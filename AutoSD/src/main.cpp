@@ -30,63 +30,102 @@ using namespace vex;
 #include <bits/stdc++.h>
 
 
-AutonStruct test_auton_motor10 {5, 0.016666666666};
-AutonStruct test_auton_motor20 {5, 0.016666666666};
+class PID {
+  public:
+    PID(double set_kp, double set_ki, double set_kd) {
+      kp = set_kp;
+      ki = set_ki;
+      kd = set_kd;
+    }
 
-void Test() {
-  Motor10.setMaxTorque(20, pct);
-  Motor20.setMaxTorque(20, pct);
+    double out(double error) {
+      double proportional = kp * error;
+      integral = ((((error + last_error) / 2) * last_time) + integral) * ki;
+      double derivative = ((error - last_error) / last_time) * kd;
+
+      last_time.reset();
+      last_error = error;
+      return proportional + integral + derivative;
+    }
+  private:
+    double kp;
+    double ki;
+    double kd;
+    double last_error;
+    double integral;
+    vex::timer last_time;
+};
+
+PID autonPID(1, 0, 0);
+
+void RunAuton() {
+  // Motor10.setMaxTorque(20, pct);
+  // Motor20.setMaxTorque(20, pct);
   double last_pos_motor10 = 0;
   // double last_pos_motor20 = 0;
-  // double error_motor10 = 1;
-  double loop_time = 10;
+  double error_motor10 = 1;
+  double loop_time;
+  // double time_multiplier;
 
   for (auto &this_step : auton_vector) {
-    loop_time = this_step.step_time_ms;
-    // Motor10.spin(fwd, this_step.step_speed_pct, pct);
-    Motor10.spin(fwd, ((this_step.step_pos_deg / 2 - last_pos_motor10) / loop_time) * 166.6667, pct);
-    // Motor10.startRotateTo(this_step.step_pos_deg, deg);
-    // Motor20.spin(fwd, 100, pct);
-    // Motor10.spin(fwd, 3 / loop_time, pct);
-    // Motor20.spin(fwd, 3 / loop_time, pct);
-    // // Motor10.setVelocity((test_auton_motor10.step_pos_deg - last_pos_motor10) / loop_time, pct);
-    // // Motor20.setVelocity((test_auton_motor20.step_pos_deg - last_pos_motor20) / loop_time, pct);
-
-    // // printf("Motor10 %f\n", test_auton_motor10.step_pos_deg);
-    // // printf("Motor20 %f\n", test_auton_motor20.step_pos_deg);
-    // error_motor10 = (test_auton_motor10.step_pos_deg - last_pos_motor10) / (Motor10.rotation(deg) - last_pos_motor10);
-    // printf("Error 1 %f\n", test_auton_motor10.step_pos_deg);
-    // printf("Error 2 %f\n", last_pos_motor10);
-    // printf("Error 3 %f\n", Motor10.rotation(deg));
-
-    last_pos_motor10 = this_step.step_pos_deg / 2;
-    // last_pos_motor20 = test_auton_motor20.step_pos_deg;
+    double temp_error = fabs(last_pos_motor10) / fabs(Motor10.rotation(deg));
+    if (std::isnormal(temp_error)) {
+    // error_motor10 = (temp_error);
+    }
+    error_motor10 = (1);
+    loop_time = this_step.step_time_ms * error_motor10;
+    
+    Motor10.spin(fwd, (autonPID.out((this_step.step_pos_deg - Motor10.rotation(deg)))) + (this_step.step_pos_deg - last_pos_motor10) * (166.6667 / loop_time), pct);
+    // Motor10.spin(fwd, ((last_pos_motor10 - Motor10.rotation(deg)) * 1) + this_step.step_speed_pct, pct);
+    // Motor10.spin(fwd, /* ((last_pos_motor10 - Motor10.rotation(deg)) * 1) +  */(this_step.step_pos_deg - last_pos_motor10) * (166.6667 / loop_time), pct);
 
 
-    // test_auton_motor10.step_pos_deg += 0.016666666666;
-    // test_auton_motor20.step_pos_deg += 0.016666666666;
+    last_pos_motor10 = this_step.step_pos_deg;
 
-    printf("Error %f\n", Motor10.rotation(deg) - this_step.step_pos_deg / 2);
+    printf("Error %f\r\n", this_step.step_pos_deg - Motor10.rotation(deg));
+    // printf("%f\t%f\t%f\t%f\t%f\r\n", Motor10.rotation(deg), last_pos_motor10, this_step.step_pos_deg, Motor10.power(), this_step.step_speed_pct);
     task::sleep(loop_time);
   }
   Motor10.stop();
 }
 
+double speed = 0.2;
+
 void CreateData() {
-  double last_time = Brain.Timer.time(msec) - 5;
+  int loop_time = 100;
   repeat(1000) {
-    printf("{%f, %f, %f},\r\n", Brain.Timer.time(msec) - last_time, Motor10.rotation(deg), Motor10.velocity(pct));
-    last_time = Brain.Timer.time(msec);
-    task::sleep(20);
+    printf("  {%f, %f, %f},\r\n", loop_time * speed, Motor10.rotation(deg), Motor10.velocity(pct));
+    task::sleep(loop_time);
+  }
+}
+
+void ManualControl() {
+  vex::timer LoopTime;
+  double stickForwardTemp = 0;
+  double stickForwardLast = 0;
+  double slew_multiplier = 0.1 * speed;
+  while (1) {
+    stickForwardTemp = Controller1.Axis3.position() * speed;
+    if(stickForwardTemp > stickForwardLast + LoopTime * slew_multiplier) {
+      stickForwardTemp = stickForwardLast + LoopTime * slew_multiplier;
+    } else if(stickForwardTemp < stickForwardLast - LoopTime * slew_multiplier) {
+      stickForwardTemp = stickForwardLast - LoopTime * slew_multiplier;
+    }
+
+    stickForwardLast = stickForwardTemp;
+    LoopTime.reset();
+
+    Motor10.spin(fwd, stickForwardTemp, pct);
+    task::sleep(10);
   }
 }
 
 int main() {
   vexcodeInit();
-  Test();
-  // thread thread1(CreateData);
+  // RunAuton();
+  thread thread1(CreateData);
+  thread thread2(ManualControl);
   while (1) {
-    // Motor10.spin(fwd, Controller1.Axis3.position(), pct);
-    task::sleep(10);
+    task::sleep(100);
   }
 }
