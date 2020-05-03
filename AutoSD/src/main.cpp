@@ -56,7 +56,7 @@ class PID {
     vex::timer last_time;
 };
 
-PID autonPID(1, 0, 0);
+PID autonPID(0.3, 0.005, 2);
 
 void RunAuton() {
   // Motor10.setMaxTorque(20, pct);
@@ -75,8 +75,9 @@ void RunAuton() {
     error_motor10 = (1);
     loop_time = this_step.step_time_ms * error_motor10;
     
-    Motor10.spin(fwd, (autonPID.out((this_step.step_pos_deg - Motor10.rotation(deg)))) + (this_step.step_pos_deg - last_pos_motor10) * (166.6667 / loop_time), pct);
-    // Motor10.spin(fwd, ((last_pos_motor10 - Motor10.rotation(deg)) * 1) + this_step.step_speed_pct, pct);
+    // Motor10.spin(fwd, (autonPID.out((this_step.step_pos_deg - Motor10.rotation(deg)))) + (this_step.step_pos_deg - last_pos_motor10) * (166.6667 / loop_time), pct);
+    // Motor10.spin(fwd, (autonPID.out((this_step.step_pos_deg - Motor10.rotation(deg)))) + this_step.step_speed_pct, pct);
+    Motor10.startSpinTo(this_step.step_pos_deg, deg, this_step.step_speed_pct * 2, rpm);
     // Motor10.spin(fwd, /* ((last_pos_motor10 - Motor10.rotation(deg)) * 1) +  */(this_step.step_pos_deg - last_pos_motor10) * (166.6667 / loop_time), pct);
 
 
@@ -93,8 +94,8 @@ double speed = 0.2;
 
 void CreateData() {
   int loop_time = 100;
-  repeat(1000) {
-    printf("  {%f, %f, %f},\r\n", loop_time * speed, Motor10.rotation(deg), Motor10.velocity(pct));
+  repeat(200) {
+    printf("  {%f, %f, %f},\r\n", loop_time * speed, Motor10.rotation(deg), Motor10.velocity(pct) / speed);
     task::sleep(loop_time);
   }
 }
@@ -122,9 +123,9 @@ void ManualControl() {
 
 int main() {
   vexcodeInit();
-  // RunAuton();
-  thread thread1(CreateData);
-  thread thread2(ManualControl);
+  RunAuton();
+  // thread thread1(CreateData);
+  // thread thread2(ManualControl);
   while (1) {
     task::sleep(100);
   }
