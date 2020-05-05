@@ -112,8 +112,12 @@ void my_task_fn(void* param) {
   printf("%d\n",*(char*)param);
 }
 
+void null_function() {
+
+}
 struct MyStruct {
-	pros::task_t task;
+	// pros::task_t taskt;
+	pros::Task task = null_function;
 };
 
 std::vector<MyStruct> my_vector = {{}, {}};
@@ -122,41 +126,23 @@ MyStruct my_object;
 
 pros::task_t t;
 
+
+
 void opcontrol() {
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 	pros::Motor left_mtr(1);
 	pros::Motor right_mtr(2);
 
-	// pros::Task my_task_one (countUpTask);
-	// pros::delay(500);
-	// my_task_one.remove();
-	// pros::delay(500);
-	// my_task_one.resume();
-	// t = pros::Task(countTask, (void*)78, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "My Task");
-	// pros::Task my_task (my_task_fn, (void*)"PROS", TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "My Task");
-	// printf("state %d\n", t.get_state());
-	// pros::task_t eg = pros::task_create(countUpTask);
-	// pros::task_t my_task = pros::c::task_create(my_task_fn, (void*)"PROS", TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "My Task");
-	// pros::Task t (countUpTask
-	// pros::Task cpptask (my_task);
-	// printf("state %d\n", my_task.get_state());
-	// my_task.remove();
-	// printf("state %d\n", my_task.get_state());
-	pros::task_t task_temp = my_object.task;
-	// pros::Task task_temp (countUpTask);
-	pros::delay(500);
-	// printf("state %d\n", my_vector[0].task.get_state());
-	// my_vector[0].task.remove();
-	// printf("state %d\n", my_vector[0].task.get_state());
-	while (true) {
-		for (int i = 0; i < 130; i++) {
-			// Calling destructor seems to not affect anything
-			// t.~thread();
-			// t = pros::Task(countTask, x_ptr);
-			// printf("t foo thread id %ld\n", t.get_name());
-			// printf("t foo native handle %p\n", t.native_handle());
+	// pros::Task task2(__null);
+  printf("state1 %d\n", my_object.task.get_state());
+  my_object.task = countDownTask;
+	pros::delay(4000);
+  printf("state2 %d\n", my_object.task.get_state());
+	my_object.task = countUpTask;
+  pros::delay(20);
+  printf("state3 %d\n", my_object.task.get_state());
 
-			pros::delay(10);
-		}
+	while (true) {
+		pros::delay(10);
 	}
 }
