@@ -5,19 +5,16 @@
 #include <bits/stdc++.h>
 
 namespace controllerbuttons {
-
-void empty_function();
-extern pros::Task empty_task;
+extern bool unnasigned_group;
 
 struct MacroGroup {
-  // pros::task_state_e_t task_state;
-  bool is_running;
-  pros::Task * last_run_task = &empty_task;
+  bool * is_running_ptr = &unnasigned_group;
+  pros::task_t * group_task_t;
 };
 
 struct ButtonStruct {
-  // Button to be checked
   pros::Controller * controller;
+  // Button to be checked
   pros::controller_digital_e_t button;
   // Should the functon be started when the button us pressed or released
   bool trigger_on_release;
@@ -25,7 +22,7 @@ struct ButtonStruct {
   void (*function)();
 
   bool was_triggered;
-  pros::Task button_task = empty_function;
+  bool is_running;
   pros::task_t button_task_t;
 };
 
@@ -44,8 +41,9 @@ struct ButtonStruct {
  *
  * Should be run in a loop.
  */
-void runButtons();
-void interruptMacroGroup(std::vector<MacroGroup *> macro_groups);
+void interruptMacroGroup(MacroGroup * group);
+
+void run_buttons();
 
 extern std::vector<MacroGroup *> macro_group_vector;
 

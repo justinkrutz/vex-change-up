@@ -6,8 +6,9 @@
 
 
 namespace robotfunctions {
-controllerbuttons::MacroGroup test2;
 controllerbuttons::MacroGroup test1;
+controllerbuttons::MacroGroup test2;
+controllerbuttons::MacroGroup test3;
 controllerbuttons::MacroGroup abort;
 
 void countUpTask() {
@@ -62,32 +63,28 @@ void checkForWarnings() {
 
 /*===========================================================================*/
 
-void countUpTaskHold() {
-  countUpTask();
-}
-
 // Abort the test
 void abortTest1() {
-  controllerbuttons::interruptMacroGroup({&test1});
+  controllerbuttons::interruptMacroGroup(&test1);
 }
 
 void abortTest2() {
-  controllerbuttons::interruptMacroGroup({&test2});
+  controllerbuttons::interruptMacroGroup(&test2);
 }
 
 void countUpTaskHoldAbort() {
-  // thread(countUpTaskHold).interrupt();
+  controllerbuttons::interruptMacroGroup(&test3);
 }
 void setCallbacks() {
   using namespace controllerbuttons;
   using namespace pros;
-  macro_group_vector = {&test1, &test2, &abort};
+  macro_group_vector = {&test1, &test2, &test3, &abort};
   button_callbacks = {
       {&master, E_CONTROLLER_DIGITAL_A,     false, {&test1,  &test2},  &countDownTask},
       {&master, E_CONTROLLER_DIGITAL_Y,     false, {&test1}, &countUpTask},
       {&master, E_CONTROLLER_DIGITAL_X,     false, {&test1}, &singleUseButton},
       {&master, E_CONTROLLER_DIGITAL_RIGHT, false, {&test2}, &countDownTask},
-      {&master, E_CONTROLLER_DIGITAL_LEFT,  false, {&test2}, &countUpTaskHold},
+      {&master, E_CONTROLLER_DIGITAL_LEFT,  false, {&test2, &test3}, &countUpTask},
       {&master, E_CONTROLLER_DIGITAL_LEFT,   true, {&abort}, &countUpTaskHoldAbort},
       {&master, E_CONTROLLER_DIGITAL_UP,    false, {&test2}, &singleUseButton},
       {&master, E_CONTROLLER_DIGITAL_B,     false, {&abort}, &abortTest1},

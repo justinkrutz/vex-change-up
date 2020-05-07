@@ -8,26 +8,37 @@
 
 namespace controllerbuttons {
 
-void empty_function() {}
-pros::Task empty_task(empty_function);
+bool unnasigned_group;
 
 std::vector<MacroGroup *> macro_group_vector;
+
 // Stores what buttons should run which functions
 // Is writen to in ::setCalback functions
 std::vector<ButtonStruct> button_callbacks;
 
-bool is_task_running(int task_state) {
-  return (task_state == pros::E_TASK_STATE_RUNNING || task_state == pros::E_TASK_STATE_READY || task_state == pros::E_TASK_STATE_BLOCKED);
-}
-
-void runButtons() {
-  // for (auto &macro_group : macro_group_vector) {
-  for(int i = 0; i < macro_group_vector.size(); i++) {
-    // macro_group->is_running = is_task_running(macro_group->last_run_task->get_state());
-    macro_group_vector[i]->is_running = is_task_running(macro_group_vector[i]->last_run_task->get_state());
-    printf("group: %d, state: %d\r\n", i, macro_group_vector[i]->last_run_task->get_state());
+void task_start_wrapper(void * void_ptr) {
+  ButtonStruct * struct_ptr = (ButtonStruct*) void_ptr;
+  for(auto group : struct_ptr->macro_groups) {
+    group->is_running_ptr = &struct_ptr->is_running;
+    group->group_task_t = &struct_ptr->button_task_t;
   }
 
+  struct_ptr->is_running = true;
+  struct_ptr->function();
+  struct_ptr->is_running = false;
+  pros::delay(20); // Wait to exit to prevent rare crash
+}
+
+void interruptMacroGroup(MacroGroup * group) {
+  printf("is_running_ptr = %d\r\n", *group->is_running_ptr);
+  if (*group->is_running_ptr) {
+    pros::c::task_delete(*group->group_task_t);
+    printf("DELETED!\r\n");
+    *group->is_running_ptr = false;
+  }
+}
+
+void run_buttons() {
   // Cycle through all button callbacks
   for (auto &button_callback : button_callbacks) {
     bool is_pressing = button_callback.controller->get_digital(button_callback.button);
@@ -37,7 +48,7 @@ void runButtons() {
                          button_callback.was_triggered);
     bool is_running = false;
     for (auto &macro_group : button_callback.macro_groups) {
-      is_running = is_running || macro_group->is_running;
+      is_running = is_running || *macro_group->is_running_ptr;
     }
 
     // If the button has been pressed and the task isn't running
@@ -53,17 +64,9 @@ void runButtons() {
     }
 
     // Run the function in a separate task
-    button_callback.button_task = button_callback.function;
-    for (auto &macro_group : button_callback.macro_groups) {
-      macro_group->is_running = true;
-      macro_group->last_run_task = &button_callback.button_task;
-    }
-  }
-}
-
-void interruptMacroGroup(std::vector<MacroGroup *> macro_groups) {
-  for (auto &macro_group : macro_groups) {
-    macro_group->last_run_task->remove();
+    button_callback.button_task_t =
+        pros::c::task_create(task_start_wrapper, (void *)&button_callback,
+            TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "run_buttons");
   }
 }
 } // namespace controllerbuttons
