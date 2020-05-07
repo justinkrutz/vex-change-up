@@ -1,20 +1,23 @@
 #include "main.h"
 
-/**
- * A callback function for LLEMU's center button.
- *
- * When this callback is fired, it will toggle line 2 of the LCD text between
- * "I was pressed!" and nothing.
- */
-// void on_center_button() {
-// 	static bool pressed = false;
-// 	pressed = !pressed;
-// 	if (pressed) {
-// 		pros::lcd::set_text(2, "I was pressed!");
-// 	} else {
-// 		pros::lcd::clear_line(2);
-// 	}
-// }
+#include "robot-config.h"
+#include "controller-buttons.h"
+#include "controller-menu.h"
+#include "robot-functions.h"
+
+void initialize_task() {
+  // controllermenu::printMenu();
+  // controllermenu::loadSettings();
+  // controllermenu::setCallbacks();
+  // (thread(robotfunctions::checkForWarnings));
+  // (thread (printGraphData));
+  // waitUntil(Competition.isCompetitionSwitch() || Competition.isFieldControl());
+  // Controller1.Screen.clearScreen();
+  // Controller1.Screen.setCursor(1, 0);
+  // Controller1.Screen.print("Connected");
+  // controllermenu::checkForAuton();
+  robotfunctions::setCallbacks();
+}
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -22,7 +25,9 @@
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
-void initialize() {}
+void initialize() {
+  (pros::Task (initialize_task));
+}
 
 /**
  * Runs while the robot is in the disabled state of Field Management System or
@@ -69,80 +74,64 @@ void autonomous() {}
  * task, not resume it from where it left off.
  */
 
- void countUpTask() {
-   printf("start\n");
-   int count = 0;
 
-   for (int i = 0; i < 50; i++) {
-     printf("Up %d\n", count ++);
-     pros::delay(20);
-   }
- }
+void foo_one() {
+  printf("foo_one\r\n");
+  pros::delay(100);
+}
 
- void countDownTask() {
-	 printf("start\n");
-	 int count = 0;
+void foo_two() {
+  printf("foo_two\r\n");
+  pros::delay(100);
+}
 
-	 for (int i = 0; i < 50; i++) {
-		 printf("Down %d\n", count --);
-		 pros::delay(20);
-	 }
- }
+void foo_three() {
+  printf("foo_three\r\n");
+  pros::delay(100);
+}
 
- void countTask(void * arg) {
-	printf("start\n");
-	int count = 0;
-
-	for (int i = 0; i < *(int*) arg; i++) {
-		printf("Count %d\n", count ++);
-		pros::delay(20);
-	}
- }
-
- int x = 50;
+int x;
 
 int *x_ptr = &x;
 
 void foo(void * arg) {
   int i = (*(int*) arg)++;
   printf("foo %d\n", i);
+  pros::delay(100);
 }
 
-void my_task_fn(void* param) {
-  printf("%d\n",*(char*)param);
+void stop_task(pros::task_t task) {
+  if (pros::c::task_get_state(task) != pros::E_TASK_STATE_DELETED &&
+      pros::c::task_get_state(task) != pros::E_TASK_STATE_INVALID) {
+    pros::c::task_delete(task);
+  }
 }
 
-void null_function() {
-
-}
-struct MyStruct {
-	// pros::task_t taskt;
-	pros::Task task = null_function;
-};
-
-std::vector<MyStruct> my_vector = {{}, {}};
-
-MyStruct my_object;
-
-pros::task_t t;
-
-
+pros::task_t task_one_t;
 
 void opcontrol() {
-	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::Motor left_mtr(1);
-	pros::Motor right_mtr(2);
 
-	// pros::Task task2(__null);
-  printf("state1 %d\n", my_object.task.get_state());
-  my_object.task = countDownTask;
-	pros::delay(4000);
-  printf("state2 %d\n", my_object.task.get_state());
-	my_object.task = countUpTask;
-  pros::delay(20);
-  printf("state3 %d\n", my_object.task.get_state());
+  // pros::Task task_one (foo_one);
+  // printf("foo state: %d\r\n", pros::c::task_get_state(task_one_t));
+  stop_task(task_one_t);
+  task_one_t = pros::c::task_create (foo, x_ptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "task_one");
+  pros::delay(5);
+  printf("foo state: %d\r\n", pros::c::task_get_state(task_one_t));
+  stop_task(task_one_t);
+  pros::delay(5);
+  printf("foo state: %d\r\n", pros::c::task_get_state(task_one_t));
+  stop_task(task_one_t);
+
+
+
+  // (pros::Task(foo, x_ptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "My Task"));
+  // pros::delay(20);
+  // printf("foo state: %d\r\n", pros::Task(foo).get_state());
+  // pros::delay(20);
+  // (pros::Task(foo)).remove();
 
 	while (true) {
+    // controllerbuttons::runButtons();
 		pros::delay(10);
 	}
 }
