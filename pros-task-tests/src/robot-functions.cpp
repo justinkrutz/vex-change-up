@@ -11,7 +11,7 @@ controllerbuttons::MacroGroup test2;
 controllerbuttons::MacroGroup test3;
 controllerbuttons::MacroGroup abort;
 
-void countUpTask() {
+void count_up_task() {
   printf("start\n");
   int count = 0;
 
@@ -21,7 +21,7 @@ void countUpTask() {
   }
 }
 
-void countDownTask() {
+void count_down_task() {
   printf("start\n");
   int count = 0;
 
@@ -31,7 +31,7 @@ void countDownTask() {
   }
 }
 
-void countTask(void * arg) {
+void count_task(void * arg) {
  printf("start\n");
  int count = 0;
 
@@ -42,8 +42,8 @@ void countTask(void * arg) {
 }
 
 // Test function that prints to the terminal.
-void singleUseButton() {
-  printf("singleUseButton\n");
+void single_use_button() {
+  printf("single_use_button\n");
 }
 
 // Dectect and cycle through warnings on the controller screen.
@@ -64,31 +64,31 @@ void checkForWarnings() {
 /*===========================================================================*/
 
 // Abort the test
-void abortTest1() {
-  controllerbuttons::interruptMacroGroup(&test1);
+void abort_test1() {
+  controllerbuttons::interrupt_macro_group(&test1);
 }
 
-void abortTest2() {
-  controllerbuttons::interruptMacroGroup(&test2);
+void abort_test2() {
+  controllerbuttons::interrupt_macro_group(&test2);
 }
 
-void countUpTaskHoldAbort() {
-  controllerbuttons::interruptMacroGroup(&test3);
+void count_up_task_hold_abort() {
+  controllerbuttons::interrupt_macro_group(&test3);
 }
-void setCallbacks() {
+void set_callbacks() {
   using namespace controllerbuttons;
   using namespace pros;
   macro_group_vector = {&test1, &test2, &test3, &abort};
   button_callbacks = {
-      {&master, E_CONTROLLER_DIGITAL_A,     false, {&test1,  &test2},  &countDownTask},
-      {&master, E_CONTROLLER_DIGITAL_Y,     false, {&test1}, &countUpTask},
-      {&master, E_CONTROLLER_DIGITAL_X,     false, {&test1}, &singleUseButton},
-      {&master, E_CONTROLLER_DIGITAL_RIGHT, false, {&test2}, &countDownTask},
-      {&master, E_CONTROLLER_DIGITAL_LEFT,  false, {&test2, &test3}, &countUpTask},
-      {&master, E_CONTROLLER_DIGITAL_LEFT,   true, {&abort}, &countUpTaskHoldAbort},
-      {&master, E_CONTROLLER_DIGITAL_UP,    false, {&test2}, &singleUseButton},
-      {&master, E_CONTROLLER_DIGITAL_B,     false, {&abort}, &abortTest1},
-      {&master, E_CONTROLLER_DIGITAL_DOWN,  false, {&abort}, &abortTest2},
+      {&master, BTN_A,     false, {&test1, &test2}, &count_down_task},
+      {&master, BTN_Y,     false, {&test1},         &count_up_task},
+      {&master, BTN_X,     false, {&test1},         &single_use_button},
+      {&master, BTN_RIGHT, false, {&test2},         &count_down_task},
+      {&master, BTN_LEFT,  false, {&test2, &test3}, &count_up_task},
+      {&master, BTN_LEFT,   true, {&abort},         &count_up_task_hold_abort},
+      {&master, BTN_UP,    false, {&test2},         &single_use_button},
+      {&master, BTN_B,     false, {&abort},         &abort_test1},
+      {&master, BTN_DOWN,  false, {&abort},         &abort_test2},
   };
 }
 

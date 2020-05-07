@@ -26,14 +26,14 @@
 //        !(device.member > lowerRange && device.member < upperRange))
 
 namespace robotfunctions {
-void countUpTask();
-void countDownTask();
-void countTask(void * arg);
-void singleUseButton();
+void count_up_task();
+void count_down_task();
+void count_task(void * arg);
+void single_use_button();
 
-void checkForWarnings();
+void check_for_warnings();
 
-void setCallbacks();
+void set_callbacks();
 } // namespace robotfunctions
 
 #endif // ROBOT_FUNCTIONS_H

@@ -8,7 +8,7 @@
 void initialize_task() {
   // controllermenu::printMenu();
   // controllermenu::loadSettings();
-  // controllermenu::setCallbacks();
+  // controllermenu::set_callbacks();
   // (thread(robotfunctions::checkForWarnings));
   // (thread (printGraphData));
   // waitUntil(Competition.isCompetitionSwitch() || Competition.isFieldControl());
@@ -16,7 +16,7 @@ void initialize_task() {
   // Controller1.Screen.setCursor(1, 0);
   // Controller1.Screen.print("Connected");
   // controllermenu::checkForAuton();
-  robotfunctions::setCallbacks();
+  robotfunctions::set_callbacks();
 }
 
 /**
@@ -73,29 +73,8 @@ void autonomous() {}
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
-
-int i;
-
-pros::task_t my_task;
-
- void my_task_fn(void* ign) {
-     // while(pros::c::task_notify_take(true, TIMEOUT_MAX)) {
-     //     printf("%d\r\n", i++);
-     // }
-     printf("start\r\n");
-     pros::c::task_notify(my_task);
-     pros::delay(3000);
-     pros::c::task_notify_take(true, TIMEOUT_MAX);
-     printf("end\r\n");
- }
-
 void opcontrol() {
-  // my_task = pros::c::task_create(my_task_fn, NULL, TASK_PRIORITY_DEFAULT,
-  //                                 TASK_STACK_DEPTH_DEFAULT, "Notify me! Task");
 	while (true) {
-    // if(master.get_digital(DIGITAL_X)) {
-    // pros::c::task_notify_clear(my_task);
-    // }
     controllerbuttons::run_buttons();
 		pros::delay(10);
 	}

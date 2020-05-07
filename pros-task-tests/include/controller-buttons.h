@@ -1,6 +1,19 @@
 #ifndef CONTROLLER_BUTTONS_H
 #define CONTROLLER_BUTTONS_H
 
+#define BTN_A     E_CONTROLLER_DIGITAL_A
+#define BTN_Y     E_CONTROLLER_DIGITAL_Y
+#define BTN_X     E_CONTROLLER_DIGITAL_X
+#define BTN_RIGHT E_CONTROLLER_DIGITAL_RIGHT
+#define BTN_LEFT  E_CONTROLLER_DIGITAL_LEFT
+#define BTN_LEFT  E_CONTROLLER_DIGITAL_LEFT
+#define BTN_UP    E_CONTROLLER_DIGITAL_UP
+#define BTN_B     E_CONTROLLER_DIGITAL_B
+#define BTN_DOWN  E_CONTROLLER_DIGITAL_DOWN
+
+
+
+
 #include "api.h"
 #include <bits/stdc++.h>
 
@@ -41,7 +54,7 @@ struct ButtonStruct {
  *
  * Should be run in a loop.
  */
-void interruptMacroGroup(MacroGroup * group);
+void interrupt_macro_group(MacroGroup * group);
 
 void run_buttons();
 
