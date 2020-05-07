@@ -26,6 +26,7 @@ struct ButtonStruct {
 
   bool was_triggered;
   pros::Task button_task = empty_function;
+  pros::task_t button_task_t;
 };
 
 

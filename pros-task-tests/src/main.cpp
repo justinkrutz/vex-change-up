@@ -98,29 +98,80 @@ void foo(void * arg) {
   int i = (*(int*) arg)++;
   printf("foo %d\n", i);
   pros::delay(100);
+  printf("finished foo %d\n", i);
 }
 
-void stop_task(pros::task_t task) {
-  if (pros::c::task_get_state(task) != pros::E_TASK_STATE_DELETED &&
-      pros::c::task_get_state(task) != pros::E_TASK_STATE_INVALID) {
-    pros::c::task_delete(task);
+
+
+
+
+struct task_group {
+  bool * is_running;
+  pros::task_t task;
+};
+
+// struct task_start_struct {
+//   void (*function)();
+//   bool is_running;
+//   std::vector<task_group *> groups;
+// };
+
+void set_groups(std::vector<task_group *> groups, bool state) {
+  for(auto group : groups) {
+    group->is_running = &state;
   }
 }
+
+void task_start_wrapper(void * void_ptr) {
+  controllerbuttons::ButtonStruct * struct_ptr = (controllerbuttons::ButtonStruct*) void_ptr;
+  set_groups(struct_ptr->macro_groups, true);
+  struct_ptr->function();
+  set_groups(struct_ptr->macro_groups, true);
+  pros::delay(20); // Wait to exit to prevent rare crash
+}
+
+controllerbuttons::ButtonStruct callback_one;
+controllerbuttons::ButtonStruct callback_two;
+
+// void task_start(pros::task_t task, void (*function)(), std::vector<task_group *> groups) {
+//   temp_struct = {function, groups};
+//   task = pros::c::task_create(task_start_wrapper, (void *)&temp_struct, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "task_start");
+// }
+
+void stop_group(task_group * task) {
+  if (!task->is_running) {
+    pros::c::task_delete(task->task);
+  }
+}
+
+task_group task_group_one;
+
+std::vector<task_group *> task_groups = {&task_group_one};
 
 pros::task_t task_one_t;
 
 void opcontrol() {
+  using namespace controllerbuttons;
 
   // pros::Task task_one (foo_one);
   // printf("foo state: %d\r\n", pros::c::task_get_state(task_one_t));
-  stop_task(task_one_t);
-  task_one_t = pros::c::task_create (foo, x_ptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "task_one");
+  printf("foo_one running: %d\r\n", *task_group_one.is_running);
+  // task_start(task_one_t, foo_one, task_groups);
+  callback_one.button_task_t = pros::c::task_create(task_start_wrapper, (void *)&callback_one, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "task_start");
   pros::delay(5);
-  printf("foo state: %d\r\n", pros::c::task_get_state(task_one_t));
-  stop_task(task_one_t);
-  pros::delay(5);
-  printf("foo state: %d\r\n", pros::c::task_get_state(task_one_t));
-  stop_task(task_one_t);
+  printf("foo_one running: %d\r\n", *task_group_one.is_running);
+  pros::delay(200);
+  printf("foo_one running: %d\r\n", *task_group_one.is_running);
+
+
+  // stop_group(&task_group_one);
+  // task_one_t = pros::c::task_create (foo, x_ptr, TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "task_one");
+  // pros::delay(5);
+  // printf("foo state: %d\r\n", pros::c::task_get_state(task_one_t));
+  // stop_group(&task_group_one);
+  // pros::delay(5);
+  // printf("foo state: %d\r\n", pros::c::task_get_state(task_one_t));
+  // stop_group(&task_group_one);
 
 
 
