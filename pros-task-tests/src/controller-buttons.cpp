@@ -10,6 +10,8 @@ namespace controllerbuttons {
 
 bool unnasigned_group;
 
+pros::Mutex mutex;
+
 std::vector<MacroGroup *> macro_group_vector;
 
 // Stores what buttons should run which functions
@@ -26,16 +28,25 @@ void task_start_wrapper(void * void_ptr) {
   struct_ptr->is_running = true;
   struct_ptr->function();
   struct_ptr->is_running = false;
-  pros::delay(20); // Wait to exit to prevent rare crash
+  // pros::delay(20); // Wait to exit to prevent rare crash
+  mutex.take(TIMEOUT_MAX);
+  mutex.give();
+  printf("ended\r\n");
 }
 
 void interruptMacroGroup(MacroGroup * group) {
+  mutex.take(TIMEOUT_MAX);
+  // pros::c::task_notify(*group->group_task_t);
   printf("is_running_ptr = %d\r\n", *group->is_running_ptr);
   if (*group->is_running_ptr) {
+
+    pros::delay(500); // REMOVE THIS!!!!
+
     pros::c::task_delete(*group->group_task_t);
     printf("DELETED!\r\n");
     *group->is_running_ptr = false;
   }
+  mutex.give();
 }
 
 void run_buttons() {
