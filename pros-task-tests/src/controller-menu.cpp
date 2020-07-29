@@ -82,6 +82,7 @@ void print_folder() {
   selection.replace((database[current_item].cursor_location) * 3 + 1, 1, "o");
 
   master.clear();
+  pros::delay(50);
   master.print(0, 0, selection.c_str());
   master.print(1, 0, item_type_name(database[database[current_item].items
                            [database[current_item].cursor_location]].item_type));
@@ -91,6 +92,7 @@ void print_folder() {
 
 void print_auton() {
   master.clear();
+  pros::delay(50);
   master.print(0, 0, database[current_item].name);
 }
 
@@ -100,6 +102,7 @@ void print_setting_slider() {
   bar.replace(1, barValue, barValue, '!');
 
   master.clear();
+  pros::delay(50);
   master.print(0, 0, database[current_item].name);
   master.print(1, 0, bar.c_str());
   master.print(2, 0, "%d%%", database[current_item].setting_value);
@@ -107,6 +110,7 @@ void print_setting_slider() {
 
 void print_setting_switch() {
   master.clear();
+  pros::delay(50);
   master.print(0, 0, database[current_item].name);
   if (database[current_item].setting_value) {
     master.print(1, 0, "True");
@@ -117,6 +121,7 @@ void print_setting_switch() {
 
 void print_action(const char *message) {
   master.clear();
+  pros::delay(50);
   master.print(0, 0, database[current_item].name);
   master.print(1, 0, database[current_item].description);
   master.print(2, 0, message);
