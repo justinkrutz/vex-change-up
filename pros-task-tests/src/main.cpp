@@ -6,16 +6,15 @@
 #include "robot-functions.h"
 
 void initialize_task() {
-  // controllermenu::printMenu();
-  // controllermenu::loadSettings();
+  // controllermenu::print_menu();
+  // controllermenu::load_settings();
   // controllermenu::set_callbacks();
-  // (thread(robotfunctions::checkForWarnings));
-  // (thread (printGraphData));
-  // waitUntil(Competition.isCompetitionSwitch() || Competition.isFieldControl());
-  // Controller1.Screen.clearScreen();
-  // Controller1.Screen.setCursor(1, 0);
-  // Controller1.Screen.print("Connected");
-  // controllermenu::checkForAuton();
+  // (pros::Task(robotfunctions::check_for_warnings));
+  // waitUntil(pros::competition::is_connected());
+  // master.clear();
+  // printf("print %d\r\n", master.print(1, 1, "Connected %d", 1));
+  // master.print(1, 1, "Connected %d", 1);
+  // controllermenu::check_for_auton();
   robotfunctions::set_callbacks();
 }
 

@@ -1,9 +1,9 @@
-// namespace controllermenu {
-// void printMenu();
-// void setCallbacks();
-// void runAuton();
-// void checkForAuton();
-// void resetSettingDefaults();
-// void storeSettings();
-// void loadSettings();
-// } // namespace controllermenu
+namespace controllermenu {
+void print_menu();
+void set_callbacks();
+void run_auton();
+void check_for_auton();
+// void reset_setting_defaults();
+// void store_settings();
+// void load_settings();
+} // namespace controllermenu

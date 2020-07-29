@@ -75,9 +75,9 @@ void abort_test2() {
 void count_up_task_hold_abort() {
   controllerbuttons::interrupt_macro_group(&test3);
 }
+
 void set_callbacks() {
   using namespace controllerbuttons;
-  using namespace pros;
   macro_group_vector = {&test1, &test2, &test3, &abort};
   button_callbacks = {
       {&master, BTN_A,     false, {&test1, &test2}, &count_down_task},
@@ -86,7 +86,7 @@ void set_callbacks() {
       {&master, BTN_RIGHT, false, {&test2},         &count_down_task},
       {&master, BTN_LEFT,  false, {&test2, &test3}, &count_up_task},
       {&master, BTN_LEFT,   true, {&abort},         &count_up_task_hold_abort},
-      {&master, BTN_UP,    false, {&test2},         &single_use_button},
+      {&master, BTN_UP,     true, {&test2},         &single_use_button},
       {&master, BTN_B,     false, {&abort},         &abort_test1},
       {&master, BTN_DOWN,  false, {&abort},         &abort_test2},
   };
