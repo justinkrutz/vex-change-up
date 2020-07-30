@@ -1,19 +1,21 @@
 #include "main.h"
 
-/**
- * A callback function for LLEMU's center button.
- *
- * When this callback is fired, it will toggle line 2 of the LCD text between
- * "I was pressed!" and nothing.
- */
-void on_center_button() {
-	static bool pressed = false;
-	pressed = !pressed;
-	if (pressed) {
-		pros::lcd::set_text(2, "I was pressed!");
-	} else {
-		pros::lcd::clear_line(2);
-	}
+#include "robot-config.h"
+#include "controller-buttons.h"
+#include "controller-menu.h"
+#include "robot-functions.h"
+
+void initialize_task() {
+  controllermenu::init();
+  // controllermenu::load_settings();
+  controllermenu::set_callbacks();
+  // (pros::Task(robotfunctions::check_for_warnings));
+  // waitUntil(pros::competition::is_connected());
+  // master.clear();
+  // printf("print %d\r\n", master.print(1, 1, "Connected %d", 1));
+  // master.print(1, 1, "Connected %d", 1);
+  // controllermenu::check_for_auton();
+  // robotfunctions::set_callbacks();
 }
 
 /**
@@ -23,10 +25,7 @@ void on_center_button() {
  * to keep execution time for this mode under a few seconds.
  */
 void initialize() {
-	pros::lcd::initialize();
-	pros::lcd::set_text(1, "Hello PROS User!");
-
-	pros::lcd::register_btn1_cb(on_center_button);
+  (pros::Task (initialize_task));
 }
 
 /**
@@ -74,19 +73,8 @@ void autonomous() {}
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::Motor left_mtr(1);
-	pros::Motor right_mtr(2);
-
 	while (true) {
-		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
-		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
-		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
-		int left = master.get_analog(ANALOG_LEFT_Y);
-		int right = master.get_analog(ANALOG_RIGHT_Y);
-
-		left_mtr = left;
-		right_mtr = right;
-		pros::delay(20);
+    controllerbuttons::run_buttons();
+		pros::delay(10);
 	}
 }
