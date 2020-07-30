@@ -76,18 +76,71 @@ const char *int_to_const_char_p(int input) {
   return output;
 }
 
+// class safe_variable {
+//   public:
+//     safe_variable(void) {
+
+//     } 
+//     void write(void * void_ptr) {
+//       mutex.take(TIMEOUT_MAX);
+
+//       mutex.give();
+//     }
+//   private:
+
+//     pros::Mutex mutex;
+// };
+
+std::string controller_print_array [3];
+
+void controller_print() {
+  // controller_print_array[0] = "test0";
+  // controller_print_array[1] = "test1";
+  // controller_print_array[2] = "test2";
+  std::string array_last [3];
+  while (true) {
+    for (int i = 0; i < 3; i++) {
+      // printf("controller_print_array[%d]: %s\n", i, controller_print_array[i].c_str());
+      if (controller_print_array[i] != array_last[i]) {
+        array_last[i] = controller_print_array[i];
+        char print_str[20];
+        sprintf(print_str, "%-19s", controller_print_array[i].c_str());
+        master.print(i, 0, print_str);
+        pros::delay(50);
+      }
+    }
+    pros::delay(10);
+  }
+}
+
+// void controller_print(std::string row_0, std::string row_1, std::string row_2) {
+//   pros::delay(50);
+//   master.clear();
+//   if (row_0.length() == 0) {
+//     pros::delay(50);
+//     master.print(0, 0, row_0.c_str());
+//   }
+//   if (row_1.length() == 0) {
+//     pros::delay(50);
+//     master.print(0, 0, row_1.c_str());
+//   }
+//   if (row_2.length() == 0) {
+//     pros::delay(50);
+//     master.print(0, 0, row_2.c_str());
+//   }
+// }
+
 void print_folder() {
+  printf("print_folder\n");
   std::string selection = "[_][_][_][_][_][_]";
   selection.resize(database[current_item].items.size() * 3);
   selection.replace((database[current_item].cursor_location) * 3 + 1, 1, "o");
 
-  master.clear();
-  pros::delay(50);
-  master.print(0, 0, selection.c_str());
-  master.print(1, 0, item_type_name(database[database[current_item].items
-                           [database[current_item].cursor_location]].item_type));
-  master.print(2, 0, database[database[current_item].items
-                           [database[current_item].cursor_location]].name);
+  controller_print_array[0] = selection;
+  controller_print_array[1] = item_type_name(database[database[current_item].items
+                           [database[current_item].cursor_location]].item_type);
+  controller_print_array[2] = database[database[current_item].items
+                           [database[current_item].cursor_location]].name;
 }
 
 void print_auton() {
@@ -191,6 +244,7 @@ void select() {
 }
 
 void print_menu() {
+  printf("print_menu");
   switch (database[current_item].item_type) {
   case kFolder:
     print_folder();
@@ -266,5 +320,12 @@ void check_for_auton() {
 //     }
 //   }
 // }
+
+void init() {
+  master.clear();
+  pros::delay(50);
+  pros::Task controller_print_task (controller_print);
+  print_menu();
+}
 
 } // namespace controllermenu

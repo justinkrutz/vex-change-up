@@ -1,4 +1,5 @@
 namespace controllermenu {
+void init();
 void print_menu();
 void set_callbacks();
 void run_auton();

@@ -6,23 +6,7 @@
 #include "robot-functions.h"
 
 void initialize_task() {
-  // printf("test");
-  // pros::delay(2000);
-  // master.clear();
-  // pros::delay(50);
-  // master.print(0, 0, "test");
-  // pros::delay(2000);
-  // master.print(0, 0, "o");
-  // master.print(1, 0, "test");
-  // master.print(1, 0, "test");
-  // master.print(1, 0, "test");
-  // master.print(1, 0, "test");
-  // while(true) {
-  //   pros::delay(100);
-  // }
-  // return;
-  controllermenu::print_menu();
-  // printf("initialize_task\n");
+  controllermenu::init();
   // controllermenu::load_settings();
   controllermenu::set_callbacks();
   // (pros::Task(robotfunctions::check_for_warnings));
