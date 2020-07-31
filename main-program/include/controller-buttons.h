@@ -29,8 +29,9 @@ struct ButtonStruct {
   // Should the functon be started when the button us pressed or released
   bool trigger_on_release;
   std::vector<MacroGroup *> macro_groups;
-  void (*function)();
-
+  // void (function)();
+  // void (*function)();
+  std::function<void()> function;
   bool was_triggered;
   bool is_running;
   pros::task_t button_task_t;
