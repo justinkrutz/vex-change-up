@@ -6,9 +6,9 @@
 #include "robot-functions.h"
 
 void initialize_task() {
-  // controllermenu::init();
+  controllermenu::set_callbacks();
+  controllermenu::init();
   // controllermenu::load_settings();
-  // controllermenu::set_callbacks();
   // (pros::Task(robotfunctions::check_for_warnings));
   // waitUntil(pros::competition::is_connected());
   // master.clear();
@@ -73,7 +73,9 @@ void autonomous() {}
  * task, not resume it from where it left off.
  */
 void opcontrol() {
+  printf("opcontrol\n");
   while (true) {
     controllerbuttons::run_buttons();
     pros::delay(10);
+  }
 }

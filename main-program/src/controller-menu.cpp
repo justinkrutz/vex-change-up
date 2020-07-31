@@ -9,6 +9,8 @@
 
 namespace controllermenu {
 
+controllerbuttons::MacroGroup menu;
+
 std::string controller_print_array [3];
 
 void controller_print() {
@@ -42,13 +44,14 @@ class MenuItem {
   private:
 
   public:
-    virtual void print(MenuItem * item) {}
-    virtual void select(MenuItem ** item_ptr) {}
-    virtual void back(MenuItem ** item_ptr) {}
-    virtual void scroll_right() {}
-    virtual void scroll_left() {}
-    virtual void scroll_up() {}
-    virtual void scroll_down() {}
+    virtual void print() {}
+    virtual void set_callbacks() {}
+    // virtual void select(MenuItem ** item_ptr) {}
+    // virtual void back(MenuItem ** item_ptr) {}
+    // virtual void scroll_right() {}
+    // virtual void scroll_left() {}
+    // virtual void scroll_up() {}
+    // virtual void scroll_down() {}
     MenuItemType item_type;
     const char *name;
 };
@@ -60,15 +63,18 @@ class Folder : public MenuItem {
   private:
     int cursor_location = 0;
     void scroll(int direction) {
-      int tempCursorLocation;
-      int tempSettingValue;
-      tempCursorLocation = this->cursor_location + direction;
-      if (tempCursorLocation < 0) {
-        tempCursorLocation = this->children.size() - 1;
-      } else if (tempCursorLocation > this->children.size() - 1) {
-        tempCursorLocation = 0;
+      printf("scroll\n");
+      int temp_cursor_location;
+      int temp_setting_value;
+      temp_cursor_location = cursor_location + direction;
+      if (temp_cursor_location < 0) {
+        temp_cursor_location = children.size() - 1;
+      } else if (temp_cursor_location > children.size() - 1) {
+        temp_cursor_location = 0;
       }
-      this->cursor_location = tempCursorLocation;
+
+      cursor_location = temp_cursor_location;
+      print();
     }
 
   public:
@@ -80,50 +86,61 @@ class Folder : public MenuItem {
     // const char *name;
     std::vector<MenuItem> children;
 
-    void foo() {
-      printf("foo");
-    }
-
     void set_callbacks() {
       using namespace controllerbuttons;
-      // button_callbacks[0].function = std::bind(&Folder::foo, this);
+      button_callbacks = {
+        {&master, BTN_RIGHT, false, {&menu}, std::bind(&Folder::scroll_right, *this)},
+        {&master, BTN_LEFT,  false, {&menu}, std::bind(&Folder::scroll_left, *this)},
+        {&master, BTN_UP,    false, {&menu}, std::bind(&Folder::scroll_up, *this)},
+        {&master, BTN_DOWN,  false, {&menu}, std::bind(&Folder::scroll_down, *this)},
+        {&master, BTN_A,     false, {&menu}, std::bind(&Folder::select, *this)},
+        {&master, BTN_B,     false, {&menu}, std::bind(&Folder::back, *this)},
+      };
     }
 
-    void print(MenuItem * item) {
-      set_callbacks();
+    void print() {
+      // set_callbacks();
       printf("print_folder\n");
-      Folder * item_to_print = (Folder*)item;
+      // Folder * item_to_print = (Folder*)item;
       std::string selection = "[_][_][_][_][_][_]";
-      selection.resize(item_to_print->children.size() * 3);
-      printf("cursor_location: %d\n", item_to_print->cursor_location);
-      selection.replace((item_to_print->cursor_location) * 3 + 1, 1, "o");
+      selection.resize(children.size() * 3);
+      printf("cursor_location: %d\n", cursor_location);
+      selection.replace((cursor_location) * 3 + 1, 1, "o");
 
       controller_print_array[0] = selection;
       controller_print_array[1] = "Type goes here";
-      controller_print_array[1] = MenuItemTypeName.at(item_to_print->children[item_to_print->cursor_location].item_type);
-      controller_print_array[2] = item_to_print->children[item_to_print->cursor_location].name;
+      controller_print_array[1] = MenuItemTypeName.at(children[cursor_location].item_type);
+      controller_print_array[2] = children[cursor_location].name;
     }
 
-    void select(MenuItem **item_ptr) {
+    void select() {
       printf("select\n");
-      if (this->children.size() > 0) {
-        *item_ptr = &this->children[this->cursor_location];
-        print(current_item);
+      if (children.size() > 0) {
+        current_item = &children[cursor_location];
+        current_item->print();
       }
     }
 
-    void back(MenuItem ** item_ptr) {
-      *item_ptr = findParent(this);
-      print(current_item);
+    void back() {
+      current_item = findParent(this);
+      print();
     }
 
-    void scrollRight() { scroll(1); }
+    void scroll_right() {
+      scroll(1);
+    }
 
-    void scrollLeft()  { scroll(-1); }
+    void scroll_left()  {
+      scroll(-1);
+    }
 
-    void scrollUp()    { scroll(10); }
+    void scroll_up()    {
+      scroll(10);
+    }
 
-    void scrollDown()  { scroll(-10); }
+    void scroll_down()  {
+      scroll(-10);
+    }
 
     Folder * findParent(Folder *current_folder) {
       if (!current_folder) {
@@ -251,32 +268,32 @@ Folder root_folder("", {
 
 
 
-void scroll_right() {
-  current_item->scroll_right();
-}
+// void scroll_right() {
+//   current_item->scroll_right();
+// }
 
-void scroll_left() {
-  current_item->scroll_left();
-}
+// void scroll_left() {
+//   current_item->scroll_left();
+// }
 
-void scroll_up() {
-  current_item->scroll_up();
-}
+// void scroll_up() {
+//   current_item->scroll_up();
+// }
 
-void scroll_down() {
-  current_item->scroll_down();
-}
+// void scroll_down() {
+//   current_item->scroll_down();
+// }
 
-void back() {
-  current_item->back(&current_item);
-}
+// void back() {
+//   current_item->back(&current_item);
+// }
 
-void select() {
-  current_item->select(&current_item);
-}
+// void select() {
+//   current_item->select(&current_item);
+// }
 
 void print_menu(MenuItem * item) {
-  item->print(current_item);
+  item->print();
 }
 
 // void run_auton() {
@@ -292,18 +309,18 @@ void print_menu(MenuItem * item) {
 //   }
 // }
 
-controllerbuttons::MacroGroup menu;
+
 
 void set_callbacks() {
-  using namespace controllerbuttons;
-  button_callbacks = {
-    {&master, BTN_RIGHT, false, {&menu}, &scroll_right},
-    {&master, BTN_LEFT,  false, {&menu}, &scroll_left},
-    {&master, BTN_UP,    false, {&menu}, &scroll_up},
-    {&master, BTN_DOWN,  false, {&menu}, &scroll_down},
-    {&master, BTN_A,     false, {&menu}, &select},
-    {&master, BTN_B,     false, {&menu}, &back},
-  };
+//   using namespace controllerbuttons;
+//   button_callbacks = {
+//     {&master, BTN_RIGHT, false, {&menu}, &scroll_right},
+//     {&master, BTN_LEFT,  false, {&menu}, &scroll_left},
+//     {&master, BTN_UP,    false, {&menu}, &scroll_up},
+//     {&master, BTN_DOWN,  false, {&menu}, &scroll_down},
+//     {&master, BTN_A,     false, {&menu}, &select},
+//     {&master, BTN_B,     false, {&menu}, &back},
+//   };
 }
 
 void init() {
@@ -311,6 +328,7 @@ void init() {
   pros::delay(50);
   current_item = &root_folder;
   pros::Task controller_print_task (controller_print);
+  current_item->set_callbacks();
   print_menu(current_item);
 }
 
