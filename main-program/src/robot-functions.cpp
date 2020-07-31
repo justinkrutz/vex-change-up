@@ -80,15 +80,15 @@ void set_callbacks() {
   using namespace controllerbuttons;
   macro_group_vector = {&test1, &test2, &test3, &abort};
   button_callbacks = {
-      {&master, BTN_A,     false, {&test1, &test2}, &count_down_task},
-      {&master, BTN_Y,     false, {&test1},         &count_up_task},
-      {&master, BTN_X,     false, {&test1},         &single_use_button},
-      {&master, BTN_RIGHT, false, {&test2},         &count_down_task},
-      {&master, BTN_LEFT,  false, {&test2, &test3}, &count_up_task},
-      {&master, BTN_LEFT,   true, {&abort},         &count_up_task_hold_abort},
-      {&master, BTN_UP,     true, {&test2},         &single_use_button},
-      {&master, BTN_B,     false, {&abort},         &abort_test1},
-      {&master, BTN_DOWN,  false, {&abort},         &abort_test2},
+      {&master, BTN_A,     &count_down_task,   false, {&test1, &test2}, true,},
+      {&master, BTN_Y,     &count_up_task,     false, {&test1},         true,},
+      {&master, BTN_X,     &single_use_button, false, {&test1}},
+      {&master, BTN_RIGHT, &count_down_task,   false, {&test2},         true,},
+      {&master, BTN_LEFT,  &count_up_task,     false, {&test2, &test3}, true,},
+      {&master, BTN_LEFT,  &count_up_task_hold_abort, true},
+      {&master, BTN_UP,    &single_use_button, true, {&test2}},
+      {&master, BTN_B,     &abort_test1},
+      {&master, BTN_DOWN,  &abort_test2},
   };
 }
 

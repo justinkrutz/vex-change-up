@@ -24,14 +24,12 @@ struct MacroGroup {
 
 struct ButtonStruct {
   pros::Controller * controller;
-  // Button to be checked
   pros::controller_digital_e_t button;
-  // Should the functon be started when the button us pressed or released
-  bool trigger_on_release;
-  std::vector<MacroGroup *> macro_groups;
-  // void (function)();
-  // void (*function)();
   std::function<void()> function;
+  bool trigger_on_release = false;
+  std::vector<MacroGroup *> macro_groups;
+  bool run_as_task = false;
+
   bool was_triggered = true;
   bool is_running;
   pros::task_t button_task_t;
@@ -61,6 +59,8 @@ extern std::vector<MacroGroup *> macro_group_vector;
 // Stores what buttons should run which functions
 // Is writen to in ::setCallback functions
 extern std::vector<ButtonStruct> button_callbacks;
+
+// extern std::vector<std::vector<ButtonStruct>> button_handler;
 
 } // namespace controllerbuttons
 

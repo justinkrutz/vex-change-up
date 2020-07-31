@@ -92,15 +92,15 @@ class Folder : public MenuItem {
 
     void set_callbacks() {
       printf("Folder::set_callbacks()\n");
-      using namespace controllerbuttons;
-      button_callbacks = {
-        {&master, BTN_RIGHT, false, {&menu}, std::bind(&Folder::scroll_right, this)},
-        {&master, BTN_LEFT,  false, {&menu}, std::bind(&Folder::scroll_left, this)},
-        {&master, BTN_UP,    false, {&menu}, std::bind(&Folder::scroll_up, this)},
-        {&master, BTN_DOWN,  false, {&menu}, std::bind(&Folder::scroll_down, this)},
-        {&master, BTN_A,     false, {&menu}, std::bind(&Folder::select, this)},
-        {&master, BTN_B,     false, {&menu}, std::bind(&Folder::back, this)},
-      };
+      // using namespace controllerbuttons;
+      // button_callbacks = {
+      //   {&master, BTN_RIGHT, false, {&menu}, std::bind(&Folder::scroll_right, this)},
+      //   {&master, BTN_LEFT,  false, {&menu}, std::bind(&Folder::scroll_left, this)},
+      //   {&master, BTN_UP,    false, {&menu}, std::bind(&Folder::scroll_up, this)},
+      //   {&master, BTN_DOWN,  false, {&menu}, std::bind(&Folder::scroll_down, this)},
+      //   {&master, BTN_A,     false, {&menu}, std::bind(&Folder::select, this)},
+      //   {&master, BTN_B,     false, {&menu}, std::bind(&Folder::back, this)},
+      // };
     }
 
     void print() {

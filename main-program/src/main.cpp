@@ -2,12 +2,12 @@
 
 #include "robot-config.h"
 #include "controller-buttons.h"
-#include "controller-menu.h"
+// #include "controller-menu.h"
 #include "robot-functions.h"
 
 void initialize_task() {
-  controllermenu::set_callbacks();
-  controllermenu::init();
+  // controllermenu::set_callbacks();
+  // controllermenu::init();
   // controllermenu::load_settings();
   // (pros::Task(robotfunctions::check_for_warnings));
   // waitUntil(pros::competition::is_connected());
@@ -15,7 +15,7 @@ void initialize_task() {
   // printf("print %d\r\n", master.print(1, 1, "Connected %d", 1));
   // master.print(1, 1, "Connected %d", 1);
   // controllermenu::check_for_auton();
-  // robotfunctions::set_callbacks();
+  robotfunctions::set_callbacks();
 }
 
 /**

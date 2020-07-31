@@ -3,8 +3,6 @@
 #include <bits/stdc++.h>
 
 #include "controller-buttons.h"
-#include "controller-menu.h"
-#include "robot-functions.h"
 
 namespace controllerbuttons {
 
@@ -68,11 +66,14 @@ void run_buttons() {
     } else {
       continue;
     }
-
+    if (button_callback.run_as_task) {
     // Run the function in a separate task
     button_callback.button_task_t =
         pros::c::task_create(task_start_wrapper, (void *)&button_callback,
             TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "run_buttons");
+    } else {
+      button_callback.function();
+    }
   }
 }
 } // namespace controllerbuttons
