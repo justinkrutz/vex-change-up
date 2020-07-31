@@ -44,8 +44,12 @@ class MenuItem {
   private:
 
   public:
-    virtual void print() {}
-    virtual void set_callbacks() {}
+    virtual void print() {
+      printf("virtual void print()\n");
+    }
+    virtual void set_callbacks() {
+      printf("virtual void set_callbacks()\n");
+    }
     // virtual void select(MenuItem ** item_ptr) {}
     // virtual void back(MenuItem ** item_ptr) {}
     // virtual void scroll_right() {}
@@ -78,23 +82,24 @@ class Folder : public MenuItem {
     }
 
   public:
-    Folder(const char *name_arg, std::vector<MenuItem> children_arg) {
+    std::vector<MenuItem*> children;
+    Folder(const char *name_arg, std::vector<MenuItem*> children_arg) {
       name = name_arg;
       children = children_arg;
       item_type = kFolder;
     }
     // const char *name;
-    std::vector<MenuItem> children;
 
     void set_callbacks() {
+      printf("Folder::set_callbacks()\n");
       using namespace controllerbuttons;
       button_callbacks = {
-        {&master, BTN_RIGHT, false, {&menu}, std::bind(&Folder::scroll_right, *this)},
-        {&master, BTN_LEFT,  false, {&menu}, std::bind(&Folder::scroll_left, *this)},
-        {&master, BTN_UP,    false, {&menu}, std::bind(&Folder::scroll_up, *this)},
-        {&master, BTN_DOWN,  false, {&menu}, std::bind(&Folder::scroll_down, *this)},
-        {&master, BTN_A,     false, {&menu}, std::bind(&Folder::select, *this)},
-        {&master, BTN_B,     false, {&menu}, std::bind(&Folder::back, *this)},
+        {&master, BTN_RIGHT, false, {&menu}, std::bind(&Folder::scroll_right, this)},
+        {&master, BTN_LEFT,  false, {&menu}, std::bind(&Folder::scroll_left, this)},
+        {&master, BTN_UP,    false, {&menu}, std::bind(&Folder::scroll_up, this)},
+        {&master, BTN_DOWN,  false, {&menu}, std::bind(&Folder::scroll_down, this)},
+        {&master, BTN_A,     false, {&menu}, std::bind(&Folder::select, this)},
+        {&master, BTN_B,     false, {&menu}, std::bind(&Folder::back, this)},
       };
     }
 
@@ -109,14 +114,25 @@ class Folder : public MenuItem {
 
       controller_print_array[0] = selection;
       controller_print_array[1] = "Type goes here";
-      controller_print_array[1] = MenuItemTypeName.at(children[cursor_location].item_type);
-      controller_print_array[2] = children[cursor_location].name;
+      controller_print_array[1] = MenuItemTypeName.at(children[cursor_location]->item_type);
+      controller_print_array[2] = children[cursor_location]->name;
     }
 
     void select() {
       printf("select\n");
       if (children.size() > 0) {
-        current_item = &children[cursor_location];
+        printf("this: %p\n", this);
+        printf("&children[cursor_location]: %p\n", children[cursor_location]);
+        printf("cursor_location: %d\n", cursor_location);
+        printf("children[cursor_location]->name: %s\n", children[cursor_location]->name);
+        printf(" children.size(): %d\n", children.size());
+        // children[cursor_location]->print();
+        printf("current_item before: %p\n", current_item);
+        current_item = children[cursor_location];
+        printf("current_item->name: %s\n", current_item->name);
+        printf("current_item after: %p\n", current_item);
+        pros::delay(1000);
+        current_item->set_callbacks();
         current_item->print();
       }
     }
@@ -147,31 +163,31 @@ class Folder : public MenuItem {
         return NULL;
       }
 
-      for (MenuItem &child : current_folder->children) {
-        if (this == &child) {
+      for (MenuItem *child : current_folder->children) {
+        if (this == child) {
           return current_folder;
         }
-        if (child.item_type == kFolder) {
-          return findParent((Folder*)&child);
+        if (child->item_type == kFolder) {
+          return findParent((Folder*)child);
         }
       }
     }
 };
 
 Folder root_folder("", {
-  Folder("Match", {
-    Folder("One", {}),
-    Folder("Two", {})
+  new Folder("Match", {
+    new Folder("One", {}),
+    new Folder("Two", {})
   }),
-  Folder("Skills", {
+  new Folder("Skills", {
   }),
-  Folder("Auto Waypoint", {
+  new Folder("Auto Waypoint", {
   }),
-  Folder("Other", {
+  new Folder("Other", {
   }),
-  Folder("Actions", {
+  new Folder("Actions", {
   }),
-  Folder("Settings", {
+  new Folder("Settings", {
   })
 });
 

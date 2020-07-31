@@ -32,7 +32,7 @@ struct ButtonStruct {
   // void (function)();
   // void (*function)();
   std::function<void()> function;
-  bool was_triggered;
+  bool was_triggered = true;
   bool is_running;
   pros::task_t button_task_t;
 };
