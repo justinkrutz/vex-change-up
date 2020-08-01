@@ -1,15 +1,15 @@
 #ifndef CONTROLLER_BUTTONS_H
 #define CONTROLLER_BUTTONS_H
 
-#define BTN_A     pros::E_CONTROLLER_DIGITAL_A
-#define BTN_Y     pros::E_CONTROLLER_DIGITAL_Y
-#define BTN_X     pros::E_CONTROLLER_DIGITAL_X
-#define BTN_RIGHT pros::E_CONTROLLER_DIGITAL_RIGHT
-#define BTN_LEFT  pros::E_CONTROLLER_DIGITAL_LEFT
-#define BTN_LEFT  pros::E_CONTROLLER_DIGITAL_LEFT
-#define BTN_UP    pros::E_CONTROLLER_DIGITAL_UP
-#define BTN_B     pros::E_CONTROLLER_DIGITAL_B
-#define BTN_DOWN  pros::E_CONTROLLER_DIGITAL_DOWN
+// #define BTN_A     pros::E_CONTROLLER_DIGITAL_A
+// #define BTN_Y     pros::E_CONTROLLER_DIGITAL_Y
+// #define BTN_X     pros::E_CONTROLLER_DIGITAL_X
+// #define BTN_RIGHT pros::E_CONTROLLER_DIGITAL_RIGHT
+// #define BTN_LEFT  pros::E_CONTROLLER_DIGITAL_LEFT
+// #define BTN_LEFT  pros::E_CONTROLLER_DIGITAL_LEFT
+// #define BTN_UP    pros::E_CONTROLLER_DIGITAL_UP
+// #define BTN_B     pros::E_CONTROLLER_DIGITAL_B
+// #define BTN_DOWN  pros::E_CONTROLLER_DIGITAL_DOWN
 
 #include "api.h"
 #include <bits/stdc++.h>
@@ -36,6 +36,7 @@ struct ButtonStruct {
 };
 
 
+
 /**
  * Checks through each struct in the vector one by one,
  * and runs starts the function running on a seperate task if:
@@ -54,7 +55,7 @@ void interrupt_macro_group(MacroGroup * group);
 
 void run_buttons();
 
-extern std::vector<MacroGroup *> macro_group_vector;
+void set_callbacks();
 
 // Stores what buttons should run which functions
 // Is writen to in ::setCallback functions
