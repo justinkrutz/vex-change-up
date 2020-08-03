@@ -1,7 +1,7 @@
 {
     "py/object": "pros.conductor.project.Project",
     "py/state": {
-        "project_name": "pros-task-tests",
+        "project_name": "main-program",
         "target": "v5",
         "templates": {
             "kernel": {

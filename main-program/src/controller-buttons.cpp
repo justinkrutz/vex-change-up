@@ -10,31 +10,71 @@ namespace controllerbuttons {
 
 class MacroHandler {
   private:
-  pros::Mutex mutex;
+  static pros::Mutex mutex;
 
-  void task_start_wrapper(void * void_ptr) {
-    ButtonStruct * struct_ptr = (ButtonStruct*) void_ptr;
-    for(auto group : struct_ptr->macro_groups) {
-      group->is_running_ptr = &struct_ptr->is_running;
-      group->group_task_t = &struct_ptr->button_task_t;
+  static void task_start_wrapper(void * void_ptr) {
+    Macro * macro_ptr = (Macro*) void_ptr;
+    for(auto &group : macro_ptr->macro_groups) {
+      group->is_running_ptr = &macro_ptr->is_running;
+      group->group_task_t = &macro_ptr->button_task_t;
     }
 
-    struct_ptr->is_running = true;
-    struct_ptr->function();
-    struct_ptr->is_running = false;
+    macro_ptr->is_running = true;
+    macro_ptr->function();
+    macro_ptr->is_running = false;
     mutex.take(TIMEOUT_MAX);
     mutex.give();
     printf("ended\r\n");
   }
 
   public:
+
   struct MacroGroup {
     bool * is_running_ptr = &unnasigned_group;
     pros::task_t * group_task_t;
   };
 
-  void start(std::function<void()>) {
+  class Macro {
+    public:
 
+    pros::task_t button_task_t;
+    std::function<void()> function;
+    std::vector<MacroGroup *> macro_groups;
+
+    void task_start_wrapper() {
+      for(auto &group : macro_groups) {
+        group->is_running_ptr = &is_running;
+        group->group_task_t = &button_task_t;
+      }
+
+      is_running = true;
+      function();
+      is_running = false;
+      mutex.take(TIMEOUT_MAX);
+      mutex.give();
+      printf("ended\r\n");
+    }
+
+    void start(Macro macro) {
+      // std::function<void()> func(std::bind(&Macro::task_start_wrapper, this));
+      // button_task_t = pros::c::task_create(),
+      button_task_t = pros::c::task_create(std::bind(&Macro::task_start_wrapper, this),
+      // button_task_t = pros::c::task_create([this] { task_start_wrapper(); },
+                                           nullptr,
+                                           TASK_PRIORITY_DEFAULT,
+                                           TASK_STACK_DEPTH_DEFAULT,
+                                           "macro");
+  }
+
+    bool is_running;
+  };
+
+  void start(Macro macro) {
+    macro.button_task_t = pros::c::task_create(task_start_wrapper,
+                                         (void *)&macro,
+                                         TASK_PRIORITY_DEFAULT,
+                                         TASK_STACK_DEPTH_DEFAULT,
+                                         "macro_handler");
   }
 
   void interrupt_macro_group(MacroGroup * group) {
@@ -94,9 +134,9 @@ class ButtonHandler {
           is_set_ = false;
         }
 
-        void clear_group(std::string button_group) {
-          for (auto &group : button_groups_) {
-            if (group == button_group){
+        void clear_if_in_group(std::string button_group) {
+          for (auto &group_to_clear : button_groups_) {
+            if (button_group == group_to_clear){
               clear();
               return;
             }
@@ -106,10 +146,8 @@ class ButtonHandler {
         void run_if_triggered() {
           if (is_set_) {
             bool is_pressing = controller_->get_digital(button_);
-            bool was_pressed  = (is_pressing &&
-                                !was_triggered_);
-            bool was_released = (!is_pressing &&
-                                was_triggered_);
+            bool was_pressed  = (is_pressing && !was_triggered_);
+            bool was_released = (!is_pressing && was_triggered_);
             bool is_running = false;
             // for (auto &macro_group : macro_groups) {
             //   is_running = is_running || *macro_group->is_running_ptr;
@@ -209,6 +247,12 @@ class ButtonHandler {
       trigger->clear();
     }
   }
+
+  void clear_group(std::string button_group) {
+    for (auto &trigger : all_triggers) {
+      trigger->clear_if_in_group(button_group);
+    }
+  }
 };
 
 ButtonHandler button_handler(&master, &partner);
@@ -219,26 +263,35 @@ void foo_one() {
 
 void foo_two() {
   printf("foo_two\n");
+  set_callbacks();
 }
 
 void foo_three() {
   printf("foo_three\n");
-  button_handler.clear_all();
-  set_callbacks();
+  button_handler.clear_group("test");
 }
 
 void foo_four() {
   printf("foo_four\n");
-  button_handler.master.a.pressed.set(foo_two, {"test"});
+  button_handler.master.a.pressed.clear();
   button_handler.master.a.released.set(foo_one, {"test"});
-  button_handler.master.x.pressed.set(foo_one, {"test"});
+}
+
+void foo_five_start() {
+  printf("foo_five_start\n");
+}
+
+void foo_five_end() {
+  printf("foo_five_end\n");
 }
 
 void set_callbacks() {
   button_handler.master.a.pressed.set(foo_one, {"test"});
-  button_handler.master.a.released.set(foo_two, {"test"});
+  button_handler.master.x.pressed.set(foo_two);
   button_handler.master.b.pressed.set(foo_three, {"test"});
   button_handler.master.y.pressed.set(foo_four, {"test"});
+  button_handler.master.left.pressed.set(foo_five_start, {"test"});
+  button_handler.master.left.released.set(foo_five_end, {"test"});
 }
 
 void run_buttons() {
