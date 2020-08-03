@@ -18,23 +18,23 @@ namespace controllerbuttons {
 
 extern bool unnasigned_group;
 
-struct MacroGroup {
-  bool * is_running_ptr = &unnasigned_group;
-  pros::task_t * group_task_t;
-};
+// struct MacroGroup {
+//   bool * is_running_ptr = &unnasigned_group;
+//   pros::task_t * group_task_t;
+// };
 
-struct ButtonStruct {
-  pros::Controller * controller;
-  pros::controller_digital_e_t button;
-  std::function<void()> function;
-  bool trigger_on_release = false;
-  std::vector<MacroGroup *> macro_groups;
-  bool run_as_task = false;
+// struct ButtonStruct {
+//   pros::Controller * controller;
+//   pros::controller_digital_e_t button;
+//   std::function<void()> function;
+//   bool trigger_on_release = false;
+//   std::vector<MacroGroup *> macro_groups;
+//   bool run_as_task = false;
 
-  bool was_triggered = true;
-  bool is_running;
-  pros::task_t button_task_t;
-};
+//   bool was_triggered = true;
+//   bool is_running;
+//   pros::task_t button_task_t;
+// };
 
 
 
@@ -52,7 +52,7 @@ struct ButtonStruct {
  *
  * Should be run in a loop.
  */
-void interrupt_macro_group(MacroGroup * group);
+// void interrupt_macro_group(MacroGroup * group);
 
 void run_buttons();
 
@@ -60,7 +60,7 @@ void set_callbacks();
 
 // Stores what buttons should run which functions
 // Is writen to in ::setCallback functions
-extern std::vector<ButtonStruct> button_callbacks;
+// extern std::vector<ButtonStruct> button_callbacks;
 
 // extern std::vector<std::vector<ButtonStruct>> button_handler;
 

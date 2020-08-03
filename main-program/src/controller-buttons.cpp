@@ -4,9 +4,108 @@
 
 #include "controller-buttons.h"
 #include "robot-config.h"
+#include "robot-functions.h"
 
 
 namespace controllerbuttons {
+
+class Macro;
+
+class MacroGroup {
+  public:
+  Macro *macro;
+  void terminate();
+};
+
+class Macro {
+  private:
+  // static std::vector<Macro*> all_macros;
+
+
+  pros::Mutex mutex;
+  // std::function<void()> function;
+  std::vector<MacroGroup *> macro_groups;
+  std::vector<pros::Task*> tasks;
+  pros::Task* _task;
+
+  void start_wrapper(){
+    is_running = true;
+    function();
+    is_running = false;
+    mutex.take(TIMEOUT_MAX);
+    mutex.give();
+  }
+
+  protected:
+  virtual void function() {}
+  virtual void clean_up() {}
+  
+  public:
+  bool is_running = false;
+
+  void start() {
+    for (auto &group : macro_groups) {
+      group->macro = this;
+    }
+    pros::Task task(std::bind(&Macro::start_wrapper, this), "Macro");
+    // tasks = {&task};
+    _task = &task;
+  }
+  void terminate() {
+    printf("is_running: %d\n", _task->get_state());
+    mutex.take(TIMEOUT_MAX);
+    // for (auto &task : tasks) {
+    if (_task->get_state() == pros::E_TASK_STATE_READY) {
+      _task->remove();
+    // tasks[0]->remove();
+      is_running = false;
+      printf("terminated\n");
+    }
+    mutex.give();
+    clean_up();
+  }
+  
+  // Macro() {
+  //   all_macros.push_back(this);
+  // }
+};
+
+// std::vector<Macro*> Macro::all_macros;
+
+void MacroGroup::terminate() {
+  if (macro) {
+    macro->terminate();
+  }
+}
+
+
+
+
+
+
+// Derived class
+class : public Macro {
+  void function() {
+    robotfunctions::count_up_task();
+  }
+  
+  void clean_up() {
+  }
+} macro_one;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class MacroHandler {
   private:
@@ -56,14 +155,14 @@ class MacroHandler {
     }
 
     void start(Macro macro) {
-      // std::function<void()> func(std::bind(&Macro::task_start_wrapper, this));
-      // button_task_t = pros::c::task_create(),
-      button_task_t = pros::c::task_create(std::bind(&Macro::task_start_wrapper, this),
-      // button_task_t = pros::c::task_create([this] { task_start_wrapper(); },
-                                           nullptr,
-                                           TASK_PRIORITY_DEFAULT,
-                                           TASK_STACK_DEPTH_DEFAULT,
-                                           "macro");
+      // // std::function<void()> func(std::bind(&Macro::task_start_wrapper, this));
+      // // button_task_t = pros::c::task_create(),
+      // button_task_t = pros::c::task_create(std::bind(&Macro::task_start_wrapper, this),
+      // // button_task_t = pros::c::task_create([this] { task_start_wrapper(); },
+      //                                      nullptr,
+      //                                      TASK_PRIORITY_DEFAULT,
+      //                                      TASK_STACK_DEPTH_DEFAULT,
+      //                                      "macro");
   }
 
     bool is_running;
@@ -259,6 +358,11 @@ ButtonHandler button_handler(&master, &partner);
 
 void foo_one() {
   printf("foo_one\n");
+  macro_one.start();
+  pros::delay(200);
+  macro_one.terminate();
+  pros::delay(2000);
+  macro_one.terminate();
 }
 
 void foo_two() {
@@ -324,7 +428,7 @@ pros::Mutex mutex;
 
 // Stores what buttons should run which functions
 // Is writen to in ::setCalback functions
-std::vector<ButtonStruct> button_callbacks;
+// std::vector<ButtonStruct> button_callbacks;
 
 // void task_start_wrapper(void * void_ptr) {
 //   ButtonStruct * struct_ptr = (ButtonStruct*) void_ptr;

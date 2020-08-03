@@ -6,10 +6,10 @@
 
 
 namespace robotfunctions {
-controllerbuttons::MacroGroup test1;
-controllerbuttons::MacroGroup test2;
-controllerbuttons::MacroGroup test3;
-controllerbuttons::MacroGroup abort;
+// controllerbuttons::MacroGroup test1;
+// controllerbuttons::MacroGroup test2;
+// controllerbuttons::MacroGroup test3;
+// controllerbuttons::MacroGroup abort;
 
 void count_up_task() {
   printf("start\n");
@@ -65,15 +65,15 @@ void checkForWarnings() {
 
 // Abort the test
 void abort_test1() {
-  controllerbuttons::interrupt_macro_group(&test1);
+  // controllerbuttons::interrupt_macro_group(&test1);
 }
 
 void abort_test2() {
-  controllerbuttons::interrupt_macro_group(&test2);
+  // controllerbuttons::interrupt_macro_group(&test2);
 }
 
 void count_up_task_hold_abort() {
-  controllerbuttons::interrupt_macro_group(&test3);
+  // controllerbuttons::interrupt_macro_group(&test3);
 }
 
 void set_callbacks() {

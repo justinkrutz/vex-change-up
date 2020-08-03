@@ -9,7 +9,7 @@
 
 namespace controllermenu {
 
-controllerbuttons::MacroGroup menu;
+// controllerbuttons::MacroGroup menu;
 
 std::string controller_print_array [3];
 
