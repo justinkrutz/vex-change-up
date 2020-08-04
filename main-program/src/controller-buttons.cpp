@@ -21,12 +21,13 @@ class Macro {
   private:
   // static std::vector<Macro*> all_macros;
 
-
+  static void empty_function_() {}
   pros::Mutex mutex;
   // std::function<void()> function;
   std::vector<MacroGroup *> macro_groups;
   std::vector<pros::Task*> tasks;
-  pros::Task* _task;
+  // pros::Task task_ = pros::Task(empty_function_);
+  pros::Task *task_;
 
   void start_wrapper(){
     is_running = true;
@@ -44,20 +45,33 @@ class Macro {
   bool is_running = false;
 
   void start() {
+    mutex.take(TIMEOUT_MAX);
     for (auto &group : macro_groups) {
       group->macro = this;
     }
-    pros::Task task(std::bind(&Macro::start_wrapper, this), "Macro");
-    // tasks = {&task};
-    _task = &task;
+    // pros::Task task(std::bind(&Macro::start_wrapper, this), "Macro");
+    // pros::Task task([this](){ Macro::start_wrapper(); }, "Macro");
+    // task_ = new pros::Task([this](){ start_wrapper(); }, "Macro");
+    delete task_;
+    task_ = new pros::Task([this](){ start_wrapper(); }, "Macro");
+    mutex.give();
   }
+
   void terminate() {
-    printf("is_running: %d\n", _task->get_state());
     mutex.take(TIMEOUT_MAX);
+    printf("terminate\n");
+    printf("&task_: %p\n", &task_);
+    printf("task_: %p\n", task_);
+    printf("task_->get_state(): %d\n", task_->get_state());
+    // while (true) {
+    //   pros::delay(10);
+    // }
     // for (auto &task : tasks) {
-    if (_task->get_state() == pros::E_TASK_STATE_READY) {
-      _task->remove();
-    // tasks[0]->remove();
+    if (task_->get_state() == pros::E_TASK_STATE_READY || task_->get_state() == pros::E_TASK_STATE_BLOCKED) {
+      printf("task_: %p\n", task_);
+      printf("task_->get_state(): %d\n", task_->get_state());
+      task_->remove();
+      // tasks[0]->remove();
       is_running = false;
       printf("terminated\n");
     }
@@ -92,7 +106,6 @@ class : public Macro {
   void clean_up() {
   }
 } macro_one;
-
 
 
 
@@ -367,12 +380,14 @@ void foo_one() {
 
 void foo_two() {
   printf("foo_two\n");
-  set_callbacks();
+  macro_one.start();
+  // set_callbacks();
 }
 
 void foo_three() {
   printf("foo_three\n");
-  button_handler.clear_group("test");
+  macro_one.terminate();
+  // button_handler.clear_group("test");
 }
 
 void foo_four() {
@@ -390,104 +405,31 @@ void foo_five_end() {
 }
 
 void set_callbacks() {
+  // button_handler.master.left.pressed.set(foo_five_start, {"test"});
+  // button_handler.master.x.pressed.set(foo_two);
   button_handler.master.a.pressed.set(foo_one, {"test"});
-  button_handler.master.x.pressed.set(foo_two);
-  button_handler.master.b.pressed.set(foo_three, {"test"});
-  button_handler.master.y.pressed.set(foo_four, {"test"});
-  button_handler.master.left.pressed.set(foo_five_start, {"test"});
-  button_handler.master.left.released.set(foo_five_end, {"test"});
+  // std::bind(&Macro::start, macro_one);
+  // macro_one.start();
+  // pros::delay(200);
+  // macro_one.terminate();
+  button_handler.master.b.pressed.set([&](){ macro_one.start(); }, {"test"});
+  button_handler.master.b.released.set([&](){ macro_one.terminate(); }, {"test"});
+  // button_handler.master.b.pressed.set(std::bind(&Macro::start, &macro_one), {"test"});
+  // button_handler.master.b.released.set(std::bind(&Macro::terminate, &macro_one), {"test"});
+  // button_handler.master.b.pressed.set(foo_two, {"test"});
+  // button_handler.master.b.released.set(foo_three, {"test"});
+  // button_handler.master.b.released.set(std::bind(&Macro::terminate, macro_one), {"test"});
+
+  // button_handler.master.b.pressed.set(foo_three, {"test"});
+  // button_handler.master.y.pressed.set(foo_four, {"test"});
+  // button_handler.master.left.released.set(foo_five_end, {"test"});
 }
 
 void run_buttons() {
+  // macro_one.start();
+  // pros::delay(200);
+  // macro_one.terminate();
   button_handler.run();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool unnasigned_group;
-
-pros::Mutex mutex;
-
-// Stores what buttons should run which functions
-// Is writen to in ::setCalback functions
-// std::vector<ButtonStruct> button_callbacks;
-
-// void task_start_wrapper(void * void_ptr) {
-//   ButtonStruct * struct_ptr = (ButtonStruct*) void_ptr;
-//   for(auto group : struct_ptr->macro_groups) {
-//     group->is_running_ptr = &struct_ptr->is_running;
-//     group->group_task_t = &struct_ptr->button_task_t;
-//   }
-
-//   struct_ptr->is_running = true;
-//   struct_ptr->function();
-//   struct_ptr->is_running = false;
-//   mutex.take(TIMEOUT_MAX);
-//   mutex.give();
-//   printf("ended\r\n");
-// }
-
-// void interrupt_macro_group(MacroGroup * group) {
-//   mutex.take(TIMEOUT_MAX);
-//   printf("is_running_ptr = %d\r\n", *group->is_running_ptr);
-//   if (*group->is_running_ptr) {
-//     pros::c::task_delete(*group->group_task_t);
-//     printf("DELETED!\r\n");
-//     *group->is_running_ptr = false;
-//   }
-//   mutex.give();
-// }
-
-// void run_buttons() {
-//   // Cycle through all button callbacks
-//   for (auto &button_callback : button_callbacks) {
-//     bool is_pressing = button_callback.controller->get_digital(button_callback.button);
-//     bool was_pressed  = (is_pressing &&
-//                          !button_callback.was_triggered);
-//     bool was_released = (!is_pressing &&
-//                          button_callback.was_triggered);
-//     bool is_running = false;
-//     for (auto &macro_group : button_callback.macro_groups) {
-//       is_running = is_running || *macro_group->is_running_ptr;
-//     }
-
-//     // If the button has been pressed and the task isn't running
-//     if (was_pressed && !is_running) {
-//       // Set the function to not run when the button is held
-//       button_callback.was_triggered = true;
-//       if (button_callback.trigger_on_release) continue;
-//     } else if (was_released) {
-//       button_callback.was_triggered = false;
-//       if (!button_callback.trigger_on_release) continue;
-//     } else {
-//       continue;
-//     }
-//     if (button_callback.run_as_task) {
-//     // Run the function in a separate task
-//     button_callback.button_task_t =
-//         pros::c::task_create(task_start_wrapper, (void *)&button_callback,
-//             TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "run_buttons");
-//     } else {
-//       button_callback.function();
-//     }
-//   }
-// }
 } // namespace controllerbuttons
