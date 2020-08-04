@@ -9,6 +9,36 @@
 
 namespace controllerbuttons {
 
+#define TASK_SHOULD_END 1 << 31 
+
+struct TaskInterruptedException : public std::exception {
+  const char * what () const throw () {
+    return "User Terminated";
+  }
+};
+
+void wait(int wait_time, int loop_time = 10) {
+  for (int i = 0; i < wait_time / loop_time; i++) {
+    if (pros::c::task_notify_take(false, 0) & TASK_SHOULD_END) {
+      throw TaskInterruptedException();
+    }
+    pros::delay(loop_time);
+  }
+}
+
+void count_up_task() {
+  printf("start\n");
+  int count = 0;
+
+  for (int i = 0; i < 50; i++) {
+    printf("Up %d\n", count ++);
+    wait(20);
+  }
+}
+
+
+
+
 class Macro;
 
 class MacroGroup {
@@ -19,22 +49,20 @@ class MacroGroup {
 
 class Macro {
   private:
-  // static std::vector<Macro*> all_macros;
-
-  static void empty_function_() {}
-  pros::Mutex mutex;
-  // std::function<void()> function;
-  std::vector<MacroGroup *> macro_groups;
-  std::vector<pros::Task*> tasks;
-  // pros::Task task_ = pros::Task(empty_function_);
-  pros::Task *task_;
+  // std::vector<MacroGroup *> macro_groups; 
+  std::optional<pros::Task> task_;
 
   void start_wrapper(){
     is_running = true;
-    function();
+    try {
+      function();
+    }
+    catch (TaskInterruptedException& e) {
+      std::cout << "TaskInterruptedException caught" << std::endl;
+      std::cout << e.what() << std::endl;
+    }
+    clean_up();
     is_running = false;
-    mutex.take(TIMEOUT_MAX);
-    mutex.give();
   }
 
   protected:
@@ -45,46 +73,19 @@ class Macro {
   bool is_running = false;
 
   void start() {
-    mutex.take(TIMEOUT_MAX);
-    for (auto &group : macro_groups) {
-      group->macro = this;
-    }
-    // pros::Task task(std::bind(&Macro::start_wrapper, this), "Macro");
-    // pros::Task task([this](){ Macro::start_wrapper(); }, "Macro");
-    // task_ = new pros::Task([this](){ start_wrapper(); }, "Macro");
-    delete task_;
-    task_ = new pros::Task([this](){ start_wrapper(); }, "Macro");
-    mutex.give();
+    // for (auto &group : macro_groups) {
+    //   group->macro = this;
+    // }
+    task_ = pros::Task([this](){ start_wrapper(); }, "Macro");
   }
 
   void terminate() {
-    mutex.take(TIMEOUT_MAX);
-    printf("terminate\n");
-    printf("&task_: %p\n", &task_);
-    printf("task_: %p\n", task_);
-    printf("task_->get_state(): %d\n", task_->get_state());
-    // while (true) {
-    //   pros::delay(10);
-    // }
-    // for (auto &task : tasks) {
-    if (task_->get_state() == pros::E_TASK_STATE_READY || task_->get_state() == pros::E_TASK_STATE_BLOCKED) {
-      printf("task_: %p\n", task_);
-      printf("task_->get_state(): %d\n", task_->get_state());
-      task_->remove();
-      // tasks[0]->remove();
-      is_running = false;
+    if (is_running) {
+      task_->notify_ext(TASK_SHOULD_END, pros::E_NOTIFY_ACTION_BITS, NULL);
       printf("terminated\n");
     }
-    mutex.give();
-    clean_up();
   }
-  
-  // Macro() {
-  //   all_macros.push_back(this);
-  // }
 };
-
-// std::vector<Macro*> Macro::all_macros;
 
 void MacroGroup::terminate() {
   if (macro) {
@@ -95,111 +96,112 @@ void MacroGroup::terminate() {
 
 
 
+// class MacroBase {
+//   private:
+
+//   pros::Mutex mutex;
+//   pros::Task task_;
+
+//   void start_wrapper(){
+//     is_running = true;
+//     function();
+//     is_running = false;
+//     mutex.take(TIMEOUT_MAX);
+//     mutex.give();
+//   }
+
+//   protected:
+//   virtual void function() {}
+//   virtual void clean_up() {}
+  
+//   public:
+//   bool is_running = false;
+
+//   void start() {
+//     mutex.take(TIMEOUT_MAX);
+//     task_ = pros::Task([this](){ start_wrapper(); }, "Macro");
+//     mutex.give();
+//   }
+
+//   void terminate() {
+//     mutex.take(TIMEOUT_MAX);
+//     // for (auto &task : tasks) {
+//     if (is_running) {
+//       task_.remove();
+//       is_running = false;
+//       printf("terminated\n");
+//     }
+//     mutex.give();
+//     clean_up();
+//   }
+// };
 
 
-// Derived class
-class : public Macro {
+
+
+
+
+// class SubMacro {
+//   private:
+//   pros::Task *task_;
+//   bool is_running;
+
+//   public:
+//   void start() {
+    
+//   }
+
+//   void end() {
+
+//   }
+
+//   void wait_for_completion() {
+//     while (is_running) {
+//       pros::delay(10);
+//     }
+//   }
+// };
+
+
+
+// class : public Macro {
+//     class : public SubMacro {
+//     void function() {
+//       // drive
+//     }
+    
+//     void clean_up() {
+//     }
+//   } drive(this);
+
+//   void function() {
+//     // do stuff
+//     drive.start();
+//     // do other stuff
+//     drive.wait_for_completion();
+//     // do even more stuff
+//   }
+  
+//   void clean_up() {
+//   }
+// } score;
+
+class MacroOne : public Macro {
   void function() {
-    robotfunctions::count_up_task();
+    count_up_task();
   }
   
   void clean_up() {
-  }
-} macro_one;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MacroHandler {
-  private:
-  static pros::Mutex mutex;
-
-  static void task_start_wrapper(void * void_ptr) {
-    Macro * macro_ptr = (Macro*) void_ptr;
-    for(auto &group : macro_ptr->macro_groups) {
-      group->is_running_ptr = &macro_ptr->is_running;
-      group->group_task_t = &macro_ptr->button_task_t;
-    }
-
-    macro_ptr->is_running = true;
-    macro_ptr->function();
-    macro_ptr->is_running = false;
-    mutex.take(TIMEOUT_MAX);
-    mutex.give();
-    printf("ended\r\n");
-  }
-
-  public:
-
-  struct MacroGroup {
-    bool * is_running_ptr = &unnasigned_group;
-    pros::task_t * group_task_t;
-  };
-
-  class Macro {
-    public:
-
-    pros::task_t button_task_t;
-    std::function<void()> function;
-    std::vector<MacroGroup *> macro_groups;
-
-    void task_start_wrapper() {
-      for(auto &group : macro_groups) {
-        group->is_running_ptr = &is_running;
-        group->group_task_t = &button_task_t;
-      }
-
-      is_running = true;
-      function();
-      is_running = false;
-      mutex.take(TIMEOUT_MAX);
-      mutex.give();
-      printf("ended\r\n");
-    }
-
-    void start(Macro macro) {
-      // // std::function<void()> func(std::bind(&Macro::task_start_wrapper, this));
-      // // button_task_t = pros::c::task_create(),
-      // button_task_t = pros::c::task_create(std::bind(&Macro::task_start_wrapper, this),
-      // // button_task_t = pros::c::task_create([this] { task_start_wrapper(); },
-      //                                      nullptr,
-      //                                      TASK_PRIORITY_DEFAULT,
-      //                                      TASK_STACK_DEPTH_DEFAULT,
-      //                                      "macro");
-  }
-
-    bool is_running;
-  };
-
-  void start(Macro macro) {
-    macro.button_task_t = pros::c::task_create(task_start_wrapper,
-                                         (void *)&macro,
-                                         TASK_PRIORITY_DEFAULT,
-                                         TASK_STACK_DEPTH_DEFAULT,
-                                         "macro_handler");
-  }
-
-  void interrupt_macro_group(MacroGroup * group) {
-    mutex.take(TIMEOUT_MAX);
-    printf("is_running_ptr = %d\r\n", *group->is_running_ptr);
-    if (*group->is_running_ptr) {
-      pros::c::task_delete(*group->group_task_t);
-      printf("DELETED!\r\n");
-      *group->is_running_ptr = false;
-    }
-    mutex.give();
+    // clean up stuff
   }
 };
+
+MacroOne macro_one;
+
+
+
+
+
 
 
 class ButtonHandler {
@@ -260,13 +262,13 @@ class ButtonHandler {
             bool is_pressing = controller_->get_digital(button_);
             bool was_pressed  = (is_pressing && !was_triggered_);
             bool was_released = (!is_pressing && was_triggered_);
-            bool is_running = false;
+            bool can_run = true;
             // for (auto &macro_group : macro_groups) {
-            //   is_running = is_running || *macro_group->is_running_ptr;
+            //   can_run = can_run && !*macro_group->is_running_ptr;
             // }
 
             // If the button has been pressed and the task isn't running
-            if (was_pressed && !is_running) {
+            if (was_pressed && can_run) {
               // Set the function to not run when the button is held
               was_triggered_ = true;
               if (trigger_on_release_) return;
@@ -369,6 +371,11 @@ class ButtonHandler {
 
 ButtonHandler button_handler(&master, &partner);
 
+
+
+
+
+
 void foo_one() {
   printf("foo_one\n");
   macro_one.start();
@@ -378,51 +385,11 @@ void foo_one() {
   macro_one.terminate();
 }
 
-void foo_two() {
-  printf("foo_two\n");
-  macro_one.start();
-  // set_callbacks();
-}
-
-void foo_three() {
-  printf("foo_three\n");
-  macro_one.terminate();
-  // button_handler.clear_group("test");
-}
-
-void foo_four() {
-  printf("foo_four\n");
-  button_handler.master.a.pressed.clear();
-  button_handler.master.a.released.set(foo_one, {"test"});
-}
-
-void foo_five_start() {
-  printf("foo_five_start\n");
-}
-
-void foo_five_end() {
-  printf("foo_five_end\n");
-}
-
 void set_callbacks() {
-  // button_handler.master.left.pressed.set(foo_five_start, {"test"});
-  // button_handler.master.x.pressed.set(foo_two);
   button_handler.master.a.pressed.set(foo_one, {"test"});
-  // std::bind(&Macro::start, macro_one);
-  // macro_one.start();
-  // pros::delay(200);
-  // macro_one.terminate();
   button_handler.master.b.pressed.set([&](){ macro_one.start(); }, {"test"});
   button_handler.master.b.released.set([&](){ macro_one.terminate(); }, {"test"});
-  // button_handler.master.b.pressed.set(std::bind(&Macro::start, &macro_one), {"test"});
-  // button_handler.master.b.released.set(std::bind(&Macro::terminate, &macro_one), {"test"});
-  // button_handler.master.b.pressed.set(foo_two, {"test"});
-  // button_handler.master.b.released.set(foo_three, {"test"});
-  // button_handler.master.b.released.set(std::bind(&Macro::terminate, macro_one), {"test"});
-
-  // button_handler.master.b.pressed.set(foo_three, {"test"});
-  // button_handler.master.y.pressed.set(foo_four, {"test"});
-  // button_handler.master.left.released.set(foo_five_end, {"test"});
+  button_handler.master.y.pressed.set([&](){ macro_one.terminate(); }, {"test"});
 }
 
 void run_buttons() {
