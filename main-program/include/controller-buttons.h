@@ -1,68 +1,142 @@
 #ifndef CONTROLLER_BUTTONS_H
 #define CONTROLLER_BUTTONS_H
 
-// #define BTN_A     pros::E_CONTROLLER_DIGITAL_A
-// #define BTN_Y     pros::E_CONTROLLER_DIGITAL_Y
-// #define BTN_X     pros::E_CONTROLLER_DIGITAL_X
-// #define BTN_RIGHT pros::E_CONTROLLER_DIGITAL_RIGHT
-// #define BTN_LEFT  pros::E_CONTROLLER_DIGITAL_LEFT
-// #define BTN_LEFT  pros::E_CONTROLLER_DIGITAL_LEFT
-// #define BTN_UP    pros::E_CONTROLLER_DIGITAL_UP
-// #define BTN_B     pros::E_CONTROLLER_DIGITAL_B
-// #define BTN_DOWN  pros::E_CONTROLLER_DIGITAL_DOWN
-
-#include "api.h"
-#include <bits/stdc++.h>
-
 namespace controllerbuttons {
 
-extern bool unnasigned_group;
+#define TASK_SHOULD_END 1 << 31 
 
-// struct MacroGroup {
-//   bool * is_running_ptr = &unnasigned_group;
-//   pros::task_t * group_task_t;
+struct TaskInterruptedException : public std::exception {
+  const char * what () const throw () {
+    return "User Terminated";
+  }
+};
+
+void wait(int wait_time);
+
+class Macro;
+
+struct MacroGroup {
+  Macro *macro;
+  bool is_running();
+  void terminate();
+};
+
+class Macro {
+  private:
+  std::function<void()> function_;
+  std::function<void()> clean_up_;
+  std::vector<Macro *> macros_ = {this};
+  std::vector<MacroGroup *> macro_groups_; 
+
+  std::optional<pros::Task> task_;
+  bool is_running_ = false;
+
+  void start_wrapper_();
+
+  public:
+  bool is_running();
+
+  std::vector<MacroGroup *> macro_groups();
+
+  void start();
+
+  void terminate();
+
+  Macro(std::function<void()> function,
+        std::function<void()> clean_up,
+        std::vector<MacroGroup *> macro_groups = {},
+        std::vector<Macro *> macros = {});
+};
+
+
+// class ButtonHandler {
+//   public:
+//   class Controller {
+//     public:
+//     class Button {
+//       public:
+//       class Trigger {
+//         private:
+        
+//         pros::Controller * controller_;
+//         pros::controller_digital_e_t button_;
+
+//         std::function<void()> function_;
+//         std::vector<std::string> button_groups_;
+//         std::vector<MacroGroup *> macro_groups_;
+        
+//         bool was_triggered_ = false;
+//         bool is_set_ = false;
+//         bool trigger_on_release_;
+
+//         public:
+//         Trigger(pros::Controller * controller,
+//                 pros::controller_digital_e_t button,
+//                 bool trigger_on_release);
+
+//         void set(std::function<void()> function,
+//                  std::vector<std::string> button_groups = {},
+//                  std::vector<MacroGroup *> macro_groups = {});
+
+//         void set_macro(Macro &macro,
+//                        std::vector<std::string> button_groups = {});
+
+//         void clear();
+
+//         void clear_if_in_group(std::string button_group);
+
+//         void run_if_triggered();
+//       };
+
+//       Button(pros::Controller * controller,
+//              pros::controller_digital_e_t button);
+
+//       Trigger pressed;
+//       Trigger released;
+//       std::vector<Trigger *> triggers{&pressed, &released};
+//     };
+    
+//     Controller(pros::Controller * controller);
+
+//     Button l1;
+//     Button l2;
+//     Button r1;
+//     Button r2;
+//     Button up;
+//     Button down;
+//     Button left;
+//     Button right;
+//     Button x;
+//     Button b;
+//     Button y;
+//     Button a;
+//     std::vector<Button *> buttons;
+//     // std::vector<Button *> buttons{&l1, &l2, &r1, &r2, &up, &down, &left, &right, &x, &b, &y, &a};
+//   };
+
+
+//   ButtonHandler(pros::Controller * master_controller,
+//                 pros::Controller * partner_controller);
+
+//   // Controller *master;
+//   Controller master;
+//   Controller partner;
+//   std::vector<Controller *> controllers{&master, &partner};
+
+//   std::vector<Controller::Button::Trigger *> all_triggers;
+
+//   void run();
+
+//   void clear_all();
+
+//   void clear_group(std::string button_group);
 // };
 
-// struct ButtonStruct {
-//   pros::Controller * controller;
-//   pros::controller_digital_e_t button;
-//   std::function<void()> function;
-//   bool trigger_on_release = false;
-//   std::vector<MacroGroup *> macro_groups;
-//   bool run_as_task = false;
-
-//   bool was_triggered = true;
-//   bool is_running;
-//   pros::task_t button_task_t;
-// };
-
-
-
-/**
- * Checks through each struct in the vector one by one,
- * and runs starts the function running on a seperate task if:
- *   1. The associated button is being pressed,
- *   2. There is not currently a function running in the same group,
- *   3. Last time around the loop, either the button wasn't pressed,
- *      or the group was running.
- * If the function is set to trigger_on_release, then it will run
- * when the button is released, instead of pressed.
- *
- * Subgroups are only for external reference, and do not effect what the buttons do.
- *
- * Should be run in a loop.
- */
-// void interrupt_macro_group(MacroGroup * group);
-
-void run_buttons();
+// extern ButtonHandler button_handler;
 
 void set_callbacks();
 
-// Stores what buttons should run which functions
-// Is writen to in ::setCallback functions
-// extern std::vector<ButtonStruct> button_callbacks;
-
-// extern std::vector<std::vector<ButtonStruct>> button_handler;
+void run_buttons();
 
 } // namespace controllerbuttons
 

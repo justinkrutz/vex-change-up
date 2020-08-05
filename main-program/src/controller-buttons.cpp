@@ -4,18 +4,8 @@
 
 #include "controller-buttons.h"
 #include "robot-config.h"
-#include "robot-functions.h"
-
 
 namespace controllerbuttons {
-
-#define TASK_SHOULD_END 1 << 31 
-
-struct TaskInterruptedException : public std::exception {
-  const char * what () const throw () {
-    return "User Terminated";
-  }
-};
 
 void wait(int wait_time) {
   int loop_time;
@@ -32,87 +22,57 @@ void wait(int wait_time) {
   }
 }
 
-void count_up_task() {
-  printf("start\n");
-  for (int i = 0; i < 50; i++) {
-    printf("Up %d\n", i);
-    wait(20);
+
+
+void Macro::start_wrapper_(){
+  is_running_ = true;
+  try {
+    function_();
+  }
+  catch (TaskInterruptedException& e) {
+    std::cout << e.what() << std::endl;
+  }
+  clean_up_();
+  is_running_ = false;
+}
+
+bool Macro::is_running() {
+  for (auto &macro : macros_) {
+    if (macro->is_running_) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::vector<MacroGroup *> Macro::macro_groups() {
+  return macro_groups_;
+}
+
+void Macro::start() {
+  for (auto &group : macro_groups_) {
+    group->macro = this;
+  }
+  task_ = pros::Task([this](){ start_wrapper_(); }, "Macro");
+}
+
+void Macro::terminate() {
+  for (auto &macro : macros_) {
+    if (macro->is_running_) {
+      macro->task_->notify_ext(TASK_SHOULD_END, pros::E_NOTIFY_ACTION_BITS, NULL);
+    }
   }
 }
 
-
-
-
-class Macro;
-
-struct MacroGroup {
-  Macro *macro;
-  bool is_running();
-  void terminate();
-};
-
-class Macro {
-  private:
-  std::function<void()> function_;
-  std::function<void()> clean_up_;
-  std::vector<Macro *> macros_ = {this};
-  std::vector<MacroGroup *> macro_groups_; 
-
-  std::optional<pros::Task> task_;
-  bool is_running_ = false;
-
-  void start_wrapper_(){
-    is_running_ = true;
-    try {
-      function_();
-    }
-    catch (TaskInterruptedException& e) {
-      std::cout << e.what() << std::endl;
-    }
-    clean_up_();
-    is_running_ = false;
-  }
-
-  public:
-
-  bool is_running() {
-    for (auto &macro : macros_) {
-      if (macro->is_running_) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  std::vector<MacroGroup *> macro_groups() {
-    return macro_groups_;
-  }
-
-  void start() {
-    for (auto &group : macro_groups_) {
-      group->macro = this;
-    }
-    task_ = pros::Task([this](){ start_wrapper_(); }, "Macro");
-  }
-
-  void terminate() {
-    for (auto &macro : macros_) {
-      if (macro->is_running_) {
-        macro->task_->notify_ext(TASK_SHOULD_END, pros::E_NOTIFY_ACTION_BITS, NULL);
-      }
-    }
-  }
-
-  Macro(std::function<void()> function,
-        std::function<void()> clean_up,
-        std::vector<MacroGroup *> macro_groups = {},
-        std::vector<Macro *> macros = {}) :
-        function_(function),
-        clean_up_(clean_up),
-        macro_groups_(macro_groups){
-    macros_.insert(macros_.end(), macros.begin(), macros.end());
-  }
-};
+Macro::Macro(std::function<void()> function,
+      std::function<void()> clean_up,
+      std::vector<MacroGroup *> macro_groups,
+      std::vector<Macro *> macros) :
+      function_(function),
+      clean_up_(clean_up),
+      macro_groups_(macro_groups){
+  macros_.insert(macros_.end(), macros.begin(), macros.end());
+}
 
 void MacroGroup::terminate() {
   if (macro) {
@@ -128,27 +88,136 @@ bool MacroGroup::is_running() {
 }
 
 
-Macro sub_one(
-  [](){
-    count_up_task();
-  },
-  [](){
-    printf("clean up sub_one\n");
-  }
-);
 
-MacroGroup test_group;
+// ButtonHandler::Controller::Button::Trigger::Trigger(
+//     pros::Controller * controller,
+//     pros::controller_digital_e_t button,
+//     bool trigger_on_release) {
+//   controller_ = controller;
+//   button_ = button;
+//   trigger_on_release_ = trigger_on_release;
+// }
 
-Macro macro_one(
-  [](){
-    sub_one.start();
-  },
-  [](){
-    printf("clean up macro_one\n");
-  },
-  {&test_group},
-  {&sub_one}
-);
+// void ButtonHandler::Controller::Button::Trigger::set(
+//     std::function<void()> function,
+//     std::vector<std::string> button_groups,
+//     std::vector<MacroGroup *> macro_groups) {
+//   function_ = function;
+//   button_groups_ = button_groups;
+//   macro_groups_ = macro_groups_;
+//   is_set_ = true;
+// }
+
+// void ButtonHandler::Controller::Button::Trigger::set_macro(
+//     Macro &macro,
+//     std::vector<std::string> button_groups) {
+//   function_ = [&](){ macro.start(); };
+//   macro_groups_ = macro.macro_groups();
+//   button_groups_ = button_groups;
+//   is_set_ = true;
+// }
+
+// void ButtonHandler::Controller::Button::Trigger::clear() {
+//   is_set_ = false;
+// }
+
+// void ButtonHandler::Controller::Button::Trigger::clear_if_in_group(
+//     std::string button_group) {
+//   for (auto &group_to_clear : button_groups_) {
+//     if (button_group == group_to_clear){
+//       clear();
+//       return;
+//     }
+//   }
+// }
+
+// void ButtonHandler::Controller::Button::Trigger::run_if_triggered() {
+//   printf("run_if_triggered\n");
+//   if (is_set_) {
+//     bool is_pressing = controller_->get_digital(button_);
+//     bool was_pressed  = (is_pressing && !was_triggered_);
+//     bool was_released = (!is_pressing && was_triggered_);
+//     bool can_run = true;
+//     for (auto &group : macro_groups_) {
+//       can_run = can_run && !group->is_running();;
+//     }
+
+//     // If the button has been pressed and the task isn't running
+//     if (was_pressed && can_run) {
+//       // Set the function to not run when the button is held
+//       was_triggered_ = true;
+//       if (!trigger_on_release_) {
+//         function_();
+//       }
+//     } else if (was_released) {
+//       was_triggered_ = false;
+//       if (trigger_on_release_) {
+//         function_();
+//       }
+//     }
+//   }
+// }
+
+// ButtonHandler::Controller::Button::Button(
+//     pros::Controller * controller,
+//     pros::controller_digital_e_t button) :
+//     pressed(controller, button, false),
+//     released(controller, button, true) {}
+    
+// ButtonHandler::Controller::Controller(pros::Controller * controller) :
+//             l1    (controller, pros::E_CONTROLLER_DIGITAL_L1),
+//             l2    (controller, pros::E_CONTROLLER_DIGITAL_L2),
+//             r1    (controller, pros::E_CONTROLLER_DIGITAL_R1),
+//             r2    (controller, pros::E_CONTROLLER_DIGITAL_R2),
+//             up    (controller, pros::E_CONTROLLER_DIGITAL_UP),
+//             down  (controller, pros::E_CONTROLLER_DIGITAL_DOWN),
+//             left  (controller, pros::E_CONTROLLER_DIGITAL_LEFT),
+//             right (controller, pros::E_CONTROLLER_DIGITAL_RIGHT),
+//             x     (controller, pros::E_CONTROLLER_DIGITAL_X),
+//             b     (controller, pros::E_CONTROLLER_DIGITAL_B),
+//             y     (controller, pros::E_CONTROLLER_DIGITAL_Y),
+//             a     (controller, pros::E_CONTROLLER_DIGITAL_A) {}
+
+
+// ButtonHandler::ButtonHandler(
+//     pros::Controller * master_controller,
+//     pros::Controller * partner_controller) :
+//     master(master_controller), 
+//     partner(partner_controller) {
+//   printf("ButtonHandler\n");
+//   for (auto &controller : controllers) {
+//     printf("for (auto &controller : controllers) {\n");
+//     for (auto &button : controller->buttons) {
+//       printf("for (auto &button : controller->buttons) {\n");
+//       for (auto &trigger : button->triggers) { 
+//         printf("for (auto &trigger : button->triggers) {\n");
+//         all_triggers.push_back(trigger);
+//       }
+//     }
+//   }
+// }
+
+// void ButtonHandler::run() {
+//   printf("all_triggers.size(): %d\n", all_triggers.size());
+//   for (auto &trigger : all_triggers) {
+//     printf("run\n");
+//     trigger->run_if_triggered();
+//   }
+// }
+
+// void ButtonHandler::clear_all() {
+//   for (auto &trigger : all_triggers) {
+//     trigger->clear();
+//   }
+// }
+
+// void ButtonHandler::clear_group(std::string button_group) {
+//   for (auto &trigger : all_triggers) {
+//     trigger->clear_if_in_group(button_group);
+//   }
+// }
+
+// ButtonHandler button_handler(&master, &partner);
 
 
 
@@ -175,92 +244,31 @@ class ButtonHandler {
         public:
         Trigger(pros::Controller * controller,
                 pros::controller_digital_e_t button,
-                bool trigger_on_release) {
-          controller_ = controller;
-          button_ = button;
-          trigger_on_release_ = trigger_on_release;
-        }
+                bool trigger_on_release);
 
         void set(std::function<void()> function,
                  std::vector<std::string> button_groups = {},
-                 std::vector<MacroGroup *> macro_groups = {}) {
-          function_ = function;
-          button_groups_ = button_groups;
-          macro_groups_ = macro_groups_;
-          is_set_ = true;
-        }
+                 std::vector<MacroGroup *> macro_groups = {});
 
         void set_macro(Macro &macro,
-                       std::vector<std::string> button_groups = {}) {
-          function_ = [&](){ macro.start(); };
-          macro_groups_ = macro.macro_groups();
-          button_groups_ = button_groups;
-          is_set_ = true;
-        }
+                       std::vector<std::string> button_groups = {});
 
-        void clear() {
-          is_set_ = false;
-        }
+        void clear();
 
-        void clear_if_in_group(std::string button_group) {
-          for (auto &group_to_clear : button_groups_) {
-            if (button_group == group_to_clear){
-              clear();
-              return;
-            }
-          }
-        }
+        void clear_if_in_group(std::string button_group);
 
-        void run_if_triggered() {
-          if (is_set_) {
-            bool is_pressing = controller_->get_digital(button_);
-            bool was_pressed  = (is_pressing && !was_triggered_);
-            bool was_released = (!is_pressing && was_triggered_);
-            bool can_run = true;
-            for (auto &group : macro_groups_) {
-              can_run = can_run && !group->is_running();;
-            }
-
-            // If the button has been pressed and the task isn't running
-            if (was_pressed && can_run) {
-              // Set the function to not run when the button is held
-              was_triggered_ = true;
-              if (!trigger_on_release_) {
-                function_();
-              }
-            } else if (was_released) {
-              was_triggered_ = false;
-              if (trigger_on_release_) {
-                function_();
-              }
-            }
-          }
-        }
+        void run_if_triggered();
       };
 
       Button(pros::Controller * controller,
-             pros::controller_digital_e_t button) :
-             pressed(controller, button, false),
-             released(controller, button, true) {}
+             pros::controller_digital_e_t button);
 
       Trigger pressed;
       Trigger released;
       std::vector<Controller::Button::Trigger *> triggers{&pressed, &released};
     };
     
-    Controller(pros::Controller * controller) :
-               l1    (controller, pros::E_CONTROLLER_DIGITAL_L1),
-               l2    (controller, pros::E_CONTROLLER_DIGITAL_L2),
-               r1    (controller, pros::E_CONTROLLER_DIGITAL_R1),
-               r2    (controller, pros::E_CONTROLLER_DIGITAL_R2),
-               up    (controller, pros::E_CONTROLLER_DIGITAL_UP),
-               down  (controller, pros::E_CONTROLLER_DIGITAL_DOWN),
-               left  (controller, pros::E_CONTROLLER_DIGITAL_LEFT),
-               right (controller, pros::E_CONTROLLER_DIGITAL_RIGHT),
-               x     (controller, pros::E_CONTROLLER_DIGITAL_X),
-               b     (controller, pros::E_CONTROLLER_DIGITAL_B),
-               y     (controller, pros::E_CONTROLLER_DIGITAL_Y),
-               a     (controller, pros::E_CONTROLLER_DIGITAL_A) {}
+    Controller(pros::Controller * controller);
 
     Button l1;
     Button l2;
@@ -277,8 +285,121 @@ class ButtonHandler {
     std::vector<Button *> buttons{&l1, &l2, &r1, &r2, &up, &down, &left, &right, &x, &b, &y, &a};
   };
 
-
   ButtonHandler(pros::Controller * master_controller,
+                pros::Controller * partner_controller);
+
+  // Controller *master;
+  Controller master;
+  Controller partner;
+  std::vector<Controller *> controllers{&master, &partner};
+
+  std::vector<Controller::Button::Trigger *> all_triggers;
+
+  void run();
+
+  void clear_all();
+
+  void clear_group(std::string button_group);
+};
+
+extern ButtonHandler button_handler;
+
+
+
+
+
+
+
+
+
+
+
+
+ButtonHandler::Controller::Button::Trigger::Trigger(pros::Controller * controller,
+        pros::controller_digital_e_t button,
+        bool trigger_on_release) {
+  controller_ = controller;
+  button_ = button;
+  trigger_on_release_ = trigger_on_release;
+}
+
+void ButtonHandler::Controller::Button::Trigger::set(std::function<void()> function,
+          std::vector<std::string> button_groups,
+          std::vector<MacroGroup *> macro_groups) {
+  function_ = function;
+  button_groups_ = button_groups;
+  macro_groups_ = macro_groups_;
+  is_set_ = true;
+}
+
+void ButtonHandler::Controller::Button::Trigger::set_macro(Macro &macro,
+                std::vector<std::string> button_groups) {
+  function_ = [&](){ macro.start(); };
+  macro_groups_ = macro.macro_groups();
+  button_groups_ = button_groups;
+  is_set_ = true;
+}
+
+void ButtonHandler::Controller::Button::Trigger::clear() {
+  is_set_ = false;
+}
+
+void ButtonHandler::Controller::Button::Trigger::clear_if_in_group(std::string button_group) {
+  for (auto &group_to_clear : button_groups_) {
+    if (button_group == group_to_clear){
+      clear();
+      return;
+    }
+  }
+}
+
+void ButtonHandler::Controller::Button::Trigger::run_if_triggered() {
+  if (is_set_) {
+    bool is_pressing = controller_->get_digital(button_);
+    bool was_pressed  = (is_pressing && !was_triggered_);
+    bool was_released = (!is_pressing && was_triggered_);
+    bool can_run = true;
+    for (auto &group : macro_groups_) {
+      can_run = can_run && !group->is_running();;
+    }
+
+    // If the button has been pressed and the task isn't running
+    if (was_pressed && can_run) {
+      // Set the function to not run when the button is held
+      was_triggered_ = true;
+      if (!trigger_on_release_) {
+        function_();
+      }
+    } else if (was_released) {
+      was_triggered_ = false;
+      if (trigger_on_release_) {
+        function_();
+      }
+    }
+  }
+}
+
+
+ButtonHandler::Controller::Button::Button(pros::Controller * controller,
+             pros::controller_digital_e_t button) :
+             pressed(controller, button, false),
+             released(controller, button, true) {}
+
+ButtonHandler::Controller::Controller(pros::Controller * controller) :
+               l1    (controller, pros::E_CONTROLLER_DIGITAL_L1),
+               l2    (controller, pros::E_CONTROLLER_DIGITAL_L2),
+               r1    (controller, pros::E_CONTROLLER_DIGITAL_R1),
+               r2    (controller, pros::E_CONTROLLER_DIGITAL_R2),
+               up    (controller, pros::E_CONTROLLER_DIGITAL_UP),
+               down  (controller, pros::E_CONTROLLER_DIGITAL_DOWN),
+               left  (controller, pros::E_CONTROLLER_DIGITAL_LEFT),
+               right (controller, pros::E_CONTROLLER_DIGITAL_RIGHT),
+               x     (controller, pros::E_CONTROLLER_DIGITAL_X),
+               b     (controller, pros::E_CONTROLLER_DIGITAL_B),
+               y     (controller, pros::E_CONTROLLER_DIGITAL_Y),
+               a     (controller, pros::E_CONTROLLER_DIGITAL_A) {}
+
+ButtonHandler::ButtonHandler(pros::Controller * master_controller,
                 pros::Controller * partner_controller) :
                 master(master_controller), 
                 partner(partner_controller) {
@@ -291,34 +412,76 @@ class ButtonHandler {
     }
   }
 
-  // Controller *master;
-  Controller master;
-  Controller partner;
-  std::vector<Controller *> controllers{&master, &partner};
-
-  std::vector<Controller::Button::Trigger *> all_triggers;
-
-  void run() {
-    for (auto &trigger : all_triggers) {
-      trigger->run_if_triggered();
-    }
+void ButtonHandler::run() {
+  for (auto &trigger : all_triggers) {
+    trigger->run_if_triggered();
   }
+}
 
-  void clear_all() {
-    for (auto &trigger : all_triggers) {
-      trigger->clear();
-    }
+void ButtonHandler::clear_all() {
+  for (auto &trigger : all_triggers) {
+    trigger->clear();
   }
+}
 
-  void clear_group(std::string button_group) {
-    for (auto &trigger : all_triggers) {
-      trigger->clear_if_in_group(button_group);
-    }
+void ButtonHandler::clear_group(std::string button_group) {
+  for (auto &trigger : all_triggers) {
+    trigger->clear_if_in_group(button_group);
   }
-};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ButtonHandler button_handler(&master, &partner);
 
+
+
+
+
+
+
+
+void count_up_task() {
+  printf("start\n");
+  for (int i = 0; i < 50; i++) {
+    printf("Up %d\n", i);
+    wait(20);
+  }
+}
+
+Macro sub_one(
+  [](){
+    count_up_task();
+  },
+  [](){
+    printf("clean up sub_one\n");
+  }
+);
+
+MacroGroup test_group;
+
+Macro macro_one(
+  [](){
+    sub_one.start();
+  },
+  [](){
+    printf("clean up macro_one\n");
+  },
+  {&test_group},
+  {&sub_one}
+);
 
 
 void set_callbacks() {
