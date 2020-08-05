@@ -15,8 +15,8 @@ void initialize_task() {
   // printf("print %d\r\n", master.print(1, 1, "Connected %d", 1));
   // master.print(1, 1, "Connected %d", 1);
   // controllermenu::check_for_auton();
-  // robotfunctions::set_callbacks();
-  controllerbuttons::set_callbacks();
+  robotfunctions::set_callbacks();
+  // controllerbuttons::set_callbacks();
 }
 
 /**

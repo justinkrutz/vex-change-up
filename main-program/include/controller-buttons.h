@@ -49,90 +49,88 @@ class Macro {
 };
 
 
-// class ButtonHandler {
-//   public:
-//   class Controller {
-//     public:
-//     class Button {
-//       public:
-//       class Trigger {
-//         private:
+class ButtonHandler {
+  public:
+  class Controller {
+    public:
+    class Button {
+      public:
+      class Trigger {
+        private:
         
-//         pros::Controller * controller_;
-//         pros::controller_digital_e_t button_;
+        pros::Controller * controller_;
+        pros::controller_digital_e_t button_;
 
-//         std::function<void()> function_;
-//         std::vector<std::string> button_groups_;
-//         std::vector<MacroGroup *> macro_groups_;
+        std::function<void()> function_;
+        std::vector<std::string> button_groups_;
+        std::vector<MacroGroup *> macro_groups_;
         
-//         bool was_triggered_ = false;
-//         bool is_set_ = false;
-//         bool trigger_on_release_;
+        bool was_triggered_ = false;
+        bool is_set_ = false;
+        bool trigger_on_release_;
 
-//         public:
-//         Trigger(pros::Controller * controller,
-//                 pros::controller_digital_e_t button,
-//                 bool trigger_on_release);
+        public:
+        Trigger(pros::Controller * controller,
+                pros::controller_digital_e_t button,
+                bool trigger_on_release);
 
-//         void set(std::function<void()> function,
-//                  std::vector<std::string> button_groups = {},
-//                  std::vector<MacroGroup *> macro_groups = {});
+        void set(std::function<void()> function,
+                 std::vector<std::string> button_groups = {},
+                 std::vector<MacroGroup *> macro_groups = {});
 
-//         void set_macro(Macro &macro,
-//                        std::vector<std::string> button_groups = {});
+        void set_macro(Macro &macro,
+                       std::vector<std::string> button_groups = {});
 
-//         void clear();
+        void clear();
 
-//         void clear_if_in_group(std::string button_group);
+        void clear_if_in_group(std::string button_group);
 
-//         void run_if_triggered();
-//       };
+        void run_if_triggered();
+      };
 
-//       Button(pros::Controller * controller,
-//              pros::controller_digital_e_t button);
+      Button(pros::Controller * controller,
+             pros::controller_digital_e_t button);
 
-//       Trigger pressed;
-//       Trigger released;
-//       std::vector<Trigger *> triggers{&pressed, &released};
-//     };
+      Trigger pressed;
+      Trigger released;
+      std::vector<Controller::Button::Trigger *> triggers{&pressed, &released};
+    };
     
-//     Controller(pros::Controller * controller);
+    Controller(pros::Controller * controller);
 
-//     Button l1;
-//     Button l2;
-//     Button r1;
-//     Button r2;
-//     Button up;
-//     Button down;
-//     Button left;
-//     Button right;
-//     Button x;
-//     Button b;
-//     Button y;
-//     Button a;
-//     std::vector<Button *> buttons;
-//     // std::vector<Button *> buttons{&l1, &l2, &r1, &r2, &up, &down, &left, &right, &x, &b, &y, &a};
-//   };
+    Button l1;
+    Button l2;
+    Button r1;
+    Button r2;
+    Button up;
+    Button down;
+    Button left;
+    Button right;
+    Button x;
+    Button b;
+    Button y;
+    Button a;
+    std::vector<Button *> buttons{&l1, &l2, &r1, &r2, &up, &down, &left, &right, &x, &b, &y, &a};
+  };
 
+  ButtonHandler(pros::Controller * master_controller,
+                pros::Controller * partner_controller);
 
-//   ButtonHandler(pros::Controller * master_controller,
-//                 pros::Controller * partner_controller);
+  // Controller *master;
+  Controller master;
+  Controller partner;
+  std::vector<Controller *> controllers{&master, &partner};
 
-//   // Controller *master;
-//   Controller master;
-//   Controller partner;
-//   std::vector<Controller *> controllers{&master, &partner};
+  std::vector<Controller::Button::Trigger *> all_triggers;
 
-//   std::vector<Controller::Button::Trigger *> all_triggers;
+  void run();
 
-//   void run();
+  void clear_all();
 
-//   void clear_all();
+  void clear_group(std::string button_group);
+};
 
-//   void clear_group(std::string button_group);
-// };
-
-// extern ButtonHandler button_handler;
+extern ButtonHandler button_handler;
 
 void set_callbacks();
 
