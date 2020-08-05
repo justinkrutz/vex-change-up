@@ -58,7 +58,6 @@ class Macro {
   std::function<void()> function_;
   std::function<void()> clean_up_;
   std::vector<Macro *> macros_ = {this}; 
-  // std::vector<MacroGroup *> macro_groups = {}; 
   std::vector<std::string> macro_groups_; 
 
   std::optional<pros::Task> task_;
@@ -77,7 +76,7 @@ class Macro {
   }
 
   public:
-  static void terminate_macro_group(std::string macro_group){
+  static void macro_group_terminate(std::string macro_group){
     for (auto &macro : all_macros_) {
       for (auto &group : macro->macro_groups_) {
         if (group == macro_group) {
@@ -88,14 +87,28 @@ class Macro {
     }
   }
 
+  static bool macro_group_is_running(std::string macro_group){
+    for (auto &macro : all_macros_) {
+      if (macro->is_running_) {
+        for (auto &group : macro->macro_groups_) {
+          if (group == macro_group) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   bool is_running() {
     return is_running_;
   }
 
+  std::vector<std::string> macro_groups() {
+    return macro_groups_;
+  }
+
   void start() {
-    // for (auto &group : macro_groups) {
-    //   group->macro = this;
-    // }
     task_ = pros::Task([this](){ start_wrapper_(); }, "Macro");
   }
 
@@ -191,6 +204,8 @@ class ButtonHandler {
         void set_macro(Macro &macro,
                        std::vector<std::string> button_groups = {}) {
           function_ = [&](){ macro.start(); };
+          macro_groups_ = macro.macro_groups();
+          printf("set_macro macro_groups_[0]: %s\n", macro_groups_[0].c_str());
           button_groups_ = button_groups;
           is_set_ = true;
         }
@@ -214,22 +229,23 @@ class ButtonHandler {
             bool was_pressed  = (is_pressing && !was_triggered_);
             bool was_released = (!is_pressing && was_triggered_);
             bool can_run = true;
-            // for (auto &macro_group : macro_groups) {
-            //   can_run = can_run && !*macro_group->is_running_ptr;
-            // }
+            for (auto &group : macro_groups_) {
+              can_run = can_run && !Macro::macro_group_is_running(group);
+            }
 
             // If the button has been pressed and the task isn't running
             if (was_pressed && can_run) {
               // Set the function to not run when the button is held
               was_triggered_ = true;
-              if (trigger_on_release_) return;
+              if (!trigger_on_release_) {
+                function_();
+              }
             } else if (was_released) {
               was_triggered_ = false;
-              if (!trigger_on_release_) return;
-            } else {
-              return;
+              if (!trigger_on_release_) {
+                function_();
+              }
             }
-            function_();
           }
         }
       };
@@ -322,7 +338,7 @@ void set_callbacks() {
   button_handler.master.b.pressed.set_macro(macro_one, {"test"});
   button_handler.master.b.released.set([&](){ macro_one.terminate(); }, {"test"});
   button_handler.master.y.pressed.set([&](){ macro_one.terminate(); }, {"test"});
-  button_handler.master.x.pressed.set([&](){ Macro::terminate_macro_group("test"); }, {"test"});
+  button_handler.master.x.pressed.set([&](){ Macro::macro_group_terminate("test"); }, {"test"});
 }
 
 void run_buttons() {
