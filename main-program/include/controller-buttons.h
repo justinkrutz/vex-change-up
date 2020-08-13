@@ -22,6 +22,17 @@ struct MacroGroup {
 };
 
 class Macro {
+  public:
+  bool is_running();
+  void start();
+  void terminate();
+  std::vector<MacroGroup *> macro_groups();
+
+  Macro(std::function<void()> function,
+        std::function<void()> clean_up,
+        std::vector<MacroGroup *> macro_groups = {},
+        std::vector<Macro *> macros = {});
+
   private:
   std::function<void()> function_;
   std::function<void()> clean_up_;
@@ -32,20 +43,6 @@ class Macro {
   bool is_running_ = false;
 
   void start_wrapper_();
-
-  public:
-  bool is_running();
-
-  std::vector<MacroGroup *> macro_groups();
-
-  void start();
-
-  void terminate();
-
-  Macro(std::function<void()> function,
-        std::function<void()> clean_up,
-        std::vector<MacroGroup *> macro_groups = {},
-        std::vector<Macro *> macros = {});
 };
 
 
@@ -56,8 +53,21 @@ class ButtonHandler {
     class Button {
       public:
       class Trigger {
+        public:
+        Trigger(pros::Controller * controller,
+                pros::controller_digital_e_t button,
+                bool trigger_on_release);
+
+        void set(std::function<void()> function,
+                 std::vector<std::string> button_groups = {},
+                 std::vector<MacroGroup *> macro_groups = {});
+        void set_macro(Macro &macro,
+                       std::vector<std::string> button_groups = {});
+        void clear();
+        void clear_if_in_group(std::string button_group);
+        void run_if_triggered();
+
         private:
-        
         pros::Controller * controller_;
         pros::controller_digital_e_t button_;
 
@@ -68,24 +78,6 @@ class ButtonHandler {
         bool was_triggered_ = false;
         bool is_set_ = false;
         bool trigger_on_release_;
-
-        public:
-        Trigger(pros::Controller * controller,
-                pros::controller_digital_e_t button,
-                bool trigger_on_release);
-
-        void set(std::function<void()> function,
-                 std::vector<std::string> button_groups = {},
-                 std::vector<MacroGroup *> macro_groups = {});
-
-        void set_macro(Macro &macro,
-                       std::vector<std::string> button_groups = {});
-
-        void clear();
-
-        void clear_if_in_group(std::string button_group);
-
-        void run_if_triggered();
       };
 
       Button(pros::Controller * controller,
@@ -116,7 +108,6 @@ class ButtonHandler {
   ButtonHandler(pros::Controller * master_controller,
                 pros::Controller * partner_controller);
 
-  // Controller *master;
   Controller master;
   Controller partner;
   std::vector<Controller *> controllers{&master, &partner};

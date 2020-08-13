@@ -34,6 +34,7 @@ void single_use_button();
 void check_for_warnings();
 
 void set_callbacks();
+void motorTask();
 } // namespace robotfunctions
 
 #endif // ROBOT_FUNCTIONS_H

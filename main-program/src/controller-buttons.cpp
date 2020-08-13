@@ -154,37 +154,39 @@ void ButtonHandler::Controller::Button::Trigger::run_if_triggered() {
 }
 
 
-ButtonHandler::Controller::Button::Button(pros::Controller * controller,
-             pros::controller_digital_e_t button) :
-             pressed(controller, button, false),
-             released(controller, button, true) {}
+ButtonHandler::Controller::Button::Button(
+    pros::Controller * controller, 
+    pros::controller_digital_e_t button)
+    : pressed(controller, button, false),
+      released(controller, button, true) {}
 
-ButtonHandler::Controller::Controller(pros::Controller * controller) :
-               l1    (controller, pros::E_CONTROLLER_DIGITAL_L1),
-               l2    (controller, pros::E_CONTROLLER_DIGITAL_L2),
-               r1    (controller, pros::E_CONTROLLER_DIGITAL_R1),
-               r2    (controller, pros::E_CONTROLLER_DIGITAL_R2),
-               up    (controller, pros::E_CONTROLLER_DIGITAL_UP),
-               down  (controller, pros::E_CONTROLLER_DIGITAL_DOWN),
-               left  (controller, pros::E_CONTROLLER_DIGITAL_LEFT),
-               right (controller, pros::E_CONTROLLER_DIGITAL_RIGHT),
-               x     (controller, pros::E_CONTROLLER_DIGITAL_X),
-               b     (controller, pros::E_CONTROLLER_DIGITAL_B),
-               y     (controller, pros::E_CONTROLLER_DIGITAL_Y),
-               a     (controller, pros::E_CONTROLLER_DIGITAL_A) {}
+ButtonHandler::Controller::Controller(pros::Controller * controller)
+    : l1    (controller, pros::E_CONTROLLER_DIGITAL_L1),
+      l2    (controller, pros::E_CONTROLLER_DIGITAL_L2),
+      r1    (controller, pros::E_CONTROLLER_DIGITAL_R1),
+      r2    (controller, pros::E_CONTROLLER_DIGITAL_R2),
+      up    (controller, pros::E_CONTROLLER_DIGITAL_UP),
+      down  (controller, pros::E_CONTROLLER_DIGITAL_DOWN),
+      left  (controller, pros::E_CONTROLLER_DIGITAL_LEFT),
+      right (controller, pros::E_CONTROLLER_DIGITAL_RIGHT),
+      x     (controller, pros::E_CONTROLLER_DIGITAL_X),
+      b     (controller, pros::E_CONTROLLER_DIGITAL_B),
+      y     (controller, pros::E_CONTROLLER_DIGITAL_Y),
+      a     (controller, pros::E_CONTROLLER_DIGITAL_A) {}
 
-ButtonHandler::ButtonHandler(pros::Controller * master_controller,
-                pros::Controller * partner_controller) :
-                master(master_controller), 
-                partner(partner_controller) {
-    for (auto &controller : controllers) {
-      for (auto &button : controller->buttons) {
-        for (auto &trigger : button->triggers) { 
-          all_triggers.push_back(trigger);
-        }
+ButtonHandler::ButtonHandler(
+    pros::Controller * master_controller,
+    pros::Controller * partner_controller)
+    : master(master_controller), 
+      partner(partner_controller) {
+  for (auto &controller : controllers) {
+    for (auto &button : controller->buttons) {
+      for (auto &trigger : button->triggers) { 
+        all_triggers.push_back(trigger);
       }
     }
   }
+}
 
 void ButtonHandler::run() {
   for (auto &trigger : all_triggers) {

@@ -16,6 +16,7 @@ void initialize_task() {
   // master.print(1, 1, "Connected %d", 1);
   // controllermenu::check_for_auton();
   robotfunctions::set_callbacks();
+  robotfunctions::motorTask();
   // controllerbuttons::set_callbacks();
 }
 
@@ -77,6 +78,17 @@ void opcontrol() {
   printf("opcontrol\n");
   while (true) {
     controllerbuttons::run_buttons();
+    // printf("%d\n", sensor.get_value());
+
+    // double forward = master.get_analog(ANALOG_RIGHT_Y);
+    // double strafe = master.get_analog(ANALOG_RIGHT_X);
+    // double turn = master.get_analog(ANALOG_LEFT_X);
+
+    // fl_drive.move(forward + strafe + turn);
+    // fr_drive.move(forward - strafe - turn);
+    // bl_drive.move(forward - strafe + turn);
+    // br_drive.move(forward + strafe - turn);
+
     pros::delay(10);
   }
 }
