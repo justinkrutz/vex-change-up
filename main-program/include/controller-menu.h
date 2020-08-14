@@ -1,4 +1,5 @@
 namespace controllermenu {
+extern std::string controller_print_array [3];
 void init();
 void print_menu();
 void set_callbacks();

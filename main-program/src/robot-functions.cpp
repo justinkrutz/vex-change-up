@@ -3,6 +3,7 @@
 #include "robot-config.h"
 #include "controller-buttons.h"
 #include "robot-functions.h"
+#include "field-position.h"
 
 
 namespace robotfunctions {
@@ -32,10 +33,10 @@ void motorTask()
     turn    = turn    * m;
   }
 
-  fl_drive.move(forward + strafe + turn);
-  fr_drive.move(forward - strafe - turn);
-  bl_drive.move(forward - strafe + turn);
-  br_drive.move(forward + strafe - turn);
+  // drive_fl.move(forward + strafe + turn);
+  // drive_fr.move(forward - strafe - turn);
+  // drive_bl.move(forward - strafe + turn);
+  // drive_br.move(forward + strafe - turn);
   pros::delay(5);
   }
 }
@@ -69,6 +70,8 @@ void set_callbacks() {
   // button_handler.master.a.released.set([&](){ count_up.terminate(); });
   // button_handler.master.x.pressed.set([&](){ test_group.terminate(); });
   // button_handler.master.left.pressed.set(single_use_button, {}, {&test_group});
+  button_handler.master.a.pressed.set([](){ driveToClosestGoal(); }, {}, {&test_group});
+
   button_handler.master.r2.pressed.set([](){ test_motor_1.move(127); }, {}, {&test_group});
   button_handler.master.r1.pressed.set([](){ test_motor_1.move(-127); }, {}, {&test_group});
   button_handler.master.l2.pressed.set([](){ test_motor_2.move(127); }, {}, {&test_group});

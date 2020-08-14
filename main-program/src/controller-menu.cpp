@@ -341,11 +341,11 @@ void set_callbacks() {
 
 void init() {
   master.clear();
-  pros::delay(50);
-  current_item = &root_folder;
+  // pros::delay(50);
+  // current_item = &root_folder;
   pros::Task controller_print_task (controller_print);
-  current_item->set_callbacks();
-  print_menu(current_item);
+  // current_item->set_callbacks();
+  // print_menu(current_item);
 }
 
 } // namespace controllermenu
