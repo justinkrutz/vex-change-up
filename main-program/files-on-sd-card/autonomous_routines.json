@@ -1,0 +1,54 @@
+{
+  "0": {
+    "name": "Left Corner One",
+    "runType": "skills",
+    "steps": [
+      {
+        "type": "waypoint",
+        "x": 12,
+        "y": 73.8,
+        "theta": 91.6
+      },
+      {
+        "type": "driveToBallAndIntake"
+      },
+      {
+        "type": "waypoint",
+        "x": 26,
+        "y": 80,
+        "theta": 15
+      },
+      {
+        "type": "driveToGoalAndCycle",
+        "ballsIn": 2,
+        "ballsOut": 3
+      }
+    ]
+  },
+  "1": {
+    "name": "Left Corner Two",
+    "runType": "match",
+    "steps": [
+      {
+        "type": "waypoint",
+        "x": 12,
+        "y": 73.8,
+        "theta": 91.6
+      },
+      {
+        "type": "driveToBallAndIntake"
+      },
+      {
+        "type": "waypoint",
+        "x": 26,
+        "y": 80,
+        "theta": 15
+      },
+      {
+        "type": "driveToGoalAndCycle",
+        "ballsIn": 2,
+        "ballsOut": 3
+      }
+    ]
+  }
+}
