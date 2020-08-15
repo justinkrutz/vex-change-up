@@ -19,7 +19,7 @@ void initialize_task() {
   // printf("print %d\r\n", master.print(1, 1, "Connected %d", 1));
   // master.print(1, 1, "Connected %d", 1);
   // controllermenu::check_for_auton();
-  robotfunctions::set_callbacks();
+  // robotfunctions::set_callbacks();
   // robotfunctions::motorTask();
   // controllerbuttons::set_callbacks();
 }
@@ -47,7 +47,7 @@ void initialize() {
         ADIEncoder{'A', 'B'},  // right encoder in ADI ports C & D (reversed)
         ADIEncoder{'C', 'D'}  // middle encoder in ADI ports E & F
     )
-    .withOdometry({{2.75_in, 11.3_in, 4.8_in, 2.75_in}, quadEncoderTPR})
+    .withOdometry({{2.75_in, 11.3_in, 4.8_in, 2.75_in}, quadEncoderTPR}, StateMode::CARTESIAN)
     .buildOdometry();
 
 // drive = ChassisControllerBuilder()
@@ -106,7 +106,7 @@ void autonomous() {}
 void opcontrol() {
   printf("opcontrol\n");
     // set the state to zero
-    chassis->setState({75_in, 110_in, 90_deg});
+    chassis->setState({75_in, 110_in, 0_deg});
     // chassis->setState({0_in, 0_in, 0_deg});
     // chassis->driveToPoint({1_ft, 0_ft});
     // chassis->moveDistance(12_in);
@@ -122,21 +122,18 @@ void opcontrol() {
   while (true) {
     controllerbuttons::run_buttons();
 
-    QLength x = chassis->getState().x;
-    QLength y = chassis->getState().y;
-    QAngle theta = chassis->getState().theta;
-    controllermenu::controller_print_array[0] = std::to_string(x.convert(inch));
-    controllermenu::controller_print_array[1] = std::to_string(y.convert(inch));
-    controllermenu::controller_print_array[2] = std::to_string(theta.convert(degree));
+    // QLength x = chassis->getState().x;
+    // QLength y = chassis->getState().y;
+    // QAngle theta = chassis->getState().theta;
+    // controllermenu::controller_print_array[0] = std::to_string(x.convert(inch));
+    // controllermenu::controller_print_array[1] = std::to_string(y.convert(inch));
+    // controllermenu::controller_print_array[2] = std::to_string(theta.convert(degree));
     
     
     // printf("tracker_left: %d tracker_right: %d tracker_back: %d\n", tracker_left.get_value(), tracker_right.get_value(), tracker_back.get_value());
-    x_model->xArcade(controller.getAnalog(ControllerAnalog::rightX),
-                    controller.getAnalog(ControllerAnalog::rightY),
-                    controller.getAnalog(ControllerAnalog::leftX));
-    // xModel->xArcade(master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X),
-    //                 master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y),
-    //                 master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X));
+    // x_model->xArcade(controller.getAnalog(ControllerAnalog::rightX),
+    //                 controller.getAnalog(ControllerAnalog::rightY),
+    //                 controller.getAnalog(ControllerAnalog::leftX));
     pros::delay(10);
   }
 }

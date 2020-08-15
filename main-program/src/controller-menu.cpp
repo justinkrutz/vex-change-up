@@ -1,11 +1,15 @@
 #include "api.h"
 
 #include <bits/stdc++.h>
+#include <iostream>
+#include <fstream>
 
 #include "robot-config.h"
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
+
+using namespace controllerbuttons;
 
 namespace controllermenu {
 
@@ -30,166 +34,216 @@ void controller_print() {
   }
 }
 
-enum MenuItemType {kFolder, kAutonomous, kSettingSwitch, kSettingSlider, kAction};
+class MenuItem;
+MenuItem *current_item;
 
-std::map<const int, const char*> MenuItemTypeName = {
+class Folder;
+Folder *root_folder;
+
+
+enum MenuItemType {kFolder,
+                   kAutonomous,
+                   kSettingSwitch,
+                   kSettingSlider,
+                   kAction};
+
+std::map<MenuItemType, const char*> MenuItemTypeName = {
   {kFolder,        "Folder"},
   {kAutonomous,    "Autonomous"},
-  {kSettingSwitch, "SettingSwitch"},
-  {kSettingSlider, "SettingSlider"},
-  {kAction,        "Action"}
+  {kSettingSwitch, "Setting Switch"},
+  {kSettingSlider, "Setting Slider"},
+  {kAction,        "Action"},
 };
 
 class MenuItem {
-  private:
-
   public:
-    virtual void print() {
-      printf("virtual void print()\n");
-    }
-    virtual void set_callbacks() {
-      printf("virtual void set_callbacks()\n");
-    }
-    // virtual void select(MenuItem ** item_ptr) {}
-    // virtual void back(MenuItem ** item_ptr) {}
-    // virtual void scroll_right() {}
-    // virtual void scroll_left() {}
-    // virtual void scroll_up() {}
-    // virtual void scroll_down() {}
+  virtual void print() {
+    printf("virtual void print()\n");
+  }
+
+  virtual void set_callbacks() {
+    printf("virtual void set_callbacks()\n");
+  }
+
+  Folder * findParent(Folder *current_folder = root_folder);
+
+  void back();
+
     MenuItemType item_type;
     const char *name;
 };
 
-
-MenuItem *current_item;
-
 class Folder : public MenuItem {
   private:
-    int cursor_location = 0;
-    void scroll(int direction) {
-      printf("scroll\n");
-      int temp_cursor_location;
-      int temp_setting_value;
-      temp_cursor_location = cursor_location + direction;
-      if (temp_cursor_location < 0) {
-        temp_cursor_location = children.size() - 1;
-      } else if (temp_cursor_location > children.size() - 1) {
-        temp_cursor_location = 0;
-      }
-
-      cursor_location = temp_cursor_location;
-      print();
+  int cursor_location = 0;
+  void scroll(int direction) {
+    printf("scroll\n");
+    int temp_cursor_location;
+    int temp_setting_value;
+    temp_cursor_location = cursor_location + direction;
+    if (temp_cursor_location < 0) {
+      temp_cursor_location = children.size() - 1;
+    } else if (temp_cursor_location > children.size() - 1) {
+      temp_cursor_location = 0;
     }
+
+    cursor_location = temp_cursor_location;
+    print();
+  }
 
   public:
-    std::vector<MenuItem*> children;
-    Folder(const char *name_arg, std::vector<MenuItem*> children_arg) {
-      name = name_arg;
-      children = children_arg;
-      item_type = kFolder;
-    }
-    // const char *name;
+  std::vector<MenuItem*> children;
+  Folder(const char *name_arg, std::vector<MenuItem*> children_arg) {
+    name = name_arg;
+    children = children_arg;
+    item_type = kFolder;
+  }
+  // const char *name;
 
-    void set_callbacks() {
-      printf("Folder::set_callbacks()\n");
-      // using namespace controllerbuttons;
-      // button_callbacks = {
-      //   {&master, BTN_RIGHT, false, {&menu}, std::bind(&Folder::scroll_right, this)},
-      //   {&master, BTN_LEFT,  false, {&menu}, std::bind(&Folder::scroll_left, this)},
-      //   {&master, BTN_UP,    false, {&menu}, std::bind(&Folder::scroll_up, this)},
-      //   {&master, BTN_DOWN,  false, {&menu}, std::bind(&Folder::scroll_down, this)},
-      //   {&master, BTN_A,     false, {&menu}, std::bind(&Folder::select, this)},
-      //   {&master, BTN_B,     false, {&menu}, std::bind(&Folder::back, this)},
-      // };
-    }
+  void set_callbacks() {
+    printf("Folder::set_callbacks()\n");
+    // using namespace controllerbuttons;
 
-    void print() {
-      // set_callbacks();
-      printf("print_folder\n");
-      // Folder * item_to_print = (Folder*)item;
+    button_handler.master.right.pressed.set ([this](){ scroll_right(); }, {"menu"});
+    button_handler.master.left.pressed.set  ([this](){ scroll_left(); },  {"menu"});
+    button_handler.master.up.pressed.set    ([this](){ scroll_up(); },    {"menu"});
+    button_handler.master.down.pressed.set  ([this](){ scroll_down(); },  {"menu"});
+    button_handler.master.a.pressed.set     ([this](){ select(); },       {"menu"});
+    button_handler.master.b.pressed.set     ([this](){ back(); },         {"menu"});
+  }
+
+  void print() {
+    // set_callbacks();
+    printf("print_folder\n");
+    // Folder * item_to_print = (Folder*)item;
+    if (children.size() > 0) {
       std::string selection = "[_][_][_][_][_][_]";
       selection.resize(children.size() * 3);
       printf("cursor_location: %d\n", cursor_location);
       selection.replace((cursor_location) * 3 + 1, 1, "o");
 
       controller_print_array[0] = selection;
-      controller_print_array[1] = "Type goes here";
       controller_print_array[1] = MenuItemTypeName.at(children[cursor_location]->item_type);
       controller_print_array[2] = children[cursor_location]->name;
+    } else {
+      controller_print_array[0] = "Folder is empty";
+      controller_print_array[1] = "";
+      controller_print_array[2] = "";
     }
+  }
 
-    void select() {
-      printf("select\n");
-      if (children.size() > 0) {
-        printf("this: %p\n", this);
-        printf("&children[cursor_location]: %p\n", children[cursor_location]);
-        printf("cursor_location: %d\n", cursor_location);
-        printf("children[cursor_location]->name: %s\n", children[cursor_location]->name);
-        printf(" children.size(): %d\n", children.size());
-        // children[cursor_location]->print();
-        printf("current_item before: %p\n", current_item);
-        current_item = children[cursor_location];
-        printf("current_item->name: %s\n", current_item->name);
-        printf("current_item after: %p\n", current_item);
-        pros::delay(1000);
-        current_item->set_callbacks();
-        current_item->print();
-      }
+  void select() {
+    printf("select\n");
+    if (children.size() > 0) {
+      printf("this: %p\n", this);
+      printf("&children[cursor_location]: %p\n", children[cursor_location]);
+      printf("cursor_location: %d\n", cursor_location);
+      printf("children[cursor_location]->name: %s\n", children[cursor_location]->name);
+      printf(" children.size(): %d\n", children.size());
+      // children[cursor_location]->print();
+      printf("current_item before: %p\n", current_item);
+      current_item = children[cursor_location];
+      printf("current_item->name: %s\n", current_item->name);
+      printf("current_item after: %p\n", current_item);
+      // pros::delay(1000);
+      current_item->set_callbacks();
+      current_item->print();
     }
+  }
 
-    void back() {
-      current_item = findParent(this);
-      print();
-    }
+  void scroll_right() {
+    scroll(1);
+  }
 
-    void scroll_right() {
-      scroll(1);
-    }
+  void scroll_left()  {
+    scroll(-1);
+  }
 
-    void scroll_left()  {
-      scroll(-1);
-    }
+  void scroll_up()    {
+    scroll(10);
+  }
 
-    void scroll_up()    {
-      scroll(10);
-    }
-
-    void scroll_down()  {
-      scroll(-10);
-    }
-
-    Folder * findParent(Folder *current_folder) {
-      if (!current_folder) {
-        return NULL;
-      }
-
-      for (MenuItem *child : current_folder->children) {
-        if (this == child) {
-          return current_folder;
-        }
-        if (child->item_type == kFolder) {
-          return findParent((Folder*)child);
-        }
-      }
-    }
+  void scroll_down()  {
+    scroll(-10);
+  }
 };
 
-Folder root_folder("", {
-  new Folder("Match", {
-    new Folder("One", {}),
-    new Folder("Two", {})
-  }),
-  new Folder("Skills", {
-  }),
-  new Folder("Auto Waypoint", {
-  }),
-  new Folder("Other", {
-  }),
-  new Folder("Actions", {
-  }),
-  new Folder("Settings", {
-  })
-});
+Folder * MenuItem::findParent(Folder *current_folder) {
+  if (this == root_folder) {
+    return root_folder;
+  }
+  for (MenuItem *child : current_folder->children) {
+    if (this == child) {
+      return current_folder;
+    }
+    if (child->item_type == kFolder) {
+      Folder* sub_child = findParent((Folder*)child);
+      if (sub_child) {
+        return sub_child;
+      }
+    }
+  }
+  return NULL;
+}
+
+void MenuItem::back() {
+  printf("back\n");
+  printf("current_item before: %p\n", current_item);
+  printf("current_item->name before: %s\n", current_item->name);
+  current_item = findParent();
+  printf("current_item after: %p\n", current_item);
+  printf("current_item->name after: %s\n", current_item->name);
+  // print();
+  current_item->set_callbacks();
+  current_item->print();
+}
+
+class Autonomous : public MenuItem {
+  public:
+  Autonomous(const char *name_arg) {
+    name = name_arg;
+    item_type = kAutonomous;
+  }
+
+  void print() {
+  printf("print_autonomous\n");
+    std::string selection = "[_][_][_]";
+    printf("cursor_location: %d\n", cursor_location);
+    selection.replace((cursor_location) * 3 + 1, 1, "o");
+
+    controller_print_array[0] = name;
+    controller_print_array[1] = selection;
+    controller_print_array[2] = SaveStateName.at(cursor_location);
+  }
+  
+  void set_callbacks() {
+    button_handler.master.b.pressed.set ([this](){ back(); }, {"menu"});
+  }
+
+  private:
+  enum SaveState {kDiscardChanges, kSaveNew, kOverwrite};
+  SaveState cursor_location = kDiscardChanges;
+
+  std::map<SaveState, const char*> SaveStateName = {
+    {kDiscardChanges, "Discard Changes"},
+    {kSaveNew,        "Save New"},
+    {kOverwrite,      "Overwrite"},
+  };
+
+    void scroll(int direction) {
+    printf("scroll\n");
+    int temp_cursor_location;
+    int temp_setting_value;
+    temp_cursor_location = cursor_location + direction;
+    if (temp_cursor_location < 0) {
+      // temp_cursor_location = children.size() - 1;
+    } else if (temp_cursor_location > 2) {
+      temp_cursor_location = 0;
+    }
+    // cursor_location = temp_cursor_location;
+    print();
+  }
+};
 
 // void folder::scroll(int direction) {
   // switch (database[current_item].item_type) {
@@ -339,13 +393,35 @@ void set_callbacks() {
 //   };
 }
 
+void createFolderStructure() {
+  root_folder = new Folder("", {
+  new Folder("Match", {
+    new Folder("One", {}),
+    new Folder("Two", {}),
+  }),
+  new Folder("Skills", {
+  }),
+  new Folder("Auton Builders", {
+    new Autonomous("Build Match"),
+    new Autonomous("Build Skills"),
+  }),
+  new Folder("Other", {
+  }),
+  new Folder("Actions", {
+  }),
+  new Folder("Settings", {
+  })
+});
+}
+
 void init() {
+  createFolderStructure();
   master.clear();
-  // pros::delay(50);
-  // current_item = &root_folder;
+  pros::delay(50);
+  current_item = root_folder;
   pros::Task controller_print_task (controller_print);
-  // current_item->set_callbacks();
-  // print_menu(current_item);
+  current_item->set_callbacks();
+  print_menu(current_item);
 }
 
 } // namespace controllermenu
