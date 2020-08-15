@@ -144,7 +144,7 @@ class Folder : public MenuItem {
       // children[cursor_location]->print();
       printf("current_item before: %p\n", current_item);
       current_item = children[cursor_location];
-      printf("current_item->name: %s\n", current_item->name);
+      printf("current_item->name: %s\n", current_item->name.c_str());
       printf("current_item after: %p\n", current_item);
       // pros::delay(1000);
       current_item->set_callbacks();
@@ -190,10 +190,10 @@ Folder * MenuItem::findParent(Folder *current_folder) {
 void MenuItem::back() {
   printf("back\n");
   printf("current_item before: %p\n", current_item);
-  printf("current_item->name before: %s\n", current_item->name);
+  printf("current_item->name before: %s\n", current_item->name.c_str());
   current_item = findParent();
   printf("current_item after: %p\n", current_item);
-  printf("current_item->name after: %s\n", current_item->name);
+  printf("current_item->name after: %s\n", current_item->name.c_str());
   // print();
   current_item->set_callbacks();
   current_item->print();
