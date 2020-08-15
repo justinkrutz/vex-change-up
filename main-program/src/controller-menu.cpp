@@ -1,13 +1,14 @@
 #include "api.h"
 
 #include <bits/stdc++.h>
-#include <iostream>
-#include <fstream>
+#include "json.hpp"
+using json = nlohmann::ordered_json;
 
 #include "robot-config.h"
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
+#include "autonomous.h"
 
 using namespace controllerbuttons;
 
@@ -70,7 +71,7 @@ class MenuItem {
   void back();
 
     MenuItemType item_type;
-    const char *name;
+    std::string name;
 };
 
 class Folder : public MenuItem {
@@ -93,7 +94,7 @@ class Folder : public MenuItem {
 
   public:
   std::vector<MenuItem*> children;
-  Folder(const char *name_arg, std::vector<MenuItem*> children_arg) {
+  Folder(std::string name_arg, std::vector<MenuItem*> children_arg) {
     name = name_arg;
     children = children_arg;
     item_type = kFolder;
@@ -200,8 +201,9 @@ void MenuItem::back() {
 
 class Autonomous : public MenuItem {
   public:
-  Autonomous(const char *name_arg) {
+  Autonomous(std::string name_arg, std::string json_key_arg) {
     name = name_arg;
+    json_key = json_key_arg;
     item_type = kAutonomous;
   }
 
@@ -221,6 +223,8 @@ class Autonomous : public MenuItem {
   }
 
   private:
+  std::string json_key;
+
   enum SaveState {kDiscardChanges, kSaveNew, kOverwrite};
   SaveState cursor_location = kDiscardChanges;
 
@@ -245,165 +249,39 @@ class Autonomous : public MenuItem {
   }
 };
 
-// void folder::scroll(int direction) {
-  // switch (database[current_item].item_type) {
-  //   int tempCursorLocation;
-  //   int tempSettingValue;
-  // case kFolder:
-  //   tempCursorLocation = database[current_item].cursor_location + direction;
-  //   if (tempCursorLocation < 0) {
-  //     tempCursorLocation = database[current_item].items.size() - 1;
-  //   } else if (tempCursorLocation > database[current_item].items.size() - 1) {
-  //     tempCursorLocation = 0;
-  //   }
-
-  //   database[current_item].cursor_location = tempCursorLocation;
-  //   break;
-  // case kSettingSlider:
-  //   tempSettingValue = database[current_item].setting_value + direction;
-  //   if (database[current_item].setting_value + direction < 0) {
-  //     tempSettingValue = 0;
-  //   } else if (database[current_item].setting_value + direction > 100) {
-  //     tempSettingValue = 100;
-  //   }
-  //   database[current_item].setting_value = tempSettingValue;
-  //   break;
-  // default:
-  //   break;
-  // }
-  // print_menu();
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// void print_auton() {
-//   master.clear();
-//   pros::delay(50);
-//   master.print(0, 0, database[current_item].name);
-// }
-
-// void print_setting_slider() {
-//   std::string bar = "l.................l";
-//   int barValue = database[current_item].setting_value * 0.17;
-//   bar.replace(1, barValue, barValue, '!');
-
-//   master.clear();
-//   pros::delay(50);
-//   master.print(0, 0, database[current_item].name);
-//   master.print(1, 0, bar.c_str());
-//   master.print(2, 0, "%d%%", database[current_item].setting_value);
-// }
-
-// void print_setting_switch() {
-//   master.clear();
-//   pros::delay(50);
-//   master.print(0, 0, database[current_item].name);
-//   if (database[current_item].setting_value) {
-//     master.print(1, 0, "True");
-//   } else {
-//     master.print(1, 0, "False");
-//   }
-// }
-
-// void print_action(const char *message) {
-//   master.clear();
-//   pros::delay(50);
-//   master.print(0, 0, database[current_item].name);
-//   master.print(1, 0, database[current_item].description);
-//   master.print(2, 0, message);
-// }
-
-
-
-
-
-// void scroll_right() {
-//   current_item->scroll_right();
-// }
-
-// void scroll_left() {
-//   current_item->scroll_left();
-// }
-
-// void scroll_up() {
-//   current_item->scroll_up();
-// }
-
-// void scroll_down() {
-//   current_item->scroll_down();
-// }
-
-// void back() {
-//   current_item->back(&current_item);
-// }
-
-// void select() {
-//   current_item->select(&current_item);
-// }
 
 void print_menu(MenuItem * item) {
   item->print();
 }
 
-// void run_auton() {
-//   if (database[current_item].item_type == kAutonomous) {
-//     master.rumble(".");
-//     database[current_item].function();
-//   }
-// }
-
-// void check_for_auton() {
-//   if (database[current_item].item_type != kAutonomous) {
-//     master.rumble(".");
-//   }
-// }
-
-
-
-void set_callbacks() {
-//   using namespace controllerbuttons;
-//   button_callbacks = {
-//     {&master, BTN_RIGHT, false, {&menu}, &scroll_right},
-//     {&master, BTN_LEFT,  false, {&menu}, &scroll_left},
-//     {&master, BTN_UP,    false, {&menu}, &scroll_up},
-//     {&master, BTN_DOWN,  false, {&menu}, &scroll_down},
-//     {&master, BTN_A,     false, {&menu}, &select},
-//     {&master, BTN_B,     false, {&menu}, &back},
-//   };
+std::vector<controllermenu::MenuItem *> getAutonsFromJson(json autons, std::string auton_type) {
+  std::vector<controllermenu::MenuItem *> auton_items;
+  for (auto & auton : autons.items()) {
+    // printf("autonType: %s\n", auton.value()["autonType"]);
+    if (auton.value()["autonType"] == auton_type) {
+      std::string auton_name;
+      if (auton.value()["name"] == "") {
+        auton_name = "Untitled-" + auton.key();
+      } else {
+        auton_name = auton.value()["name"];
+      }
+      auton_items.push_back(new Autonomous(auton_name, auton.key()));
+    }
+  }
+  return auton_items;
 }
 
 void createFolderStructure() {
   root_folder = new Folder("", {
   new Folder("Match", {
-    new Folder("One", {}),
-    new Folder("Two", {}),
+    getAutonsFromJson(all_autons, "match")
   }),
   new Folder("Skills", {
+    getAutonsFromJson(all_autons, "skills")
   }),
   new Folder("Auton Builders", {
-    new Autonomous("Build Match"),
-    new Autonomous("Build Skills"),
+    // new Autonomous("Build Match"),
+    // new Autonomous("Build Skills"),
   }),
   new Folder("Other", {
   }),

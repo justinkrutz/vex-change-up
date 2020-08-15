@@ -1,54 +1,33 @@
 {
   "0": {
     "name": "Left Corner One",
-    "runType": "skills",
+    "autonType": "skills",
     "steps": [
       {
-        "type": "waypoint",
+        "theta": 91.6,
+        "stepType": "waypoint",
         "x": 12,
-        "y": 73.8,
-        "theta": 91.6
+        "y": 73.8
       },
       {
-        "type": "driveToBallAndIntake"
+        "stepType": "driveToBallAndIntake"
       },
       {
-        "type": "waypoint",
+        "theta": 15,
+        "stepType": "waypoint",
         "x": 26,
-        "y": 80,
-        "theta": 15
+        "y": 80
       },
       {
-        "type": "driveToGoalAndCycle",
         "ballsIn": 2,
-        "ballsOut": 3
+        "ballsOut": 3,
+        "stepType": "driveToGoalAndCycle"
       }
     ]
   },
   "1": {
-    "name": "Left Corner Two",
-    "runType": "match",
-    "steps": [
-      {
-        "type": "waypoint",
-        "x": 12,
-        "y": 73.8,
-        "theta": 91.6
-      },
-      {
-        "type": "driveToBallAndIntake"
-      },
-      {
-        "type": "waypoint",
-        "x": 26,
-        "y": 80,
-        "theta": 15
-      },
-      {
-        "type": "driveToGoalAndCycle",
-        "ballsIn": 2,
-        "ballsOut": 3
-      }
-    ]
+    "name": "",
+    "autonType": "match",
+    "steps": []
   }
 }

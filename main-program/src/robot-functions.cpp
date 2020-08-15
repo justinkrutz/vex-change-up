@@ -3,7 +3,7 @@
 #include "robot-config.h"
 #include "controller-buttons.h"
 #include "robot-functions.h"
-#include "field-position.h"
+#include "autonomous.h"
 
 
 namespace robotfunctions {

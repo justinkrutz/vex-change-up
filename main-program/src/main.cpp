@@ -4,26 +4,11 @@
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
-#include "field-position.h"
+#include "autonomous.h"
 
 // ChassisController chassis;
 
 std::shared_ptr<OdomChassisController> chassis;
-
-void initialize_task() {
-  // controllermenu::set_callbacks();
-  controllermenu::init();
-  // controllermenu::load_settings();
-  // (pros::Task(robotfunctions::check_for_warnings));
-  // waitUntil(pros::competition::is_connected());
-  // master.clear();
-  // printf("print %d\r\n", master.print(1, 1, "Connected %d", 1));
-  // master.print(1, 1, "Connected %d", 1);
-  // controllermenu::check_for_auton();
-  // robotfunctions::set_callbacks();
-  // robotfunctions::motorTask();
-  // controllerbuttons::set_callbacks();
-}
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -56,8 +41,8 @@ void initialize() {
 //         // Green gearset, 4 in wheel diam, 11.5 in wheel track
 //         .withDimensions(AbstractMotor::gearset::green, {{4_in, 11.5_in}, imev5GreenTPR})
 //         .build();
-
-  (pros::Task (initialize_task));
+  loadAllAutons();
+  controllermenu::init();
 }
 
 /**
@@ -105,7 +90,7 @@ void autonomous() {}
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-  jsonTest();
+  // jsonTest();
   printf("opcontrol\n");
   // set the state to zero
   chassis->setState({75_in, 110_in, 0_deg});

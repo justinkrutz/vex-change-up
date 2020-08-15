@@ -2,7 +2,7 @@
 
 #include <bits/stdc++.h>
 #include "json.hpp"
-using json = nlohmann::json;
+using json = nlohmann::ordered_json;
 
 enum BallColor {kOurs, kTheirs };
 
@@ -101,10 +101,40 @@ void driveToClosestGoal() {
   // chassis->driveToPoint({70.3 * inch, 134.9 * inch}, false, 14_in);
 }
 
+
+json all_autons;
+
+void loadAllAutons() {
+  std::ifstream i("/usd/autonomous_routines.json");
+  i >> all_autons;
+  i.close();
+}
+
+std::string getNewAutonId(json autons) {
+  // std::cout << "autons: " << autons << "\n";
+  int largest_id_int = 0;
+  for (auto & id_json : autons.items()) {
+    int id_int = std::stoi(id_json.key(), nullptr);
+    if (id_int > largest_id_int) {
+      largest_id_int = id_int;
+    }
+  }
+  // std::cout << "largest_id_int: " << largest_id_int << "\n";
+  // std::cout << "to_string: " << std::to_string(largest_id_int + 1) << std::endl;
+  return std::to_string(largest_id_int + 1);
+}
+
+// void setAuton(json autons, std::string id) {
+//   all_autons[id];
+// }
+
 void jsonTest() {
-  json j;
-  j["object one"]["sub object"] = "test";
+  loadAllAutons();
+  std::cout << "all_autons before: " << all_autons.dump(2) << "\n";
+  json new_auton = all_autons["0"];
+  all_autons[getNewAutonId(all_autons)] = new_auton;
   std::ofstream o("/usd/autonomous_routines.json");
-  o << std::setw(2) << j << std::endl;
+  o << std::setw(2) << all_autons << std::endl;
   o.close();
+  std::cout << "all_autons after: " << all_autons.dump(2) << "\n";
 }

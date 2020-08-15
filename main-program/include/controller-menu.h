@@ -2,7 +2,6 @@ namespace controllermenu {
 extern std::string controller_print_array [3];
 void init();
 void print_menu();
-void set_callbacks();
 void run_auton();
 void check_for_auton();
 // void reset_setting_defaults();
