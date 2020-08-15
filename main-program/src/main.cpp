@@ -4,6 +4,7 @@
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
+#include "field-position.h"
 
 // ChassisController chassis;
 
@@ -104,18 +105,19 @@ void autonomous() {}
  * task, not resume it from where it left off.
  */
 void opcontrol() {
+  jsonTest();
   printf("opcontrol\n");
-    // set the state to zero
-    chassis->setState({75_in, 110_in, 0_deg});
-    // chassis->setState({0_in, 0_in, 0_deg});
-    // chassis->driveToPoint({1_ft, 0_ft});
-    // chassis->moveDistance(12_in);
-    // turn 45 degrees and drive approximately 1.4 ft
-    // chassis->driveToPoint({1_ft, 1_ft});
-    // turn approximately 45 degrees to end up at 90 degrees
-    // chassis->turnToAngle(90_deg);
-    // turn approximately -90 degrees to face {5_ft, 0_ft} which is to the north of the robot
-    // chassis->turnToPoint({5_ft, 0_ft});
+  // set the state to zero
+  chassis->setState({75_in, 110_in, 0_deg});
+  // chassis->setState({0_in, 0_in, 0_deg});
+  // chassis->driveToPoint({1_ft, 0_ft});
+  // chassis->moveDistance(12_in);
+  // turn 45 degrees and drive approximately 1.4 ft
+  // chassis->driveToPoint({1_ft, 1_ft});
+  // turn approximately 45 degrees to end up at 90 degrees
+  // chassis->turnToAngle(90_deg);
+  // turn approximately -90 degrees to face {5_ft, 0_ft} which is to the north of the robot
+  // chassis->turnToPoint({5_ft, 0_ft});
 
   Controller controller;
   auto x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());

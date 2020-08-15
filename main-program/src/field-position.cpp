@@ -1,7 +1,8 @@
 #include "main.h"
 
-// #include <bits/stdc++.h>
+#include <bits/stdc++.h>
 #include "json.hpp"
+using json = nlohmann::json;
 
 enum BallColor {kOurs, kTheirs };
 
@@ -98,4 +99,12 @@ void driveToClosestGoal() {
   chassis->driveToPoint({goal.x * inch, goal.y * inch}, false, 14_in);
   // chassis->driveToPoint({10 * inch, 10 * inch});
   // chassis->driveToPoint({70.3 * inch, 134.9 * inch}, false, 14_in);
+}
+
+void jsonTest() {
+  json j;
+  j["object one"]["sub object"] = "test";
+  std::ofstream o("/usd/autonomous_routines.json");
+  o << std::setw(2) << j << std::endl;
+  o.close();
 }

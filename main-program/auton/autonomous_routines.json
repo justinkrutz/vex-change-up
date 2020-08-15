@@ -1,0 +1,21 @@
+{
+  "name": "Left Corner One",
+  "version": 1,
+  "runType": "skills",
+  "steps": [
+    {
+      "type": "waypoint",
+      "x": 12,
+      "y": 73.8,
+      "theta": 91.6
+    },
+    {
+      "type": "driveToBallAndIntake"
+    },
+    {
+      "type": "driveToGoalAndCycle",
+      "ballsIn": 2,
+      "ballsOut": 3
+    }
+  ]
+}
