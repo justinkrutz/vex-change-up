@@ -125,7 +125,7 @@ class Folder : public MenuItem {
 
       controller_print_array[0] = selection;
       controller_print_array[1] = MenuItemTypeName.at(children[cursor_location]->item_type);
-      controller_print_array[2] = children[cursor_location]->name;
+      controller_print_array[2] = children[cursor_location]->name.c_str();
     } else {
       controller_print_array[0] = "Folder is empty";
       controller_print_array[1] = "";
@@ -139,7 +139,7 @@ class Folder : public MenuItem {
       printf("this: %p\n", this);
       printf("&children[cursor_location]: %p\n", children[cursor_location]);
       printf("cursor_location: %d\n", cursor_location);
-      printf("children[cursor_location]->name: %s\n", children[cursor_location]->name);
+      printf("children[cursor_location]->name: %s\n", children[cursor_location]->name.c_str());
       printf(" children.size(): %d\n", children.size());
       // children[cursor_location]->print();
       printf("current_item before: %p\n", current_item);
