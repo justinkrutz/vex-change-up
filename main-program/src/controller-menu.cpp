@@ -22,7 +22,6 @@ void controller_print() {
   std::string array_last [3];
   while (true) {
     for (int i = 0; i < 3; i++) {
-      // printf("controller_print_array[%d]: %s\n", i, controller_print_array[i].c_str());
       if (controller_print_array[i] != array_last[i]) {
         array_last[i] = controller_print_array[i];
         char print_str[20];
@@ -56,8 +55,16 @@ std::map<MenuItemType, const char*> MenuItemTypeName = {
   {kAction,        "Action"},
 };
 
+
 class MenuItem {
   public:
+  MenuItem(MenuItemType item_type, std::string name, std::vector<MenuItem*> children = {})
+           : item_type(item_type), name(name), children(children) {}
+
+  MenuItemType item_type;
+  std::string name;
+  std::vector<MenuItem*> children;
+
   virtual void print() {
     printf("virtual void print()\n");
   }
@@ -66,66 +73,70 @@ class MenuItem {
     printf("virtual void set_callbacks()\n");
   }
 
-  Folder * findParent(Folder *current_folder = root_folder);
+  MenuItem * findParent(MenuItem *current_folder = (MenuItem *) root_folder);
 
   void back();
+};
 
-    MenuItemType item_type;
-    std::string name;
+class MenuScroll {
+  public:
+  MenuScroll(MenuItem *menu_item, int number_of_items) : menu_item(menu_item), number_of_items(number_of_items) {}
+
+  int cursor_location = 0;
+
+  int number_of_items;
+
+  void print() {
+    std::string selection = "[_][_][_][_][_]";
+    if (number_of_items < 6) {
+      selection.resize(number_of_items * 3);
+      selection.replace(cursor_location * 3 + 1, 1, "o");
+    } else if (cursor_location > 2 && cursor_location < number_of_items - 3) {
+      selection.replace(1, 1, "<");
+      selection.replace(13, 1, ">");
+      selection.replace(7, 1, "o");
+    } else if (cursor_location > 2) {
+      selection.replace(1, 1, "<");
+      selection.replace((cursor_location - number_of_items + 5) * 3 + 1, 1, "o");
+    } else if (cursor_location < number_of_items - 3) {
+      selection.replace(13, 1, ">");
+      selection.replace(cursor_location * 3 + 1, 1, "o");
+    }
+    controller_print_array[0] = selection;
+  }
+
+  void set_callbacks() {
+    button_handler.master.right.pressed.set ([this](){ scroll(1); }, {"menu"});
+    button_handler.master.left.pressed.set  ([this](){ scroll(-1); },  {"menu"});
+  }
+
+  private:
+  MenuItem *menu_item;
+
+  void scroll(int scroll_amount) {
+    if (scroll_amount + cursor_location >= 0 && scroll_amount + cursor_location < number_of_items) {
+      cursor_location += scroll_amount;
+      menu_item->print();
+    }
+  }
 };
 
 class Folder : public MenuItem {
-  private:
-  int cursor_location = 0;
-  void scroll(int direction) {
-    printf("scroll\n");
-    int temp_cursor_location;
-    int temp_setting_value;
-    temp_cursor_location = cursor_location + direction;
-    if (temp_cursor_location < 0) {
-      temp_cursor_location = children.size() - 1;
-    } else if (temp_cursor_location > children.size() - 1) {
-      temp_cursor_location = 0;
-    }
-
-    cursor_location = temp_cursor_location;
-    print();
-  }
-
   public:
-  std::vector<MenuItem*> children;
-  Folder(std::string name_arg, std::vector<MenuItem*> children_arg) {
-    name = name_arg;
-    children = children_arg;
-    item_type = kFolder;
-  }
-  // const char *name;
+  Folder(std::string name, std::vector<MenuItem*> children)
+         : MenuItem(kFolder, name, children), folderScroll(this, children.size()) {}
 
   void set_callbacks() {
-    printf("Folder::set_callbacks()\n");
-    // using namespace controllerbuttons;
-
-    button_handler.master.right.pressed.set ([this](){ scroll_right(); }, {"menu"});
-    button_handler.master.left.pressed.set  ([this](){ scroll_left(); },  {"menu"});
-    button_handler.master.up.pressed.set    ([this](){ scroll_up(); },    {"menu"});
-    button_handler.master.down.pressed.set  ([this](){ scroll_down(); },  {"menu"});
-    button_handler.master.a.pressed.set     ([this](){ select(); },       {"menu"});
-    button_handler.master.b.pressed.set     ([this](){ back(); },         {"menu"});
+    folderScroll.set_callbacks();
+    button_handler.master.a.pressed.set ([this](){ select(); }, {"menu"});
+    button_handler.master.b.pressed.set ([this](){ back(); },   {"menu"});
   }
 
   void print() {
-    // set_callbacks();
-    printf("print_folder\n");
-    // Folder * item_to_print = (Folder*)item;
-    if (children.size() > 0) {
-      std::string selection = "[_][_][_][_][_][_]";
-      selection.resize(children.size() * 3);
-      printf("cursor_location: %d\n", cursor_location);
-      selection.replace((cursor_location) * 3 + 1, 1, "o");
-
-      controller_print_array[0] = selection;
-      controller_print_array[1] = MenuItemTypeName.at(children[cursor_location]->item_type);
-      controller_print_array[2] = children[cursor_location]->name.c_str();
+    if (folderScroll.number_of_items > 0) {
+      folderScroll.print();
+      controller_print_array[1] = MenuItemTypeName.at(children[folderScroll.cursor_location]->item_type);
+      controller_print_array[2] = children[folderScroll.cursor_location]->name;
     } else {
       controller_print_array[0] = "Folder is empty";
       controller_print_array[1] = "";
@@ -134,42 +145,18 @@ class Folder : public MenuItem {
   }
 
   void select() {
-    printf("select\n");
     if (children.size() > 0) {
-      printf("this: %p\n", this);
-      printf("&children[cursor_location]: %p\n", children[cursor_location]);
-      printf("cursor_location: %d\n", cursor_location);
-      printf("children[cursor_location]->name: %s\n", children[cursor_location]->name.c_str());
-      printf(" children.size(): %d\n", children.size());
-      // children[cursor_location]->print();
-      printf("current_item before: %p\n", current_item);
-      current_item = children[cursor_location];
-      printf("current_item->name: %s\n", current_item->name.c_str());
-      printf("current_item after: %p\n", current_item);
-      // pros::delay(1000);
+      current_item = children[folderScroll.cursor_location];
       current_item->set_callbacks();
       current_item->print();
     }
   }
 
-  void scroll_right() {
-    scroll(1);
-  }
-
-  void scroll_left()  {
-    scroll(-1);
-  }
-
-  void scroll_up()    {
-    scroll(10);
-  }
-
-  void scroll_down()  {
-    scroll(-10);
-  }
+  private:
+  MenuScroll folderScroll;
 };
 
-Folder * MenuItem::findParent(Folder *current_folder) {
+MenuItem * MenuItem::findParent(MenuItem *current_folder) {
   if (this == root_folder) {
     return root_folder;
   }
@@ -178,7 +165,7 @@ Folder * MenuItem::findParent(Folder *current_folder) {
       return current_folder;
     }
     if (child->item_type == kFolder) {
-      Folder* sub_child = findParent((Folder*)child);
+      MenuItem* sub_child = findParent((MenuItem*)child);
       if (sub_child) {
         return sub_child;
       }
@@ -188,65 +175,41 @@ Folder * MenuItem::findParent(Folder *current_folder) {
 }
 
 void MenuItem::back() {
-  printf("back\n");
-  printf("current_item before: %p\n", current_item);
-  printf("current_item->name before: %s\n", current_item->name.c_str());
   current_item = findParent();
-  printf("current_item after: %p\n", current_item);
-  printf("current_item->name after: %s\n", current_item->name.c_str());
-  // print();
   current_item->set_callbacks();
   current_item->print();
 }
 
 class Autonomous : public MenuItem {
   public:
-  Autonomous(std::string name_arg, std::string json_key_arg) {
-    name = name_arg;
-    json_key = json_key_arg;
-    item_type = kAutonomous;
-  }
+  Autonomous(std::string name, std::string json_key) 
+             : MenuItem(kAutonomous, name), json_key(json_key), optionsScroll(this, 3) {}
 
   void print() {
-  printf("print_autonomous\n");
-    std::string selection = "[_][_][_]";
-    printf("cursor_location: %d\n", cursor_location);
-    selection.replace((cursor_location) * 3 + 1, 1, "o");
-
+    printf("print_autonomous\n");
     controller_print_array[0] = name;
-    controller_print_array[1] = selection;
-    controller_print_array[2] = SaveStateName.at(cursor_location);
+    optionsScroll.print();
+    controller_print_array[1] = "";
+    controller_print_array[2] = "";
+    // controller_print_array[2] = SaveStateName.at(optionsScroll.cursor_location);
   }
   
   void set_callbacks() {
+    optionsScroll.set_callbacks();
     button_handler.master.b.pressed.set ([this](){ back(); }, {"menu"});
   }
 
   private:
+  MenuScroll optionsScroll;
   std::string json_key;
 
   enum SaveState {kDiscardChanges, kSaveNew, kOverwrite};
-  SaveState cursor_location = kDiscardChanges;
 
   std::map<SaveState, const char*> SaveStateName = {
     {kDiscardChanges, "Discard Changes"},
     {kSaveNew,        "Save New"},
     {kOverwrite,      "Overwrite"},
   };
-
-    void scroll(int direction) {
-    printf("scroll\n");
-    int temp_cursor_location;
-    int temp_setting_value;
-    temp_cursor_location = cursor_location + direction;
-    if (temp_cursor_location < 0) {
-      // temp_cursor_location = children.size() - 1;
-    } else if (temp_cursor_location > 2) {
-      temp_cursor_location = 0;
-    }
-    // cursor_location = temp_cursor_location;
-    print();
-  }
 };
 
 
@@ -273,22 +236,22 @@ std::vector<controllermenu::MenuItem *> getAutonsFromJson(json autons, std::stri
 
 void createFolderStructure() {
   root_folder = new Folder("", {
-  new Folder("Match", {
+  new Folder("Match Autons", {
     getAutonsFromJson(all_autons, "match")
   }),
-  new Folder("Skills", {
+  new Folder("Skills Autons", {
     getAutonsFromJson(all_autons, "skills")
   }),
-  new Folder("Auton Builders", {
-    // new Autonomous("Build Match"),
-    // new Autonomous("Build Skills"),
-  }),
-  new Folder("Other", {
-  }),
-  new Folder("Actions", {
-  }),
-  new Folder("Settings", {
-  })
+  // new Folder("Auton Builders", {
+  //   // new Autonomous("Build Match"),
+  //   // new Autonomous("Build Skills"),
+  // }),
+  // new Folder("Other", {
+  // }),
+  // new Folder("Actions", {
+  // }),
+  // new Folder("Settings", {
+  // })
 });
 }
 
