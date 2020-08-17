@@ -1,8 +1,29 @@
 #include "json.hpp"
 using json = nlohmann::ordered_json;
 
-extern json all_autons;
+// extern json all_autons;
+// extern std::string selected_auton_id;
 
-void loadAllAutons();
-void driveToClosestGoal();
-void jsonTest();
+std::string getNewAutonId(json autons);
+// void loadAllAutons();
+// void jsonTest();
+// void driveToClosestGoal();
+
+class AutonManager {
+  public:
+  AutonManager(std::string auton_id);
+
+  std::string auton_id;
+  json auton_steps;
+  int selected_step = 0;
+  static json all_autons;
+
+  void run();
+  void nextStep();
+  void previousStep();
+  void setStepDriveToGoalAndScore(int balls_in, int balls_out) ;
+  void insertStep();
+  void setStepWaypoint();
+  static void loadAutonsFromSD();
+  static void saveAutonsToSD();
+};

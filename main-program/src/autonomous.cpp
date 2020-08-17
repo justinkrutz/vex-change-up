@@ -1,8 +1,12 @@
 #include "main.h"
+#include "robot-functions.h"
+#include "autonomous.h"
 
 #include <bits/stdc++.h>
 #include "json.hpp"
 using json = nlohmann::ordered_json;
+
+std::string selected_auton_id = "0";
 
 enum BallColor {kOurs, kTheirs };
 
@@ -102,16 +106,15 @@ void driveToClosestGoal() {
 }
 
 
-json all_autons;
+// json all_autons;
 
-void loadAllAutons() {
-  std::ifstream i("/usd/autonomous_routines.json");
-  i >> all_autons;
-  i.close();
-}
+// void loadAllAutons() {
+//   std::ifstream i("/usd/autonomous_routines.json");
+//   i >> all_autons;
+//   i.close();
+// }
 
 std::string getNewAutonId(json autons) {
-  // std::cout << "autons: " << autons << "\n";
   int largest_id_int = 0;
   for (auto & id_json : autons.items()) {
     int id_int = std::stoi(id_json.key(), nullptr);
@@ -119,22 +122,107 @@ std::string getNewAutonId(json autons) {
       largest_id_int = id_int;
     }
   }
-  // std::cout << "largest_id_int: " << largest_id_int << "\n";
-  // std::cout << "to_string: " << std::to_string(largest_id_int + 1) << std::endl;
   return std::to_string(largest_id_int + 1);
 }
 
-// void setAuton(json autons, std::string id) {
-//   all_autons[id];
-// }
 
-void jsonTest() {
-  loadAllAutons();
-  std::cout << "all_autons before: " << all_autons.dump(2) << "\n";
-  json new_auton = all_autons["0"];
-  all_autons[getNewAutonId(all_autons)] = new_auton;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+json AutonManager::all_autons = {};
+
+void AutonManager::loadAutonsFromSD() {
+  std::ifstream i("/usd/autonomous_routines.json");
+  i >> all_autons;
+  i.close();
+}
+
+void AutonManager::saveAutonsToSD() {
   std::ofstream o("/usd/autonomous_routines.json");
   o << std::setw(2) << all_autons << std::endl;
   o.close();
-  std::cout << "all_autons after: " << all_autons.dump(2) << "\n";
 }
+
+AutonManager::AutonManager(std::string auton_id)
+              : auton_id(auton_id), auton_steps(all_autons[auton_id]["steps"]){}
+
+void AutonManager::run() {
+  json last_waypoint = {};
+  for (auto& step : auton_steps.items()) {
+    if (step.value()["stepType"] == "waypoint") {
+      QLength x = step.value()["x"] * inch;
+      QLength y = step.value()["y"] * inch;
+      QAngle theta = step.value()["theta"] * degree;
+      robotfunctions::driveToPosition(x, y, theta);
+      last_waypoint = step.value();
+    } else if (step.value()["stepType"] == "driveToBallAndIntake") {
+      QLength x = last_waypoint["x"] * inch;
+      QLength y = last_waypoint["y"] * inch;
+      QAngle theta = last_waypoint["theta"] * degree;
+      robotfunctions::driveToPosition(x, y, theta);
+      robotfunctions::intakeBalls(step.value()["ballsIn"]);
+      robotfunctions::intakeBalls(step.value()["ballsOut"]);
+    } else if (step.value()["stepType"] == "driveToGoalAndCycle") {
+      driveToClosestGoal();
+    }
+  }
+}
+
+void AutonManager::nextStep() {
+  selected_step = std::min(selected_step + 1, int(auton_steps.size()));
+}
+
+void AutonManager::previousStep() {
+  selected_step = std::max(selected_step - 1, 0);
+}
+
+void AutonManager::setStepDriveToGoalAndScore(int balls_in, int balls_out) {
+  json step;
+  step["stepType"] = "driveToGoalAndCycle";
+  step["ballsIn"] = balls_in;
+  step["ballsOut"] = balls_out;
+  auton_steps[selected_step] = step;
+}
+
+void AutonManager::insertStep() {
+  json step = {};
+  auton_steps.insert(auton_steps.begin() + ++selected_step, step);
+}
+
+void AutonManager::setStepWaypoint() {
+  QLength x = chassis->getState().x;
+  QLength y = chassis->getState().y;
+  QAngle theta = chassis->getState().theta;
+  auton_steps[selected_step]["x"] = std::to_string(x.convert(inch));
+  auton_steps[selected_step]["y"] = std::to_string(y.convert(inch));
+  auton_steps[selected_step]["theta"] = std::to_string(theta.convert(degree));
+}
+
+// void jsonTest() {
+//   loadAllAutons();
+//   std::cout << "all_autons before: " << all_autons.dump(2) << "\n";
+//   json new_auton = all_autons["0"];
+//   all_autons[getNewAutonId(all_autons)] = new_auton;
+//   std::ofstream o("/usd/autonomous_routines.json");
+//   o << std::setw(2) << all_autons << std::endl;
+//   o.close();
+//   std::cout << "all_autons after: " << all_autons.dump(2) << "\n";
+// }

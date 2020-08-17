@@ -14,8 +14,6 @@ using namespace controllerbuttons;
 
 namespace controllermenu {
 
-// controllerbuttons::MacroGroup menu;
-
 std::string controller_print_array [3];
 
 void controller_print() {
@@ -44,17 +42,13 @@ MenuFolder *root_folder;
 enum MenuItemType {
   kFolder,
   kAutonomous,
-  kAutonomousRun,
-  kAutonomousSelect,
-  kAutonomousEdit,
+  kAction,
 };
 
 std::map<MenuItemType, const char*> MenuItemTypeName = {
   {kFolder,           "Folder"},
   {kAutonomous,       "Autonomous"},
-  {kAutonomousSelect, "Select Autonomous"},
-  {kAutonomousRun,    "Run Autonomous"},
-  {kAutonomousEdit, "Edit Autonomous"},
+  {kAction, "Action"},
 };
 
 
@@ -72,6 +66,7 @@ class MenuItem {
   }
 
   virtual void set_callbacks() {
+    button_handler.clear_group("menu");
     button_handler.master.b.pressed.set ([this](){ back(); }, {"menu"});
   }
 
@@ -108,6 +103,7 @@ class MenuScroll {
   }
 
   void set_callbacks() {
+    button_handler.clear_group("menu");
     button_handler.master.right.pressed.set ([this](){ scroll(1); }, {"menu"});
     button_handler.master.left.pressed.set  ([this](){ scroll(-1); },  {"menu"});
   }
@@ -129,6 +125,7 @@ class MenuFolder : public MenuItem {
          : MenuItem(item_type, name, children), folderScroll(this, children.size()) {}
 
   void set_callbacks() {
+    button_handler.clear_group("menu");
     folderScroll.set_callbacks();
     button_handler.master.a.pressed.set ([this](){ select(); }, {"menu"});
     button_handler.master.b.pressed.set ([this](){ back(); },   {"menu"});
@@ -182,96 +179,111 @@ void MenuItem::back() {
 
 class MenuAutonomous;
 
-class MenuAutonomousSelect : public MenuItem {
+class MenuAction : public MenuItem {
   public:
-  MenuAutonomousSelect(MenuAutonomous *menu_autonomous) : MenuItem(kAutonomousSelect, "Select for match"), menu_autonomous(menu_autonomous) {}
+  MenuAction(MenuAutonomous *menu_autonomous,
+             std::string name,
+             std::string message_one,
+             std::string message_two,
+             std::function<void()> function)
+           : MenuItem(kAction, name),
+             message_one_(message_one),
+             message_two_(message_two),
+             menu_autonomous_(menu_autonomous),
+             function_(function) {}
 
   void print();
   private:
-  MenuAutonomous *menu_autonomous;
+  MenuAutonomous *menu_autonomous_;
+  std::string message_one_;
+  std::string message_two_;
+  std::function<void()> function_;
 };
 
-class MenuAutonomousRun : public MenuItem {
+class MenuCreateAuton : public MenuItem {
   public:
-  MenuAutonomousRun(MenuAutonomous *menu_autonomous) : MenuItem(kAutonomousRun, "Run immediately"), menu_autonomous(menu_autonomous) {}
+  MenuCreateAuton(std::string name) : MenuItem(kAction, name) {}
 
-  void print();
+  void set_callbacks() {
+    button_handler.clear_group("menu");
+    button_handler.master.b.pressed.set ([this](){ back(); }, {"menu"});
+    button_handler.master.a.pressed.set ([this](){ /*apply changes to waypoint*/ }, {"menu"});
+    button_handler.master.x.pressed.set ([this](){ /*discard changes to waypoint*/ }, {"menu"});
+    button_handler.master.up.pressed.set ([this](){ /*add waypoint*/ }, {"menu"});
+    button_handler.master.down.pressed.set ([this](){ /*remove waypoint*/ }, {"menu"});
+    button_handler.master.left.pressed.set ([this](){ /*got to previous waypoint*/ }, {"menu"});
+    button_handler.master.right.pressed.set ([this](){ /*got to next waypoint*/ }, {"menu"});
+    button_handler.master.r1.pressed.set ([this](){ /*drive to nearest goal*/ }, {"menu"});
+    button_handler.master.r2.pressed.set ([this](){ /*drive to and intake nearest ball*/ }, {"menu"});
+    button_handler.master.l1.pressed.set ([this](){ /*score one ball if at goal*/ }, {"menu"});
+    button_handler.master.l2.pressed.set ([this](){ /*intake one ball if at goal*/ }, {"menu"});
+  }
+
   private:
-  MenuAutonomous *menu_autonomous;
+  // std::string auton_id = getNewAutonId(AutonManager::all_autons);
 };
 
-class MenuAutonomousEdit : public MenuItem {
-  public:
-  MenuAutonomousEdit(MenuAutonomous *menu_autonomous) : MenuItem(kAutonomousEdit, "Changes saved to SD"), menu_autonomous(menu_autonomous) {}
+// class MenuAutonomousSelect : public MenuItem {
+//   MenuAutonomousSelect(MenuAutonomous *menu_autonomous) : MenuItem(kAutonomousSelect, "Select for match"), menu_autonomous(menu_autonomous) {}
 
-  void print();
-  private:
-  MenuAutonomous *menu_autonomous;
-};
+//   void print();
+//   private:
+//   MenuAutonomous *menu_autonomous;
+// };
+
+// class MenuAutonomousRun : public MenuItem {
+//   public:
+//   MenuAutonomousRun(MenuAutonomous *menu_autonomous) : MenuItem(kAutonomousRun, "Run immediately"), menu_autonomous(menu_autonomous) {}
+
+//   void print();
+//   private:
+//   MenuAutonomous *menu_autonomous;
+// };
+
+// class MenuAutonomousEdit : public MenuItem {
+//   public:
+//   MenuAutonomousEdit(MenuAutonomous *menu_autonomous) : MenuItem(kAutonomousEdit, "Changes saved to SD"), menu_autonomous(menu_autonomous) {}
+
+//   void print();
+//   private:
+//   MenuAutonomous *menu_autonomous;
+// };
+
 
 
 class MenuAutonomous : public MenuFolder {
   public:
   MenuAutonomous(std::string name, std::string json_key) 
       : MenuFolder(name, {
-          new MenuAutonomousSelect(this),
-          new MenuAutonomousRun(this),
-          new MenuAutonomousEdit(this)
+          new MenuAction(this, "Select", "Selected:", "Waiting for enable", [this](){ select(); }),
+          new MenuAction(this, "Run", "Running","Press 'B' to abort", [this](){ run(); }),
+          new MenuAction(this, "Edit", "Editing", "Press 'A' to save", [this](){ edit(); })
         },
         kAutonomous),
-        json_key(json_key),
-        optionsScroll(this, 3) {}
+        json_key(json_key) {}
 
-  // void print() {
-  //   printf("print_autonomous\n");
-  //   controller_print_array[0] = name;
-  //   optionsScroll.print();
-  //   controller_print_array[1] = "";
-  //   controller_print_array[2] = "";
-  //   // controller_print_array[2] = SaveStateName.at(optionsScroll.cursor_location);
-  // }
-  
-  // void set_callbacks() {
-  //   optionsScroll.set_callbacks();
-  //   button_handler.master.b.pressed.set ([this](){ back(); }, {"menu"});
-  // }
+  void select() {}
+  void run() {}
+  void edit() {}
 
   private:
-  MenuScroll optionsScroll;
   std::string json_key;
-
-  // enum SaveState {kDiscardChanges, kSaveNew, kOverwrite};
-
-  // std::map<SaveState, const char*> SaveStateName = {
-  //   {kDiscardChanges, "Discard Changes"},
-  //   {kSaveNew,        "Save New"},
-  //   {kOverwrite,      "Overwrite"},
-  // };
 };
 
-void MenuAutonomousSelect::print() {
-    controller_print_array[0] = "Selected:";
-    controller_print_array[1] = menu_autonomous->name;
-    controller_print_array[2] = "Waiting for enable";
-  }
-
-void MenuAutonomousRun::print() {
-    controller_print_array[0] = "Running:";
-    controller_print_array[1] = menu_autonomous->name;
-    controller_print_array[2] = "Press 'B' to abort";
-  }
-  
-void MenuAutonomousEdit::print() {
-    controller_print_array[0] = "Editing:";
-    controller_print_array[1] = menu_autonomous->name;
-    controller_print_array[2] = "Press 'A' to save";
-  }
-
-void print_menu(MenuItem * item) {
-  item->print();
+void MenuAction::print() {
+  controller_print_array[0] = message_one_;
+  controller_print_array[1] = menu_autonomous_->name;
+  controller_print_array[2] = message_two_;
+  function_();
 }
 
-std::vector<MenuItem *> getAutonsFromJson(json autons, std::string auton_type) {
+
+
+
+
+
+
+std::vector<MenuItem *> getMenuAutonsFromJson(json autons, std::string auton_type) {
   std::vector<MenuItem *> auton_items;
   for (auto & auton : autons.items()) {
     // printf("autonType: %s\n", auton.value()["autonType"]);
@@ -291,10 +303,10 @@ std::vector<MenuItem *> getAutonsFromJson(json autons, std::string auton_type) {
 void createFolderStructure() {
   root_folder = new MenuFolder("", {
   new MenuFolder("Match Autons", {
-    getAutonsFromJson(all_autons, "match")
+    getMenuAutonsFromJson(AutonManager::all_autons, "match")
   }),
   new MenuFolder("Skills Autons", {
-    getAutonsFromJson(all_autons, "skills")
+    getMenuAutonsFromJson(AutonManager::all_autons, "skills")
   }),
   // new MenuFolder("Auton Builders", {
   //   // new Autonomous("Build Match"),
@@ -316,7 +328,7 @@ void init() {
   current_item = root_folder;
   pros::Task controller_print_task (controller_print);
   current_item->set_callbacks();
-  print_menu(current_item);
+  current_item->print();
 }
 
 } // namespace controllermenu

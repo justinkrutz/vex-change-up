@@ -1,4 +1,4 @@
-#include "api.h"
+#include "main.h"
 
 #include "robot-config.h"
 #include "controller-buttons.h"
@@ -41,7 +41,16 @@ void motorTask()
   }
 }
 
+void driveToPosition(QLength x, QLength y, QAngle theta, QLength offset) {
+  chassis->driveToPoint({x, y}, false, offset);
+  chassis->turnToAngle({theta});
+}
 
+void intakeBalls(int balls) {
+}
+
+void scoreBalls(int balls) {
+}
 
 
 controllerbuttons::Macro count_up(
@@ -70,22 +79,22 @@ void set_callbacks() {
   // button_handler.master.a.released.set([&](){ count_up.terminate(); });
   // button_handler.master.x.pressed.set([&](){ test_group.terminate(); });
   // button_handler.master.left.pressed.set(single_use_button, {}, {&test_group});
-  button_handler.master.a.pressed.set([](){ driveToClosestGoal(); }, {}, {&test_group});
+  // button_handler.master.a.pressed.set([](){ driveToClosestGoal(); }, {}, {&test_group});
 
-  button_handler.master.r2.pressed.set([](){ test_motor_1.move(127); }, {}, {&test_group});
-  button_handler.master.r1.pressed.set([](){ test_motor_1.move(-127); }, {}, {&test_group});
-  button_handler.master.l2.pressed.set([](){ test_motor_2.move(127); }, {}, {&test_group});
-  button_handler.master.l1.pressed.set([](){ test_motor_2.move(-127); }, {}, {&test_group});
-  button_handler.master.right.pressed.set([](){ test_motor_3.move(-127); }, {}, {&test_group});
-  button_handler.master.left.pressed.set([](){
-      test_motor_3.move(0);
-      test_motor_3.move_relative(100, 127);
-    }, {}, {&test_group});
-  button_handler.master.b.pressed.set([](){
-      test_motor_3.move(0);
-      test_motor_2.move(0);
-      test_motor_1.move(0);
-    }, {}, {&test_group});
+  // button_handler.master.r2.pressed.set([](){ test_motor_1.move(127); }, {}, {&test_group});
+  // button_handler.master.r1.pressed.set([](){ test_motor_1.move(-127); }, {}, {&test_group});
+  // button_handler.master.l2.pressed.set([](){ test_motor_2.move(127); }, {}, {&test_group});
+  // button_handler.master.l1.pressed.set([](){ test_motor_2.move(-127); }, {}, {&test_group});
+  // button_handler.master.right.pressed.set([](){ test_motor_3.move(-127); }, {}, {&test_group});
+  // button_handler.master.left.pressed.set([](){
+  //     test_motor_3.move(0);
+  //     test_motor_3.move_relative(100, 127);
+  //   }, {}, {&test_group});
+  // button_handler.master.b.pressed.set([](){
+  //     test_motor_3.move(0);
+  //     test_motor_2.move(0);
+  //     test_motor_1.move(0);
+  //   }, {}, {&test_group});
 }
 
 } // namespace robotfunctions

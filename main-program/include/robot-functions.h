@@ -1,7 +1,7 @@
 #ifndef ROBOT_FUNCTIONS_H
 #define ROBOT_FUNCTIONS_H
 
-#include "api.h"
+#include "main.h"
 #include <bits/stdc++.h>
 
 // #define WARN(device, messageToPrint, warnIf)                                   \
@@ -26,6 +26,10 @@
 //        !(device.member > lowerRange && device.member < upperRange))
 
 namespace robotfunctions {
+void driveToPosition(QLength x, QLength y, QAngle theta, QLength offset = 0_in);
+void intakeBalls(int balls);
+void scoreBalls(int balls);
+
 void count_up_task();
 void count_down_task();
 void count_task(void * arg);

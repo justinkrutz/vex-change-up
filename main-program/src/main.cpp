@@ -41,7 +41,8 @@ void initialize() {
 //         // Green gearset, 4 in wheel diam, 11.5 in wheel track
 //         .withDimensions(AbstractMotor::gearset::green, {{4_in, 11.5_in}, imev5GreenTPR})
 //         .build();
-  loadAllAutons();
+  // loadAllAutons();
+  AutonManager::loadAutonsFromSD();
   controllermenu::init();
 }
 

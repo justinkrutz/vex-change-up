@@ -4,8 +4,8 @@
     "autonType": "skills",
     "steps": [
       {
-        "theta": 91.6,
         "stepType": "waypoint",
+        "theta": 91.6,
         "x": 12,
         "y": 73.8
       },
@@ -13,15 +13,15 @@
         "stepType": "driveToBallAndIntake"
       },
       {
-        "theta": 15,
         "stepType": "waypoint",
+        "theta": 15,
         "x": 26,
         "y": 80
       },
       {
+        "stepType": "driveToGoalAndCycle",
         "ballsIn": 2,
-        "ballsOut": 3,
-        "stepType": "driveToGoalAndCycle"
+        "ballsOut": 3
       }
     ]
   },
