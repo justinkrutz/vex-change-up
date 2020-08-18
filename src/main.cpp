@@ -9,6 +9,7 @@
 // ChassisController chassis;
 
 std::shared_ptr<OdomChassisController> chassis;
+std::shared_ptr<ThreeEncoderXDriveModel> x_model;
 
 /**
  * Runs initialization code. This occurs as soon as the program is started.
@@ -36,8 +37,12 @@ void initialize() {
     .withOdometry({{2.75_in, 11.3_in, 4.8_in, 2.75_in}, quadEncoderTPR}, StateMode::CARTESIAN)
     .buildOdometry();
 
+  x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
+
+  pros::Task(robotfunctions::motorTask);
+  robotfunctions::set_callbacks();
   AutonManager::loadAutonsFromSD();
-  controllermenu::init();
+  // controllermenu::init();
 }
 
 /**
@@ -85,22 +90,9 @@ void autonomous() {}
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-  // jsonTest();
   printf("opcontrol\n");
-  // set the state to zero
-  // chassis->setState({75_in, 110_in, 0_deg});
   chassis->setState({0_in, 0_in, 0_deg});
-  // chassis->driveToPoint({1_ft, 0_ft});
-  // chassis->moveDistance(12_in);
-  // turn 45 degrees and drive approximately 1.4 ft
-  // chassis->driveToPoint({1_ft, 1_ft});
-  // turn approximately 45 degrees to end up at 90 degrees
-  // chassis->turnToAngle(90_deg);
-  // turn approximately -90 degrees to face {5_ft, 0_ft} which is to the north of the robot
-  // chassis->turnToPoint({5_ft, 0_ft});
-
   Controller controller;
-  auto x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
   while (true) {
     controllerbuttons::run_buttons();
 
@@ -113,9 +105,9 @@ void opcontrol() {
     
     
     // printf("tracker_left: %d tracker_right: %d tracker_back: %d\n", tracker_left.get_value(), tracker_right.get_value(), tracker_back.get_value());
-    x_model->xArcade(controller.getAnalog(ControllerAnalog::rightX),
-                    controller.getAnalog(ControllerAnalog::rightY),
-                    controller.getAnalog(ControllerAnalog::leftX));
+    // x_model->xArcade(controller.getAnalog(ControllerAnalog::rightX),
+    //                 controller.getAnalog(ControllerAnalog::rightY),
+    //                 controller.getAnalog(ControllerAnalog::leftX));
     pros::delay(10);
   }
 }
