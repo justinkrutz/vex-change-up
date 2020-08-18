@@ -36,12 +36,6 @@ void initialize() {
     .withOdometry({{2.75_in, 11.3_in, 4.8_in, 2.75_in}, quadEncoderTPR}, StateMode::CARTESIAN)
     .buildOdometry();
 
-// drive = ChassisControllerBuilder()
-//         .withMotors(1, -10)
-//         // Green gearset, 4 in wheel diam, 11.5 in wheel track
-//         .withDimensions(AbstractMotor::gearset::green, {{4_in, 11.5_in}, imev5GreenTPR})
-//         .build();
-  // loadAllAutons();
   AutonManager::loadAutonsFromSD();
   controllermenu::init();
 }
@@ -94,8 +88,8 @@ void opcontrol() {
   // jsonTest();
   printf("opcontrol\n");
   // set the state to zero
-  chassis->setState({75_in, 110_in, 0_deg});
-  // chassis->setState({0_in, 0_in, 0_deg});
+  // chassis->setState({75_in, 110_in, 0_deg});
+  chassis->setState({0_in, 0_in, 0_deg});
   // chassis->driveToPoint({1_ft, 0_ft});
   // chassis->moveDistance(12_in);
   // turn 45 degrees and drive approximately 1.4 ft
@@ -119,9 +113,9 @@ void opcontrol() {
     
     
     // printf("tracker_left: %d tracker_right: %d tracker_back: %d\n", tracker_left.get_value(), tracker_right.get_value(), tracker_back.get_value());
-    // x_model->xArcade(controller.getAnalog(ControllerAnalog::rightX),
-    //                 controller.getAnalog(ControllerAnalog::rightY),
-    //                 controller.getAnalog(ControllerAnalog::leftX));
+    x_model->xArcade(controller.getAnalog(ControllerAnalog::rightX),
+                    controller.getAnalog(ControllerAnalog::rightY),
+                    controller.getAnalog(ControllerAnalog::leftX));
     pros::delay(10);
   }
 }

@@ -19,10 +19,12 @@ class AutonManager {
   static json all_autons;
 
   void run();
+  void save();
   void nextStep();
   void previousStep();
   void setStepDriveToGoalAndScore(int balls_in, int balls_out) ;
   void insertStep();
+  void removeStep();
   void setStepWaypoint();
   static void loadAutonsFromSD();
   static void saveAutonsToSD();

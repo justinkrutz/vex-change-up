@@ -137,16 +137,6 @@ std::string getNewAutonId(json autons) {
 
 
 
-
-
-
-
-
-
-
-
-
-
 json AutonManager::all_autons = {};
 
 void AutonManager::loadAutonsFromSD() {
@@ -168,11 +158,13 @@ void AutonManager::run() {
   json last_waypoint = {};
   for (auto& step : auton_steps.items()) {
     if (step.value()["stepType"] == "waypoint") {
+      // double test = step.value()["x"];
       QLength x = step.value()["x"] * inch;
       QLength y = step.value()["y"] * inch;
       QAngle theta = step.value()["theta"] * degree;
       robotfunctions::driveToPosition(x, y, theta);
       last_waypoint = step.value();
+    // }
     } else if (step.value()["stepType"] == "driveToBallAndIntake") {
       QLength x = last_waypoint["x"] * inch;
       QLength y = last_waypoint["y"] * inch;
@@ -184,6 +176,12 @@ void AutonManager::run() {
       driveToClosestGoal();
     }
   }
+}
+
+void AutonManager::save() {
+  all_autons[auton_id]["name"] = "test auton";
+  all_autons[auton_id]["autonType"] = "match";
+  all_autons[auton_id]["steps"] = auton_steps;
 }
 
 void AutonManager::nextStep() {
@@ -207,13 +205,18 @@ void AutonManager::insertStep() {
   auton_steps.insert(auton_steps.begin() + ++selected_step, step);
 }
 
+void AutonManager::removeStep() {
+  auton_steps.erase(selected_step);
+}
+
 void AutonManager::setStepWaypoint() {
+  auton_steps[selected_step]["stepType"] = "waypoint";
   QLength x = chassis->getState().x;
   QLength y = chassis->getState().y;
   QAngle theta = chassis->getState().theta;
-  auton_steps[selected_step]["x"] = std::to_string(x.convert(inch));
-  auton_steps[selected_step]["y"] = std::to_string(y.convert(inch));
-  auton_steps[selected_step]["theta"] = std::to_string(theta.convert(degree));
+  auton_steps[selected_step]["x"] = x.convert(inch);
+  auton_steps[selected_step]["y"] = y.convert(inch);
+  auton_steps[selected_step]["theta"] = theta.convert(degree);
 }
 
 // void jsonTest() {

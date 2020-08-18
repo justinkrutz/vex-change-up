@@ -43,7 +43,7 @@ void motorTask()
 
 void driveToPosition(QLength x, QLength y, QAngle theta, QLength offset) {
   chassis->driveToPoint({x, y}, false, offset);
-  chassis->turnToAngle({theta});
+  // chassis->turnToAngle({theta});
 }
 
 void intakeBalls(int balls) {
