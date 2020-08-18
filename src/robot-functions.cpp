@@ -14,32 +14,46 @@ namespace robotfunctions {
 
 controllerbuttons::MacroGroup test_group;
 
+template <typename T> int sgn(T val) {
+  if (val < 0) {
+    return -1;
+  } else {
+    return 1;
+  }
+}
+
 void motorTask()
 {
   std::shared_ptr<AbstractMotor> drive_fl = x_model->getTopLeftMotor();
   std::shared_ptr<AbstractMotor> drive_fr = x_model->getTopRightMotor();
   std::shared_ptr<AbstractMotor> drive_bl = x_model->getBottomLeftMotor();
   std::shared_ptr<AbstractMotor> drive_br = x_model->getBottomRightMotor();
-  double forward;
-  double strafe;
-  double turn;
-  double m;
   while(1)
   {
-  double forward = SetDrive.forward + master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
-  double strafe  = SetDrive.strafe  + master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
-  double turn    = SetDrive.turn    + master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
+  double ctr_f = master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
+  double ctr_s = -master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
+  double ctr_t = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
+  double theta = 0;
+  if (ctr_f != 0) {
+    theta = atan(ctr_s / ctr_f);
+  } else {
+    theta = 90 * degreeToRadian * sgn(ctr_s);
+  }
+  double move_m = sqrt(pow(ctr_f, 2) + pow(ctr_s, 2)) * sgn(ctr_f);
+  double forward = move_m * cos(theta + chassis->getState().theta.convert(radian));
+  double strafe  = move_m * -sin(theta + chassis->getState().theta.convert(radian));
+  double turn    = ctr_t;
 
   if(fabs(forward) + fabs(strafe) + fabs(turn) > 100) {
-    m = 100 / (fabs(forward) + fabs(strafe) + fabs(turn));
+    double m = 100 / (fabs(forward) + fabs(strafe) + fabs(turn));
     forward = forward * m;
     strafe  = strafe  * m;
     turn    = turn    * m;
   }
-  drive_fl->moveVelocity((forward + strafe + turn) * 0.5);
-  drive_fr->moveVelocity((forward - strafe - turn) * 0.5);
-  drive_bl->moveVelocity((forward - strafe + turn) * 0.5);
-  drive_br->moveVelocity((forward + strafe - turn) * 0.5);
+  drive_fl->moveVelocity((forward + strafe + turn) * 2);
+  drive_fr->moveVelocity((forward - strafe - turn) * 2);
+  drive_bl->moveVelocity((forward - strafe + turn) * 2);
+  drive_br->moveVelocity((forward + strafe - turn) * 2);
   pros::delay(5);
   }
 }
@@ -75,9 +89,9 @@ controllerbuttons::Macro count_up(
 controllerbuttons::Macro drive_test(
     [](){
       while (true) {
-        SetDrive.forward = cos(chassis->getState().theta.convert(radian));
-        SetDrive.strafe = -sin(chassis->getState().theta.convert(radian));
-        SetDrive.turn = 1;
+        SetDrive.forward = cos(chassis->getState().theta.convert(radian)) * 100;
+        SetDrive.strafe = -sin(chassis->getState().theta.convert(radian)) * 100;
+        SetDrive.turn = 100;
         controllerbuttons::wait(5);
       }
     }, 
