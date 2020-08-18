@@ -185,7 +185,7 @@ void AutonManager::save() {
 }
 
 void AutonManager::nextStep() {
-  selected_step = std::min(selected_step + 1, int(auton_steps.size()));
+  selected_step = std::min(selected_step + 1, int(auton_steps.size() - 1));
 }
 
 void AutonManager::previousStep() {

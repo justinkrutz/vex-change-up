@@ -215,24 +215,12 @@ class MenuCreateAuton : public MenuItem {
         std::string x_str     = std::to_string((int)x);
         std::string y_str     = std::to_string((int)y);
         std::string theta_str = std::to_string((int)theta);
-        // controller_print_array[0] = sprintf("x: %sy: %st: %s", 
-        //     x_str.c_str(),
-        //     y_str.c_str(),
-        //     theta_str.c_str());
-        // controller_print_array[0] = "x: " + x_str
-        //     + "y: " + y_str
-        //     + "t: " + theta_str;
-        std::string chassis_pos = "x " + x_str + " y " + y_str + " t " + theta_str;
-        // chassis_pos.resize(19);
-        controller_print_array[0] = chassis_pos;
-        pros::delay(50);
-        // controller_print_array[1] = "step: " + std::to_string(auton.selected_step);
-        // pros::delay(50);
-        // controller_print_array[2] = "";
-        // // controller_print_array[2] = "x: " + std::to_string(double(auton.auton_steps["x"]))
-        // //     + "y: " + std::to_string(double(auton.auton_steps["y"]))
-        // //     + "t: " + std::to_string(double(auton.auton_steps["theta"]));
-        pros::delay(50);
+        controller_print_array[0] = "x: " + x_str + " y: " + y_str + " t: " + theta_str;
+        controller_print_array[1] = "step " + std::to_string(auton.selected_step + 1) + " of " + std::to_string(auton.auton_steps.size());
+        // controller_print_array[2] = "x: " + std::to_string((int)auton.auton_steps["x"])
+        //     + " y: " + std::to_string((int)auton.auton_steps["y"])
+        //     + " t: " + std::to_string((int)auton.auton_steps["theta"]);
+        pros::delay(150);
       }
     });
   }
