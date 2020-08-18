@@ -30,7 +30,7 @@ struct {
   double forward;
   double strafe;
   double turn;
-} SetDrive;
+} set_drive;
 
 void driveToPosition(QLength x, QLength y, QAngle theta, QLength offset = 0_in);
 void intakeBalls(int balls);

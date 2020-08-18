@@ -14,7 +14,7 @@ namespace robotfunctions {
 
 controllerbuttons::MacroGroup test_group;
 
-template <typename T> int sgn(T val) {
+template <typename T> int sgn(T &&val) {
   if (val < 0) {
     return -1;
   } else {
@@ -30,19 +30,23 @@ void motorTask()
   std::shared_ptr<AbstractMotor> drive_br = x_model->getBottomRightMotor();
   while(1)
   {
-  double ctr_f = master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
-  double ctr_s = -master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
-  double ctr_t = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
-  double theta = 0;
-  if (ctr_f != 0) {
-    theta = atan(ctr_s / ctr_f);
-  } else {
-    theta = 90 * degreeToRadian * sgn(ctr_s);
-  }
-  double move_m = sqrt(pow(ctr_f, 2) + pow(ctr_s, 2)) * sgn(ctr_f);
-  double forward = move_m * cos(theta + chassis->getState().theta.convert(radian));
-  double strafe  = move_m * -sin(theta + chassis->getState().theta.convert(radian));
-  double turn    = ctr_t;
+  // double ctr_f = master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
+  // double ctr_s = -master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
+  // double ctr_t = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
+  // double theta = 0;
+  // if (ctr_f != 0) {
+  //   theta = atan(ctr_s / ctr_f);
+  // } else {
+  //   theta = 90 * degreeToRadian * sgn(ctr_s);
+  // }
+  // double move_m = sqrt(pow(ctr_f, 2) + pow(ctr_s, 2)) * sgn(ctr_f);
+  // double forward = move_m * cos(chassis->getState().theta.convert(radian) + theta);
+  // double strafe  = move_m * -sin(chassis->getState().theta.convert(radian) + theta);
+  // double turn    = ctr_t;
+
+  double forward = set_drive.forward + master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
+  double strafe  = set_drive.strafe  + master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+  double turn    = set_drive.turn    + master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
 
   if(fabs(forward) + fabs(strafe) + fabs(turn) > 100) {
     double m = 100 / (fabs(forward) + fabs(strafe) + fabs(turn));
@@ -60,10 +64,10 @@ void motorTask()
 
 void driveToPosition(QLength x, QLength y, QAngle theta, QLength offset) {
   chassis->driveToPoint({x, y}, false, offset);
-  // chassis->turnToAngle({theta});
-  // SetDrive.forward = cos(chassis->getState().theta.convert(radian));
-  // SetDrive.strafe = sin(chassis->getState().theta.convert(radian));
-  // SetDrive.turn = 1;
+  chassis->turnToAngle({theta});
+  set_drive.forward = cos(chassis->getState().theta.convert(radian));
+  set_drive.strafe = sin(chassis->getState().theta.convert(radian));
+  set_drive.turn = 100;
 }
 
 void intakeBalls(int balls) {
@@ -89,16 +93,18 @@ controllerbuttons::Macro count_up(
 controllerbuttons::Macro drive_test(
     [](){
       while (true) {
-        SetDrive.forward = cos(chassis->getState().theta.convert(radian)) * 100;
-        SetDrive.strafe = -sin(chassis->getState().theta.convert(radian)) * 100;
-        SetDrive.turn = 100;
+        double move_speed = 100;
+        double turn_speed = 100;
+        set_drive.forward = move_speed * cos(chassis->getState().theta.convert(radian)) * 100;
+        set_drive.strafe = move_speed * -sin(chassis->getState().theta.convert(radian)) * 100;
+        set_drive.turn = turn_speed;
         controllerbuttons::wait(5);
       }
     }, 
     [](){
-      SetDrive.forward = 0;
-      SetDrive.strafe = 0;
-      SetDrive.turn = 0;
+      set_drive.forward = 0;
+      set_drive.strafe = 0;
+      set_drive.turn = 0;
     },
     {&test_group});
 
