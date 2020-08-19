@@ -21,32 +21,46 @@ template <typename T> int sgn(T &&val) {
   }
 }
 
-int rampMath(double input, double totalRange, int startOutput, int maxOutput, int endOutput, double rampUpP = 0.1, double rampDownP = 0.12) {
+struct rampMathSettings {
+  int start_output;
+  int max_output;
+  int end_output;
+  double ramp_up_p;
+  double ramp_down_p;
+};
+
+int rampMath(double input, double total_range, rampMathSettings s) {
   int output;
-  double rampUpRange = ((maxOutput - startOutput)*rampUpP);
-  double rampDownRange = ((maxOutput - endOutput)*rampDownP);
-  double rampUpMuliplier = ((maxOutput - startOutput) / rampUpRange);
-  double rampDownMuliplier = ((maxOutput - endOutput) / rampDownRange);
-      if (fabs(input) < fabs(rampUpRange)) {
-        output = ((input * rampUpMuliplier) + startOutput);
-      } else if (fabs(input) >= (fabs(totalRange) - fabs(rampDownRange))) {
-        output = ((totalRange - input) * rampDownMuliplier + endOutput);
+  double ramp_up_range = ((s.max_output - s.start_output)*s.ramp_up_p);
+  double ramp_down_range = ((s.max_output - s.end_output)*s.ramp_down_p);
+  double ramp_up_muliplier = ((s.max_output - s.start_output) / ramp_up_range);
+  double ramp_down_muliplier = ((s.max_output - s.end_output) / ramp_down_range);
+      if (fabs(input) < fabs(ramp_up_range)) {
+        output = ((input * ramp_up_muliplier) + s.start_output);
+      } else if (fabs(input) >= (fabs(total_range) - fabs(ramp_down_range))) {
+        output = ((total_range - input) * ramp_down_muliplier + s.end_output);
       } else {
-        output = (maxOutput);
+        output = (s.max_output);
       }
   return output;
 }
 
 bool targetPositionEnabled = false;
 
-struct position {
+struct Position {
   QLength x;
   QLength y;
   QAngle theta;
   QLength offset;
+  // robotfunctions::Position starting_pos;
 };
 
-std::vector<position> targets = {};
+struct Target {
+  Position start;
+  Position end;
+};
+
+std::queue<Target> targets = {};
 
 // namespace positiontarget{
 //   QLength x;
@@ -75,12 +89,20 @@ void motorTask()
 
   if (targetPositionEnabled) {
     if (targets.size() > 1) {
-      // slow down and hold position
-    } else {
-      // don't slow down
-      // if () {
-      //   targets.erase(targets.begin());
+      driveToPosition(targets.front(),
+                      {100, 100, 100, 8, 8},
+                      {100, 100, 100, 100, 100});
+      
+      Point point{targets.front().end.x, targets.front().end.y};
+      auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(point, chassis->getState());
+      // if (magnitude > ) { // if close to position
+      //   targets.pop();
       // }
+    } else {
+      driveToPosition(targets.front(),
+                      {100, 100, 20, 8, 8},
+                      {100, 100, 20, 100, 100});
+      // slow down and hold position
     }
   }
 
@@ -116,47 +138,22 @@ void motorTask()
   }
 }
 
-void driveToPosition(QLength x, QLength y, QAngle theta, QLength offset) {
-  Point point{x, y};
+void driveToPosition(Target target, rampMathSettings move_settings, rampMathSettings turn_settings) {
+  Point point{target.end.x, target.end.y};
 
   auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(point, chassis->getState());
-  // direction = 45_deg;
-  direction;
+  OdomState start_state {target.start.x, target.start.y, target.start.theta};
+  auto [start_magnitude, start_direction] = OdomMath::computeDistanceAndAngleToPoint(point, start_state);
+  // double move_speed = std::min(100.0, magnitude.convert(inch)*8);
+  double move_speed = rampMath(magnitude.convert(inch), start_magnitude.convert(inch), move_settings);
+  double turn_speed = rampMath(direction.convert(radian), start_direction.convert(radian), turn_settings);
 
-  double move_speed = std::min(100.0, magnitude.convert(inch)*8);
-  // double move_speed = 50;
-  double turn_speed = 100 * (theta - chassis->getState().theta).convert(radian);
-  // magnitude.convert(inch)
-  controllermenu::controller_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
-  controllermenu::controller_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
-  // controllermenu::controller_print_array[1] = "y: " + y_str;
+  // double turn_speed = 100 * (target.end.theta - chassis->getState().theta).convert(radian);
+  // controllermenu::controller_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
+  // controllermenu::controller_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
   set_drive.forward = move_speed * cos(direction.convert(radian));
   set_drive.strafe  = move_speed * sin(direction.convert(radian));
   set_drive.turn    = turn_speed;
-
-
-  // double ctr_f;
-  // double ctr_s;
-  // double ctr_t;
-  // chassis->driveToPoint({x, y}, false, offset);
-  // chassis->turnToAngle({theta});
-  // set_drive.forward = cos(chassis->getState().theta.convert(radian));
-  // set_drive.strafe = sin(chassis->getState().theta.convert(radian));
-
-  // double x_pos = chassis->getState().x.convert(inch);
-  // double y_pos = chassis->getState().y.convert(inch);
-  // double direction = 0;
-  // if (ctr_f != 0) {
-  //   direction = atan(ctr_s / ctr_f);
-  // } else {
-  //   direction = 90 * degreeToRadian * sgn(ctr_s);
-  // }
-  // double magnitude = sqrt(pow(ctr_f, 2) + pow(ctr_s, 2)) * sgn(ctr_f);
-
-  // set_drive.turn = 100;
-  // set_drive.forward = move_speed * cos(chassis->getState().theta.convert(radian));
-  // set_drive.strafe = move_speed * -sin(chassis->getState().theta.convert(radian));
-  // set_drive.turn = turn_speed;
 }
 
 void intakeBalls(int balls) {
