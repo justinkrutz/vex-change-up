@@ -2,6 +2,7 @@
 
 #include "robot-config.h"
 #include "controller-buttons.h"
+#include "controller-menu.h"
 #include "robot-functions.h"
 #include "autonomous.h"
 
@@ -12,14 +13,55 @@ namespace robotfunctions {
 // controllerbuttons::MacroGroup test3;
 // controllerbuttons::MacroGroup abort;
 
-controllerbuttons::MacroGroup test_group;
-
 template <typename T> int sgn(T &&val) {
   if (val < 0) {
     return -1;
   } else {
     return 1;
   }
+}
+
+int rampMath(double input, double totalRange, int startOutput, int maxOutput, int endOutput, double rampUpP = 0.1, double rampDownP = 0.12) {
+  int output;
+  double rampUpRange = ((maxOutput - startOutput)*rampUpP);
+  double rampDownRange = ((maxOutput - endOutput)*rampDownP);
+  double rampUpMuliplier = ((maxOutput - startOutput) / rampUpRange);
+  double rampDownMuliplier = ((maxOutput - endOutput) / rampDownRange);
+      if (fabs(input) < fabs(rampUpRange)) {
+        output = ((input * rampUpMuliplier) + startOutput);
+      } else if (fabs(input) >= (fabs(totalRange) - fabs(rampDownRange))) {
+        output = ((totalRange - input) * rampDownMuliplier + endOutput);
+      } else {
+        output = (maxOutput);
+      }
+  return output;
+}
+
+bool targetPositionEnabled = false;
+
+struct position {
+  QLength x;
+  QLength y;
+  QAngle theta;
+  QLength offset;
+};
+
+std::vector<position> targets = {};
+
+// namespace positiontarget{
+//   QLength x;
+//   QLength y;
+//   QAngle theta;
+//   QLength offset;
+// } // positiontarget
+
+void setPositionTarget(QLength x, QLength y, QAngle theta, QLength offset) {
+  // positiontarget::x = x;
+  // positiontarget::y = y;
+  // positiontarget::theta = theta;
+  // positiontarget::offset = offset;
+
+  targetPositionEnabled = true;
 }
 
 void motorTask()
@@ -30,6 +72,18 @@ void motorTask()
   std::shared_ptr<AbstractMotor> drive_br = x_model->getBottomRightMotor();
   while(1)
   {
+
+  if (targetPositionEnabled) {
+    if (targets.size() > 1) {
+      // slow down and hold position
+    } else {
+      // don't slow down
+      // if () {
+      //   targets.erase(targets.begin());
+      // }
+    }
+  }
+
   // double ctr_f = master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
   // double ctr_s = -master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
   // double ctr_t = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
@@ -63,11 +117,46 @@ void motorTask()
 }
 
 void driveToPosition(QLength x, QLength y, QAngle theta, QLength offset) {
-  chassis->driveToPoint({x, y}, false, offset);
-  chassis->turnToAngle({theta});
-  set_drive.forward = cos(chassis->getState().theta.convert(radian));
-  set_drive.strafe = sin(chassis->getState().theta.convert(radian));
-  set_drive.turn = 100;
+  Point point{x, y};
+
+  auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(point, chassis->getState());
+  // direction = 45_deg;
+  direction;
+
+  double move_speed = std::min(100.0, magnitude.convert(inch)*8);
+  // double move_speed = 50;
+  double turn_speed = 100 * (theta - chassis->getState().theta).convert(radian);
+  // magnitude.convert(inch)
+  controllermenu::controller_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
+  controllermenu::controller_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
+  // controllermenu::controller_print_array[1] = "y: " + y_str;
+  set_drive.forward = move_speed * cos(direction.convert(radian));
+  set_drive.strafe  = move_speed * sin(direction.convert(radian));
+  set_drive.turn    = turn_speed;
+
+
+  // double ctr_f;
+  // double ctr_s;
+  // double ctr_t;
+  // chassis->driveToPoint({x, y}, false, offset);
+  // chassis->turnToAngle({theta});
+  // set_drive.forward = cos(chassis->getState().theta.convert(radian));
+  // set_drive.strafe = sin(chassis->getState().theta.convert(radian));
+
+  // double x_pos = chassis->getState().x.convert(inch);
+  // double y_pos = chassis->getState().y.convert(inch);
+  // double direction = 0;
+  // if (ctr_f != 0) {
+  //   direction = atan(ctr_s / ctr_f);
+  // } else {
+  //   direction = 90 * degreeToRadian * sgn(ctr_s);
+  // }
+  // double magnitude = sqrt(pow(ctr_f, 2) + pow(ctr_s, 2)) * sgn(ctr_f);
+
+  // set_drive.turn = 100;
+  // set_drive.forward = move_speed * cos(chassis->getState().theta.convert(radian));
+  // set_drive.strafe = move_speed * -sin(chassis->getState().theta.convert(radian));
+  // set_drive.turn = turn_speed;
 }
 
 void intakeBalls(int balls) {
@@ -93,11 +182,7 @@ controllerbuttons::Macro count_up(
 controllerbuttons::Macro drive_test(
     [](){
       while (true) {
-        double move_speed = 100;
-        double turn_speed = 100;
-        set_drive.forward = move_speed * cos(chassis->getState().theta.convert(radian)) * 100;
-        set_drive.strafe = move_speed * -sin(chassis->getState().theta.convert(radian)) * 100;
-        set_drive.turn = turn_speed;
+        driveToPosition(0_in, 0_in, 0_deg);
         controllerbuttons::wait(5);
       }
     }, 

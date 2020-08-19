@@ -34,7 +34,7 @@ void initialize() {
         ADIEncoder{'A', 'B'},  // right encoder in ADI ports C & D (reversed)
         ADIEncoder{'C', 'D'}  // middle encoder in ADI ports E & F
     )
-    .withOdometry({{2.75_in, 11.3_in, 4.8_in, 2.75_in}, quadEncoderTPR}, StateMode::CARTESIAN)
+    .withOdometry({{2.75_in, 11.3_in, 4.8_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
     .buildOdometry();
 
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
@@ -42,7 +42,7 @@ void initialize() {
   pros::Task(robotfunctions::motorTask);
   robotfunctions::set_callbacks();
   AutonManager::loadAutonsFromSD();
-  // controllermenu::init();
+  controllermenu::init();
 }
 
 /**
@@ -95,6 +95,15 @@ void opcontrol() {
   Controller controller;
   while (true) {
     controllerbuttons::run_buttons();
+    double x = chassis->getState().x.convert(inch);
+    double y = chassis->getState().y.convert(inch);
+    double theta = chassis->getState().theta.convert(degree);
+    std::string x_str     = std::to_string(x);
+    std::string y_str     = std::to_string(y);
+    std::string theta_str = std::to_string(theta);
+    // controllermenu::controller_print_array[0] = "x: " + x_str;
+    // controllermenu::controller_print_array[1] = "y: " + y_str;
+    controllermenu::controller_print_array[2] = "t: " + theta_str;
 
     // QLength x = chassis->getState().x;
     // QLength y = chassis->getState().y;

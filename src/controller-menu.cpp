@@ -348,13 +348,13 @@ void createFolderStructure() {
 }
 
 void init() {
-  createFolderStructure();
+  // createFolderStructure();
   master.clear();
   pros::delay(50);
-  current_item = root_folder;
+  // current_item = root_folder;
   pros::Task controller_print_task (controller_print);
-  current_item->set_callbacks();
-  current_item->print();
+  // current_item->set_callbacks();
+  // current_item->print();
 }
 
 } // namespace controllermenu
