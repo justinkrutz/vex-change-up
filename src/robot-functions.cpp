@@ -8,10 +8,7 @@
 
 
 namespace robotfunctions {
-// controllerbuttons::MacroGroup test1;
-// controllerbuttons::MacroGroup test2;
-// controllerbuttons::MacroGroup test3;
-// controllerbuttons::MacroGroup abort;
+controllerbuttons::MacroGroup test_group;
 
 template <typename T> int sgn(T &&val) {
   if (val < 0) {
@@ -48,12 +45,14 @@ int rampMath(double input, double total_range, rampMathSettings s) {
 bool targetPositionEnabled = false;
 
 struct Position {
-  QLength x;
-  QLength y;
-  QAngle theta;
-  QLength offset;
+  QLength x = 0_in;
+  QLength y = 0_in;
+  QAngle theta = 0_deg;
+  QLength offset = 0_in;
   // robotfunctions::Position starting_pos;
 };
+
+OdomState starting_position;
 
 struct Target {
   Position start;
@@ -70,13 +69,29 @@ std::queue<Target> targets = {};
 // } // positiontarget
 
 void setPositionTarget(QLength x, QLength y, QAngle theta, QLength offset) {
-  // positiontarget::x = x;
-  // positiontarget::y = y;
-  // positiontarget::theta = theta;
-  // positiontarget::offset = offset;
-
+  targets.push({x, y, theta, offset});
   targetPositionEnabled = true;
 }
+
+
+
+void driveToPosition(Target target, rampMathSettings move_settings, rampMathSettings turn_settings) {
+  Point point{target.end.x, target.end.y};
+  auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(point, chassis->getState());
+  OdomState start_state {target.start.x, target.start.y, target.start.theta};
+  auto [start_magnitude, start_direction] = OdomMath::computeDistanceAndAngleToPoint(point, start_state);
+  double move_speed = rampMath(magnitude.convert(inch), start_magnitude.convert(inch), move_settings);
+  double turn_speed = rampMath(direction.convert(radian), start_direction.convert(radian), turn_settings);
+  set_drive.forward = move_speed * cos(direction.convert(radian));
+  set_drive.strafe  = move_speed * sin(direction.convert(radian));
+  set_drive.turn    = turn_speed;
+  controllermenu::controller_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
+  controllermenu::controller_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
+}
+
+
+
+
 
 void motorTask()
 {
@@ -88,20 +103,26 @@ void motorTask()
   {
 
   if (targetPositionEnabled) {
-    if (targets.size() > 1) {
+    if (targets.size() == 0) {
+      set_drive.forward = 0;
+      set_drive.strafe = 0;
+      set_drive.turn = 0;
+    } else if (targets.size() == 1) {
+      driveToPosition(targets.front(),
+                      {100, 100, 20, 8, 8},
+                      {100, 100, 20, 100, 100});
+    } else {
       driveToPosition(targets.front(),
                       {100, 100, 100, 8, 8},
                       {100, 100, 100, 100, 100});
       
-      Point point{targets.front().end.x, targets.front().end.y};
-      auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(point, chassis->getState());
-      // if (magnitude > ) { // if close to position
-      //   targets.pop();
-      // }
-    } else {
-      driveToPosition(targets.front(),
-                      {100, 100, 20, 8, 8},
-                      {100, 100, 20, 100, 100});
+      OdomState state_target{targets.front().end.x, targets.front().end.y, targets.front().end.theta};
+      Point starting_point{targets.front().end.x, targets.front().end.y};
+      auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, state_target);
+      auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
+      if (magnitude_real + 2_in >= magnitude_target && direction_real + 10_deg >= direction_target) {
+        targets.pop();
+      }
       // slow down and hold position
     }
   }
@@ -138,23 +159,6 @@ void motorTask()
   }
 }
 
-void driveToPosition(Target target, rampMathSettings move_settings, rampMathSettings turn_settings) {
-  Point point{target.end.x, target.end.y};
-
-  auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(point, chassis->getState());
-  OdomState start_state {target.start.x, target.start.y, target.start.theta};
-  auto [start_magnitude, start_direction] = OdomMath::computeDistanceAndAngleToPoint(point, start_state);
-  // double move_speed = std::min(100.0, magnitude.convert(inch)*8);
-  double move_speed = rampMath(magnitude.convert(inch), start_magnitude.convert(inch), move_settings);
-  double turn_speed = rampMath(direction.convert(radian), start_direction.convert(radian), turn_settings);
-
-  // double turn_speed = 100 * (target.end.theta - chassis->getState().theta).convert(radian);
-  // controllermenu::controller_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
-  // controllermenu::controller_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
-  set_drive.forward = move_speed * cos(direction.convert(radian));
-  set_drive.strafe  = move_speed * sin(direction.convert(radian));
-  set_drive.turn    = turn_speed;
-}
 
 void intakeBalls(int balls) {
 }
@@ -178,15 +182,16 @@ controllerbuttons::Macro count_up(
 
 controllerbuttons::Macro drive_test(
     [](){
-      while (true) {
-        driveToPosition(0_in, 0_in, 0_deg);
-        controllerbuttons::wait(5);
-      }
+      // while (true) {
+      //   driveToPosition(0_in, 0_in, 0_deg);
+      //   controllerbuttons::wait(5);
+      // }
+      setPositionTarget(10 * targets.size() * inch, 0_in, 0_deg, 0_in);
     }, 
     [](){
-      set_drive.forward = 0;
-      set_drive.strafe = 0;
-      set_drive.turn = 0;
+      // set_drive.forward = 0;
+      // set_drive.strafe = 0;
+      // set_drive.turn = 0;
     },
     {&test_group});
 
