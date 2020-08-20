@@ -162,14 +162,14 @@ void AutonManager::run() {
       QLength x = step.value()["x"] * inch;
       QLength y = step.value()["y"] * inch;
       QAngle theta = step.value()["theta"] * degree;
-      robotfunctions::driveToPosition(x, y, theta);
+      // robotfunctions::driveToPosition(x, y, theta);
       last_waypoint = step.value();
     // }
     } else if (step.value()["stepType"] == "driveToBallAndIntake") {
       QLength x = last_waypoint["x"] * inch;
       QLength y = last_waypoint["y"] * inch;
       QAngle theta = last_waypoint["theta"] * degree;
-      robotfunctions::driveToPosition(x, y, theta);
+      // robotfunctions::driveToPosition(x, y, theta);
       robotfunctions::intakeBalls(step.value()["ballsIn"]);
       robotfunctions::intakeBalls(step.value()["ballsOut"]);
     } else if (step.value()["stepType"] == "driveToGoalAndCycle") {

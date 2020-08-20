@@ -32,7 +32,7 @@ struct {
   double turn;
 } set_drive;
 
-void driveToPosition(QLength x, QLength y, QAngle theta, QLength offset = 0_in);
+// void driveToPosition(QLength x, QLength y, QAngle theta, QLength offset = 0_in);
 void intakeBalls(int balls);
 void scoreBalls(int balls);
 

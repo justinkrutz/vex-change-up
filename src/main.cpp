@@ -38,6 +38,7 @@ void initialize() {
     .buildOdometry();
 
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
+  x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
 
   pros::Task(robotfunctions::motorTask);
   robotfunctions::set_callbacks();
@@ -103,7 +104,7 @@ void opcontrol() {
     std::string theta_str = std::to_string(theta);
     // controllermenu::controller_print_array[0] = "x: " + x_str;
     // controllermenu::controller_print_array[1] = "y: " + y_str;
-    controllermenu::controller_print_array[2] = "t: " + theta_str;
+    // controllermenu::controller_print_array[2] = "t: " + theta_str;
 
     // QLength x = chassis->getState().x;
     // QLength y = chassis->getState().y;

@@ -348,11 +348,11 @@ void createFolderStructure() {
 }
 
 void init() {
-  // createFolderStructure();
   master.clear();
   pros::delay(50);
-  // current_item = root_folder;
   pros::Task controller_print_task (controller_print);
+  // createFolderStructure();
+  // current_item = root_folder;
   // current_item->set_callbacks();
   // current_item->print();
 }

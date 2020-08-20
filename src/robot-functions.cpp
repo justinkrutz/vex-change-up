@@ -20,7 +20,7 @@ template <typename T> int sgn(T &&val) {
 
 struct rampMathSettings {
   int start_output;
-  int max_output;
+  int mid_output;
   int end_output;
   double ramp_up_p;
   double ramp_down_p;
@@ -28,16 +28,17 @@ struct rampMathSettings {
 
 int rampMath(double input, double total_range, rampMathSettings s) {
   int output;
-  double ramp_up_range = ((s.max_output - s.start_output)*s.ramp_up_p);
-  double ramp_down_range = ((s.max_output - s.end_output)*s.ramp_down_p);
-  double ramp_up_muliplier = ((s.max_output - s.start_output) / ramp_up_range);
-  double ramp_down_muliplier = ((s.max_output - s.end_output) / ramp_down_range);
-      if (fabs(input) < fabs(ramp_up_range)) {
-        output = ((input * ramp_up_muliplier) + s.start_output);
-      } else if (fabs(input) >= (fabs(total_range) - fabs(ramp_down_range))) {
-        output = ((total_range - input) * ramp_down_muliplier + s.end_output);
+  double ramp_up_range = (s.mid_output - s.start_output)*s.ramp_up_p;
+  double ramp_down_range = (s.mid_output - s.end_output)*s.ramp_down_p;
+  double ramp_up_muliplier = (s.mid_output - s.start_output) / ramp_up_range;
+  double ramp_down_muliplier = (s.mid_output - s.end_output) / ramp_down_range;
+  double ramp_ramge_muliplier = std::min(1.0, total_range / (ramp_up_range + ramp_down_range));
+      if (fabs(input) < fabs(ramp_up_range) * ramp_ramge_muliplier) {
+        output = input * ramp_up_muliplier + s.start_output;
+      } else if (fabs(input) >= (total_range - ramp_down_range) * ramp_ramge_muliplier) {
+        output = (total_range - input) * ramp_down_muliplier + s.end_output;
       } else {
-        output = (s.max_output);
+        output = s.mid_output;
       }
   return output;
 }
@@ -49,10 +50,15 @@ struct Position {
   QLength y = 0_in;
   QAngle theta = 0_deg;
   QLength offset = 0_in;
-  // robotfunctions::Position starting_pos;
+  bool is_new = true;
+  OdomState starting_state;
 };
 
-OdomState starting_position;
+// target pos
+// at start:
+//   starting pos
+
+
 
 struct Target {
   Position start;
@@ -68,26 +74,87 @@ std::queue<Target> targets = {};
 //   QLength offset;
 // } // positiontarget
 
-void setPositionTarget(QLength x, QLength y, QAngle theta, QLength offset) {
-  targets.push({x, y, theta, offset});
-  targetPositionEnabled = true;
-}
+namespace DriveToPosition {
+  std::queue<Position> targets;
+  bool targetPositionEnabled = false;
+  
+  OdomState starting_position;
+  rampMathSettings move_settings;
+  rampMathSettings turn_settings;
 
+  double forward = 0;
+  double strafe  = 0;
+  double turn    = 0;
 
+  void addPositionTarget(Position position) {
+    // position.
+    targets.push(position);
+    targetPositionEnabled = true;
+  };
 
-void driveToPosition(Target target, rampMathSettings move_settings, rampMathSettings turn_settings) {
-  Point point{target.end.x, target.end.y};
-  auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(point, chassis->getState());
-  OdomState start_state {target.start.x, target.start.y, target.start.theta};
-  auto [start_magnitude, start_direction] = OdomMath::computeDistanceAndAngleToPoint(point, start_state);
-  double move_speed = rampMath(magnitude.convert(inch), start_magnitude.convert(inch), move_settings);
-  double turn_speed = rampMath(direction.convert(radian), start_direction.convert(radian), turn_settings);
-  set_drive.forward = move_speed * cos(direction.convert(radian));
-  set_drive.strafe  = move_speed * sin(direction.convert(radian));
-  set_drive.turn    = turn_speed;
-  controllermenu::controller_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
-  controllermenu::controller_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
-}
+  void driveToPosition() {
+    Position target = targets.front();
+    Point target_point{target.x, target.y};
+    auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, chassis->getState());
+
+    OdomState target_state{target.x, target.y, target.theta};
+    Point starting_point{target.starting_state.x, target.starting_state.y};
+    auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
+    auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
+    // auto [start_magnitude, start_direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, starting_position);
+
+    double move_speed = rampMath(magnitude_real.convert(inch), magnitude_target.convert(inch), {20, 100, 20, 0.2, 0.2});
+    // double turn_speed = rampMath(direction.convert(radian), start_direction.convert(radian), turn_settings);
+    // double move_speed = std::min(100.0, magnitude.convert(inch)*10);
+    // double move_speed = 0;
+    double turn_speed = std::min(100.0, 100 * (target.theta - chassis->getState().theta).convert(radian));
+    forward = move_speed * cos(direction.convert(radian));
+    strafe  = move_speed * sin(direction.convert(radian));
+    turn    = turn_speed;
+    controllermenu::controller_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
+    controllermenu::controller_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
+  }
+
+  void update() {
+    controllermenu::controller_print_array[2] = "targets: " + std::to_string(targets.size());
+    if (targetPositionEnabled) {
+      if (targets.size() == 0) {
+        forward = 0;
+        strafe = 0;
+        turn = 0;
+      // } else if (targets.size() == 1) {
+      //   // driveToPosition(targets.front(),
+      //   //                 {100, 100, 20, 8, 8},
+      //   //                 {100, 100, 20, 100, 100});
+      //   driveToPosition();
+      //   // move_settings = {100, 100, 20, 8, 8},
+      //   // turn_settings = {100, 100, 20, 100, 100};
+      } else {
+        if (targets.front().is_new) {
+          targets.front().is_new = false;
+          targets.front().starting_state = chassis->getState();
+        }
+        Position target = targets.front();
+        driveToPosition();
+        // move_settings = {100, 100, 100, 8, 8},
+        // turn_settings = {100, 100, 100, 100, 100};
+
+        // if (targets.size() > 1) {
+        // move_settings.end_output = 100;
+          OdomState target_state{target.x, target.y, target.theta};
+          Point starting_point{target.starting_state.x, target.starting_state.y};
+          auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
+          auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
+          if (magnitude_real >= magnitude_target) {
+            targets.pop();
+          }
+        // } else {
+          // move_settings.end_output = 1;
+        // }
+      }
+    }
+  }
+};
 
 
 
@@ -102,60 +169,37 @@ void motorTask()
   while(1)
   {
 
-  if (targetPositionEnabled) {
-    if (targets.size() == 0) {
-      set_drive.forward = 0;
-      set_drive.strafe = 0;
-      set_drive.turn = 0;
-    } else if (targets.size() == 1) {
-      driveToPosition(targets.front(),
-                      {100, 100, 20, 8, 8},
-                      {100, 100, 20, 100, 100});
-    } else {
-      driveToPosition(targets.front(),
-                      {100, 100, 100, 8, 8},
-                      {100, 100, 100, 100, 100});
-      
-      OdomState state_target{targets.front().end.x, targets.front().end.y, targets.front().end.theta};
-      Point starting_point{targets.front().end.x, targets.front().end.y};
-      auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, state_target);
-      auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
-      if (magnitude_real + 2_in >= magnitude_target && direction_real + 10_deg >= direction_target) {
-        targets.pop();
-      }
-      // slow down and hold position
+    // double ctr_f = master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
+    // double ctr_s = -master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
+    // double ctr_t = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
+    // double theta = 0;
+    // if (ctr_f != 0) {
+    //   theta = atan(ctr_s / ctr_f);
+    // } else {
+    //   theta = 90 * degreeToRadian * sgn(ctr_s);
+    // }
+    // double move_m = sqrt(pow(ctr_f, 2) + pow(ctr_s, 2)) * sgn(ctr_f);
+    // double forward = move_m * cos(chassis->getState().theta.convert(radian) + theta);
+    // double strafe  = move_m * -sin(chassis->getState().theta.convert(radian) + theta);
+    // double turn    = ctr_t;
+
+    DriveToPosition::update();
+
+    double forward = DriveToPosition::forward + master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
+    double strafe  = DriveToPosition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
+    double turn    = DriveToPosition::turn    + master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
+
+    if(fabs(forward) + fabs(strafe) + fabs(turn) > 100) {
+      double m = 100 / (fabs(forward) + fabs(strafe) + fabs(turn));
+      forward = forward * m;
+      strafe  = strafe  * m;
+      turn    = turn    * m;
     }
-  }
-
-  // double ctr_f = master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
-  // double ctr_s = -master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
-  // double ctr_t = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
-  // double theta = 0;
-  // if (ctr_f != 0) {
-  //   theta = atan(ctr_s / ctr_f);
-  // } else {
-  //   theta = 90 * degreeToRadian * sgn(ctr_s);
-  // }
-  // double move_m = sqrt(pow(ctr_f, 2) + pow(ctr_s, 2)) * sgn(ctr_f);
-  // double forward = move_m * cos(chassis->getState().theta.convert(radian) + theta);
-  // double strafe  = move_m * -sin(chassis->getState().theta.convert(radian) + theta);
-  // double turn    = ctr_t;
-
-  double forward = set_drive.forward + master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
-  double strafe  = set_drive.strafe  + master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
-  double turn    = set_drive.turn    + master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
-
-  if(fabs(forward) + fabs(strafe) + fabs(turn) > 100) {
-    double m = 100 / (fabs(forward) + fabs(strafe) + fabs(turn));
-    forward = forward * m;
-    strafe  = strafe  * m;
-    turn    = turn    * m;
-  }
-  drive_fl->moveVelocity((forward + strafe + turn) * 2);
-  drive_fr->moveVelocity((forward - strafe - turn) * 2);
-  drive_bl->moveVelocity((forward - strafe + turn) * 2);
-  drive_br->moveVelocity((forward + strafe - turn) * 2);
-  pros::delay(5);
+    drive_fl->moveVelocity((forward + strafe + turn) * 2);
+    drive_fr->moveVelocity((forward - strafe - turn) * 2);
+    drive_bl->moveVelocity((forward - strafe + turn) * 2);
+    drive_br->moveVelocity((forward + strafe - turn) * 2);
+    pros::delay(5);
   }
 }
 
@@ -186,7 +230,7 @@ controllerbuttons::Macro drive_test(
       //   driveToPosition(0_in, 0_in, 0_deg);
       //   controllerbuttons::wait(5);
       // }
-      setPositionTarget(10 * targets.size() * inch, 0_in, 0_deg, 0_in);
+      DriveToPosition::addPositionTarget({20_in * DriveToPosition::targets.size(), 0_in, 0_deg, 0_in});
     }, 
     [](){
       // set_drive.forward = 0;
