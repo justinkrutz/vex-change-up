@@ -38,7 +38,7 @@ void initialize() {
     .buildOdometry();
 
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
-  x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
+  // x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
 
   pros::Task(robotfunctions::motorTask);
   robotfunctions::set_callbacks();

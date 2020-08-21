@@ -52,7 +52,6 @@ struct Position {
   QLength x = 0_in;
   QLength y = 0_in;
   QAngle theta = 0_deg;
-  QLength offset = 0_in;
   bool is_new = true;
   OdomState starting_state;
 };
@@ -89,9 +88,10 @@ namespace DriveToPosition {
   double strafe  = 0;
   double turn    = 0;
 
-  void addPositionTarget(Position position) {
-    // position.
-    targets.push(position);
+  void addPositionTarget(QLength x, QLength y, QAngle theta, QLength offset = 0_in) {
+    QLength x_new = cos(theta.convert(radian)) * offset;
+    QLength y_new = sin(theta.convert(radian)) * offset;
+    targets.push({x + x_new, y + y_new, theta});
     targetPositionEnabled = true;
   };
 
@@ -255,12 +255,12 @@ controllerbuttons::Macro drive_test(
       //   driveToPosition(0_in, 0_in, 0_deg);
       //   controllerbuttons::wait(5);
       // }
-      DriveToPosition::addPositionTarget({0_in, 0_in, 0_deg, 0_in});
-      DriveToPosition::addPositionTarget({20_in, 0_in, 0_deg, 0_in});
-      DriveToPosition::addPositionTarget({30_in, 0_in, 0_deg, 0_in});
-      DriveToPosition::addPositionTarget({40_in, 0_in, 0_deg, 0_in});
+      DriveToPosition::addPositionTarget(0_in, 0_in, 0_deg, 0_in);
+      DriveToPosition::addPositionTarget(20_in, 0_in, 0_deg, 0_in);
+      DriveToPosition::addPositionTarget(30_in, 0_in, 0_deg, 0_in);
+      DriveToPosition::addPositionTarget(40_in, 0_in, 0_deg, 0_in);
       controllerbuttons::wait(3000);
-      DriveToPosition::addPositionTarget({0_in, 0_in, 0_deg, 0_in});
+      DriveToPosition::addPositionTarget(0_in, 0_in, 0_deg, 0_in);
     }, 
     [](){
       // set_drive.forward = 0;
