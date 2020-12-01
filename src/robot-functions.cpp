@@ -37,10 +37,10 @@ int rampMath(double input, double total_range, rampMathSettings s) {
   
   double ramp_up_range = (mid_output - start_output)*ramp_up_p;
   double ramp_down_range = (mid_output - end_output)*ramp_down_p;
-  double ramp_range_muliplier = std::min(1.0, total_range / (ramp_up_range + ramp_down_range));
-  if (start_output != mid_output && input < ramp_up_range * ramp_range_muliplier) {
+  double ramp_range_multiplier = std::min(1.0, total_range / (ramp_up_range + ramp_down_range));
+  if (start_output != mid_output && input < ramp_up_range * ramp_range_multiplier) {
     return input / ramp_up_p + start_output;
-  } else if (end_output != mid_output && input > (total_range - ramp_down_range) * ramp_range_muliplier) {
+  } else if (end_output != mid_output && input > (total_range - ramp_down_range) * ramp_range_multiplier) {
     return (total_range - input) / ramp_down_p + end_output;
   }
   return mid_output;
@@ -229,11 +229,11 @@ void motorTask()
 }
 
 
-void intakeBalls(int balls) {
-}
+// void intakeBalls(int balls) {
+// }
 
-void scoreBalls(int balls) {
-}
+// void scoreBalls(int balls) {
+// }
 
 
 controllerbuttons::Macro count_up(
@@ -274,32 +274,75 @@ void single_use_button() {
   printf("single_use_button\n");
 }
 
+
+
+
+void intake_on() {
+  intake_left.move(127);
+  intake_right.move(127);
+}
+
+void intake_back() {
+  intake_left.move_relative(-180, 600);
+  intake_right.move_relative(-180, 600);
+}
+
+void intake_off() {
+  intake_left.move(0);
+  intake_right.move(0);
+}
+
+namespace rollers {
+  int balls_in_queue = 0;
+  int balls_in_robot = 0;
+  double roller_pos_when_switch_pressed = 0;
+  double ball_step = 600;
+
+  void main_task() {
+    bottom_roller.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    while (true) {
+      // if (balls_in_queue > 0 && roller_pos_when_switch_pressed > ) {
+        
+      // }
+      if (front_ball_limit_switch.get_new_press() && balls_in_robot < 2) {
+        // bottom_roller.move_relative(600, 600);
+        balls_in_robot++;
+        bottom_roller.move(127);
+        top_roller.move_relative(360, 600);
+        while (!back_ball_limit_switch.get_new_press()) {
+          pros::delay(10);
+        }
+        if (balls_in_robot = 2) {
+          bottom_roller.move_relative(210, 600);
+          top_roller.move_relative(180, 600);
+        } else {
+          bottom_roller.move_voltage(0);
+        }
+      } else if (balls_in_queue > 0) {
+        bottom_roller.move_relative(600, 600);
+        top_roller.move_relative(600, 600);
+        balls_in_queue--;
+        balls_in_robot--;
+      }
+    }
+  }
+
+  void score_ball() {
+    // if (balls_in_robot > 0) {
+    balls_in_queue++;
+    // }
+  }
+}
+
 /*===========================================================================*/
 
 void set_callbacks() {
   using namespace controllerbuttons;
-  button_handler.master.a.pressed.set_macro(drive_test);
-  button_handler.master.a.released.set([&](){ drive_test.terminate(); });
-  // button_handler.master.a.pressed.set_macro(count_up);
-  // button_handler.master.a.released.set([&](){ count_up.terminate(); });
-  // button_handler.master.x.pressed.set([&](){ test_group.terminate(); });
-  // button_handler.master.left.pressed.set(single_use_button, {}, {&test_group});
-  // button_handler.master.a.pressed.set([](){ driveToClosestGoal(); }, {}, {&test_group});
-
-  // button_handler.master.r2.pressed.set([](){ test_motor_1.move(127); }, {}, {&test_group});
-  // button_handler.master.r1.pressed.set([](){ test_motor_1.move(-127); }, {}, {&test_group});
-  // button_handler.master.l2.pressed.set([](){ test_motor_2.move(127); }, {}, {&test_group});
-  // button_handler.master.l1.pressed.set([](){ test_motor_2.move(-127); }, {}, {&test_group});
-  // button_handler.master.right.pressed.set([](){ test_motor_3.move(-127); }, {}, {&test_group});
-  // button_handler.master.left.pressed.set([](){
-  //     test_motor_3.move(0);
-  //     test_motor_3.move_relative(100, 127);
-  //   }, {}, {&test_group});
-  // button_handler.master.b.pressed.set([](){
-  //     test_motor_3.move(0);
-  //     test_motor_2.move(0);
-  //     test_motor_1.move(0);
-  //   }, {}, {&test_group});
+  button_handler.master.a.pressed.set(intake_on);
+  button_handler.master.y.pressed.set(intake_back);
+  button_handler.master.b.pressed.set(intake_off);
+  button_handler.master.r2.pressed.set(rollers::score_ball);
 }
 
 } // namespace robotfunctions

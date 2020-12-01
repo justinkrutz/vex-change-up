@@ -45,6 +45,13 @@ void check_for_warnings();
 
 void set_callbacks();
 void motorTask();
+
+namespace rollers {
+  extern int balls_in_queue;
+  
+  void main_task();
+}
+
 } // namespace robotfunctions
 
 #endif // ROBOT_FUNCTIONS_H
