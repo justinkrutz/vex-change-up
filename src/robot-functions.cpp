@@ -289,32 +289,45 @@ namespace rollers {
   double roller_pos_when_switch_pressed = 0;
   double ball_step = 600;
   // bool intake_toggle = false;
+  bool ball_sensor_triggered = false;
 
   void main_task() {
     bottom_roller.move(127);
-    intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-    intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     bottom_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    pros::delay(500);
     while (true) {
       controllermenu::controller_print_array[0] = "BIQ: " + std::to_string(balls_in_queue);
       controllermenu::controller_print_array[1] = "BIR: " + std::to_string(balls_in_robot);
-      controllermenu::controller_print_array[2] = "LS: " + std::to_string(back_ball_limit_switch.get_value());
-      if (back_ball_limit_switch.get_new_press()) {
+      controllermenu::controller_print_array[2] = "LS: " + std::to_string(ball_sensor.get_value());
+      if (ball_sensor.get_value() < 2000 && !ball_sensor_triggered) {
+        ball_sensor_triggered = true;
+        if (balls_in_robot < 3) {
         balls_in_robot++;
-        if (balls_in_robot == 1) {
-          top_roller.move_relative(540, 600);
-        } else if (balls_in_robot == 2) {
-          bottom_roller.move(0);
         }
+        if (balls_in_robot == 1) {
+          top_roller.move_relative(700, 300);
+        } else if (balls_in_robot == 2) {
+          bottom_roller.move_relative(750, 600);
+        } else if (balls_in_robot == 3) {
+          bottom_roller.move_relative(270, 600);
+        }
+      } else if (ball_sensor.get_value() > 2200 && ball_sensor_triggered) {
+        ball_sensor_triggered = false;
       }
       if (balls_in_queue > 0) {
-        bottom_roller.move(127);
-        top_roller.move_absolute(top_roller.get_target_position() + 600, 600);
+        top_roller.move_absolute(top_roller.get_target_position() + 500, 600);
         balls_in_queue--;
         balls_in_robot--;
+        if (balls_in_robot > 1) {
+        bottom_roller.move_absolute(bottom_roller.get_target_position() + 500, 600);
+        } else {
+          bottom_roller.move(127);
+        }
       }
-      pros::delay(10);
+      pros::delay(5);
     }
 
 
@@ -360,12 +373,28 @@ void intake_toggle() {
   }
 }
 
-void intake_back() {
-  intake_left.move_relative(-180, 200);;
-  intake_right.move_relative(-180, 200);;
-  pros::delay(200);
-  intake_left = 0;
-  intake_right = 0;
+controllerbuttons::Macro intake_back(
+    [](){
+      intake_left.move(-127);
+      intake_right.move(-127);
+      pros::delay(600);
+    }, 
+    [](){
+      intake_left = 0;
+      intake_right = 0;
+    },
+    {&test_group});
+
+// void intake_back() {
+//   intake_left.move(-127);
+//   intake_right.move(-127);
+//   pros::delay(600);
+//   intake_left = 0;
+//   intake_right = 0;
+// }
+
+void intake_stop() {
+  intake_back.terminate();
 }
 
 void rollers_forward() {
@@ -390,7 +419,8 @@ void rollers_stop() {
 void set_callbacks() {
   using namespace controllerbuttons;
   button_handler.master.r1.pressed.set(intake_toggle);
-  button_handler.master.l1.pressed.set(intake_back);
+  button_handler.master.l1.pressed.set_macro(intake_back);
+  button_handler.master.l1.released.set(intake_stop);
   button_handler.master.r2.pressed.set(rollers::score_ball);
   button_handler.master.down.pressed.set(rollers_reverse);
   button_handler.master.down.released.set(rollers_stop);

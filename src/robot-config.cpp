@@ -13,8 +13,9 @@ pros::Motor top_roller (8, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENCODE
 pros::ADIEncoder tracker_left ('A', 'B', false);
 pros::ADIEncoder tracker_back ('C', 'D', false);
 pros::ADIEncoder tracker_right ('E', 'F', false);
-pros::ADIDigitalIn front_ball_limit_switch ('G');
-pros::ADIDigitalIn back_ball_limit_switch ('H');
+// pros::ADIDigitalIn front_ball_limit_switch ('G');
+// pros::ADIDigitalIn back_ball_limit_switch ('H');
+pros::ADILineSensor ball_sensor ('H');
 // pros::ADIEncoder sensor (1, 2, false);
 pros::Vision vision_sensor (7);
 pros::Imu imu_sensor (6);
