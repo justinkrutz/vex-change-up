@@ -5,6 +5,8 @@
 #include "controller-menu.h"
 #include "robot-functions.h"
 #include "autonomous.h"
+#include <stdio.h>
+#include <complex.h>
 
 
 namespace robotfunctions {
@@ -102,8 +104,8 @@ namespace DriveToPosition {
 
     OdomState target_state{target.x, target.y, target.theta};
     Point starting_point{target.starting_state.x, target.starting_state.y};
-    auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
     auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
+    auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
     // auto [start_magnitude, start_direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, starting_position);
 
     move_settings.start_output = std::max(20.0, sqrt(forward * forward + strafe * strafe));
@@ -144,7 +146,7 @@ namespace DriveToPosition {
   }
 
   void update() {
-    controllermenu::controller_print_array[2] = "targets: " + std::to_string(targets.size());
+    // controllermenu::controller_print_array[2] = "targets: " + std::to_string(targets.size());
     if (targetPositionEnabled) {
       if (targets.size() == 0) {
         forward = 0;
@@ -213,11 +215,13 @@ void motorTask()
     // double strafe  = move_m * -sin(chassis->getState().theta.convert(radian) + theta);
     // double turn    = ctr_t;
 
-    DriveToPosition::update();
+    // DriveToPosition::update();
 
     double forward = DriveToPosition::forward + master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
     double strafe  = DriveToPosition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
-    double turn    = DriveToPosition::turn    + master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
+    // double turn    = DriveToPosition::turn    + master.get_analog(ANALOG_LEFT_X) * 0.787401574803 * ((master.get_analog(ANALOG_LEFT_Y) * 0.787401574803) / 100 + 1.1);
+    double temp_turn    = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
+    double turn    = DriveToPosition::turn    + pow(abs(temp_turn / 100), 1.8) * 100 * sgn(temp_turn);
     double m = std::min(1.0, 100 / (fabs(forward) + fabs(strafe) + fabs(turn)));
 
     drive_fl->moveVelocity((forward + strafe + turn) * 2 * m);
@@ -277,72 +281,121 @@ void single_use_button() {
 
 
 
-void intake_on() {
-  intake_left.move(127);
-  intake_right.move(127);
-}
 
-void intake_back() {
-  intake_left.move_relative(-180, 600);
-  intake_right.move_relative(-180, 600);
-}
-
-void intake_off() {
-  intake_left.move(0);
-  intake_right.move(0);
-}
 
 namespace rollers {
   int balls_in_queue = 0;
   int balls_in_robot = 0;
   double roller_pos_when_switch_pressed = 0;
   double ball_step = 600;
+  // bool intake_toggle = false;
 
   void main_task() {
-    bottom_roller.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-    top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    bottom_roller.move(127);
+    intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    bottom_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     while (true) {
-      // if (balls_in_queue > 0 && roller_pos_when_switch_pressed > ) {
-        
-      // }
-      if (front_ball_limit_switch.get_new_press() && balls_in_robot < 2) {
-        // bottom_roller.move_relative(600, 600);
+      controllermenu::controller_print_array[0] = "BIQ: " + std::to_string(balls_in_queue);
+      controllermenu::controller_print_array[1] = "BIR: " + std::to_string(balls_in_robot);
+      controllermenu::controller_print_array[2] = "LS: " + std::to_string(back_ball_limit_switch.get_value());
+      if (back_ball_limit_switch.get_new_press()) {
         balls_in_robot++;
+        if (balls_in_robot == 1) {
+          top_roller.move_relative(540, 600);
+        } else if (balls_in_robot == 2) {
+          bottom_roller.move(0);
+        }
+      }
+      if (balls_in_queue > 0) {
         bottom_roller.move(127);
-        top_roller.move_relative(360, 600);
-        while (!back_ball_limit_switch.get_new_press()) {
-          pros::delay(10);
-        }
-        if (balls_in_robot = 2) {
-          bottom_roller.move_relative(210, 600);
-          top_roller.move_relative(180, 600);
-        } else {
-          bottom_roller.move_voltage(0);
-        }
-      } else if (balls_in_queue > 0) {
-        bottom_roller.move_relative(600, 600);
-        top_roller.move_relative(600, 600);
+        top_roller.move_absolute(top_roller.get_target_position() + 600, 600);
         balls_in_queue--;
         balls_in_robot--;
       }
+      pros::delay(10);
     }
+
+
+      // if (balls_in_queue > 0 && roller_pos_when_switch_pressed > ) {
+        
+      // }
+      // if (front_ball_limit_switch.get_new_press() && balls_in_robot < 2) {
+      //   // bottom_roller.move_relative(600, 600);
+      //   balls_in_robot++;
+      //   bottom_roller.move(127);
+      //   top_roller.move_relative(360, 600);
+      //   while (!back_ball_limit_switch.get_new_press()) {
+      //     pros::delay(10);
+      //   }
+      //   if (balls_in_robot = 2) {
+      //     bottom_roller.move_relative(210, 600);
+      //     top_roller.move_relative(180, 600);
+      //   } else {
+      //     bottom_roller.move_voltage(0);
+      //   }
+      // } else if (balls_in_queue > 0) {
+      //   bottom_roller.move_relative(600, 600);
+      //   top_roller.move_relative(600, 600);
+      //   balls_in_queue--;
+      //   balls_in_robot--;
+      // }
   }
 
   void score_ball() {
-    // if (balls_in_robot > 0) {
-    balls_in_queue++;
-    // }
+    if (balls_in_robot > 0) {
+      balls_in_queue++;
+    }
   }
 }
+
+void intake_toggle() {
+  if (intake_left.get_target_velocity() == 0) {
+    intake_left.move_velocity(200);
+    intake_right.move_velocity(200);
+  } else {
+    intake_left.move_velocity(0);
+    intake_right.move_velocity(0);
+  }
+}
+
+void intake_back() {
+  intake_left.move_relative(-180, 200);;
+  intake_right.move_relative(-180, 200);;
+  pros::delay(200);
+  intake_left = 0;
+  intake_right = 0;
+}
+
+void rollers_forward() {
+  // bottom_roller.move(127);
+  top_roller.move(127);
+}
+
+void rollers_reverse() {
+  // bottom_roller.move(-127);
+  top_roller.move(-127);
+}
+
+void rollers_stop() {
+  // bottom_roller.move(0);
+  top_roller.move(0);
+}
+
+
 
 /*===========================================================================*/
 
 void set_callbacks() {
   using namespace controllerbuttons;
-  button_handler.master.a.pressed.set(intake_on);
-  button_handler.master.y.pressed.set(intake_back);
-  button_handler.master.b.pressed.set(intake_off);
+  button_handler.master.r1.pressed.set(intake_toggle);
+  button_handler.master.l1.pressed.set(intake_back);
   button_handler.master.r2.pressed.set(rollers::score_ball);
+  button_handler.master.down.pressed.set(rollers_reverse);
+  button_handler.master.down.released.set(rollers_stop);
+  button_handler.master.up.pressed.set(rollers_forward);
+  button_handler.master.up.released.set(rollers_stop);
 }
 
 } // namespace robotfunctions

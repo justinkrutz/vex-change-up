@@ -36,14 +36,14 @@ void initialize() {
     )
     .withOdometry({{2.75_in, 11.3_in, 4.8_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
     .buildOdometry();
-
+  chassis->getModel()->setBrakeMode(okapi::AbstractMotor::brakeMode::brake);
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
   // x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
 
   pros::Task(robotfunctions::motorTask);
   robotfunctions::set_callbacks();
   AutonManager::loadAutonsFromSD();
-  // controllermenu::init();
+  controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
 }
 
