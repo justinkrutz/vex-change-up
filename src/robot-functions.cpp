@@ -11,6 +11,7 @@
 
 namespace robotfunctions {
 controllerbuttons::MacroGroup test_group;
+controllerbuttons::MacroGroup intake_group;
 
 template <typename T> int sgn(T &&val) {
   if (val < 0) {
@@ -363,39 +364,118 @@ namespace rollers {
   }
 }
 
+namespace intake { 
+  #define ARM_RANGE 170
+  double arm_target_pos = 0;
+
+  enum class State {kRetracted, kSplayed, kExtendedStoped, kExtendedRunning};
+  State target_state = State::kRetracted;
+  State current_state = State::kRetracted;
+
+  double target_pct = 0;
+  pros::motor_brake_mode_e brake_mode = pros::E_MOTOR_BRAKE_BRAKE;
+
+  void loop() {
+    while(true) {
+
+      switch (target_state) {
+        case State::kRetracted:
+          switch (current_state) {
+            case State::kSplayed:
+              break;
+            case State::kExtendedStoped:
+              // break;
+            case State::kExtendedRunning:
+              break;
+          }
+          break;
+        case State::kSplayed:
+          switch (current_state) {
+            case State::kRetracted:
+              break;
+            case State::kExtendedStoped:
+              break;
+            case State::kExtendedRunning:
+              break;
+          }
+          break;
+        case State::kExtendedStoped:
+          switch (current_state) {
+            case State::kRetracted:
+              break;
+            case State::kSplayed:
+              break;
+            case State::kExtendedRunning:
+              target_pct = 0;
+              break;
+          }
+          break;
+        case State::kExtendedRunning:
+          switch (current_state) {
+            case State::kRetracted:
+              // break;
+            case State::kSplayed:
+              // break;
+            case State::kExtendedStoped:
+              target_pct = 100;
+              break;
+          }
+          break;
+      }
+      intake_left.move_velocity(target_pct * 2);
+      intake_right.move_velocity(target_pct * 2);
+      intake_left.set_brake_mode(brake_mode);
+      intake_right.set_brake_mode(brake_mode);
+    }
+  }
+
+/*
+          switch (current_state) {
+            case State::kRetracted:
+              break;
+            case State::kExtendedStoped:
+              break;
+            case State::kExtendedRunning:
+              break;
+            case State::kSplayed:
+              break;
+            default:
+              break;
+          }
+*/
+
+  void start() {
+    pros::Task intake_loop (loop);
+  }
+}
+
 void intake_toggle() {
-  if (intake_left.get_target_velocity() == 0) {
+  intake_group.terminate();
+  intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  if (intake_left.get_target_velocity() != 200) {
     intake_left.move_velocity(200);
     intake_right.move_velocity(200);
   } else {
     intake_left.move_velocity(0);
     intake_right.move_velocity(0);
+    // intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    // intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   }
 }
-
 controllerbuttons::Macro intake_back(
     [](){
-      intake_left.move(-127);
-      intake_right.move(-127);
-      pros::delay(600);
+      intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+      intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+      intake_left.move_velocity(-200);
+      intake_right.move_velocity(-200);
+      controllerbuttons::wait(600);
     }, 
     [](){
-      intake_left = 0;
-      intake_right = 0;
+    intake_left.move_velocity(0);
+    intake_right.move_velocity(0);
     },
-    {&test_group});
-
-// void intake_back() {
-//   intake_left.move(-127);
-//   intake_right.move(-127);
-//   pros::delay(600);
-//   intake_left = 0;
-//   intake_right = 0;
-// }
-
-void intake_stop() {
-  intake_back.terminate();
-}
+    {&intake_group});
 
 void rollers_forward() {
   // bottom_roller.move(127);
@@ -420,7 +500,6 @@ void set_callbacks() {
   using namespace controllerbuttons;
   button_handler.master.r1.pressed.set(intake_toggle);
   button_handler.master.l1.pressed.set_macro(intake_back);
-  button_handler.master.l1.released.set(intake_stop);
   button_handler.master.r2.pressed.set(rollers::score_ball);
   button_handler.master.down.pressed.set(rollers_reverse);
   button_handler.master.down.released.set(rollers_stop);
