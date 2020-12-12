@@ -35,9 +35,9 @@ void controller_print() {
       if (partner_print_array[i] != partner_array_last[i]) {
         partner_array_last[i] = partner_print_array[i];
         char print_str[20];
-        master_print_array[i].resize(19);
+        partner_print_array[i].resize(19);
         sprintf(print_str, "%-19s", partner_print_array[i].c_str());
-        master.print(i, 0, print_str);
+        partner.print(i, 0, print_str);
         pros::delay(50);
       }
     }

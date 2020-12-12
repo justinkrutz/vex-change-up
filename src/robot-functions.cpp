@@ -189,9 +189,16 @@ namespace DriveToPosition {
   }
 };
 
+#define DRIVER_SLEW 3
+#define AUTON_SLEW 1
 
-
-
+double slew(double new_value, double old_value, double slew_rate = AUTON_SLEW) {
+  if (new_value > old_value + slew_rate)
+    return old_value + slew_rate;
+  if (new_value < old_value - slew_rate)
+    return old_value - slew_rate;
+  return new_value;
+}
 
 void motorTask()
 {
@@ -199,6 +206,12 @@ void motorTask()
   std::shared_ptr<AbstractMotor> drive_fr = x_model->getTopRightMotor();
   std::shared_ptr<AbstractMotor> drive_bl = x_model->getBottomLeftMotor();
   std::shared_ptr<AbstractMotor> drive_br = x_model->getBottomRightMotor();
+
+  double drive_fl_old = 0;
+  double drive_fr_old = 0;
+  double drive_bl_old = 0;
+  double drive_br_old = 0;
+
   while(1)
   {
 
@@ -216,7 +229,7 @@ void motorTask()
     // double strafe  = move_m * -sin(chassis->getState().theta.convert(radian) + theta);
     // double turn    = ctr_t;
 
-    // DriveToPosition::update();
+    DriveToPosition::update();
 
     double forward = DriveToPosition::forward + master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
     double strafe  = DriveToPosition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
@@ -225,10 +238,22 @@ void motorTask()
     double turn    = DriveToPosition::turn    + pow(abs(temp_turn / 100), 1.8) * 100 * sgn(temp_turn);
     double m = std::min(1.0, 100 / (fabs(forward) + fabs(strafe) + fabs(turn)));
 
-    drive_fl->moveVelocity((forward + strafe + turn) * 2 * m);
-    drive_fr->moveVelocity((forward - strafe - turn) * 2 * m);
-    drive_bl->moveVelocity((forward - strafe + turn) * 2 * m);
-    drive_br->moveVelocity((forward + strafe - turn) * 2 * m);
+    
+    double drive_fl_value = slew((forward + strafe + turn) * 2 * m, drive_fl_old);
+    double drive_fr_value = slew((forward - strafe - turn) * 2 * m, drive_fr_old);
+    double drive_bl_value = slew((forward - strafe + turn) * 2 * m, drive_bl_old);
+    double drive_br_value = slew((forward + strafe - turn) * 2 * m, drive_br_old);
+
+    drive_fl->moveVelocity(drive_fl_value);
+    drive_fr->moveVelocity(drive_fr_value);
+    drive_bl->moveVelocity(drive_bl_value);
+    drive_br->moveVelocity(drive_br_value);
+
+    drive_fl_old = drive_fl_value;
+    drive_fr_old = drive_fr_value;
+    drive_bl_old = drive_bl_value;
+    drive_br_old = drive_br_value;
+
     pros::delay(5);
   }
 }
@@ -354,8 +379,8 @@ namespace intake {
 }
 
 
-bool intakes_retracted = false;
-bool intake_sensors_last = false;
+bool intakes_retracted = true;
+bool intake_sensors_last = true;
 int intakes_retracted_time = 0;
 
 bool intakes_extended() {
@@ -427,11 +452,7 @@ namespace rollers {
   int score_queue = 0;
   int intake_queue = 0;
   int balls_in_robot = 0;
-  double roller_pos_when_switch_pressed = 0;
-  double ball_step = 600;
-  // bool intake_toggle = false;
   bool ball_sensor_last = false;
-  int t = 0;
 
   void main_task() {
     intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
@@ -447,9 +468,9 @@ namespace rollers {
       // controllermenu::master_print_array[0] = "BIR: " + std::to_string(balls_in_robot) + " SQ: " + std::to_string(score_queue) + " IQ: " + std::to_string(intake_queue);
       // controllermenu::master_print_array[1] = "IR: " + std::to_string(intakes_retracted);
       // controllermenu::master_print_array[2] = "LLS: " + std::to_string(left_intake_sensor.get_value()) + " RLS: " + std::to_string(right_intake_sensor.get_value());
-      // controllermenu::partner_print_array[0] = "BIR: " + std::to_string(balls_in_robot) + " SQ: " + std::to_string(score_queue) + " IQ: " + std::to_string(intake_queue);
-      // controllermenu::partner_print_array[1] = "IR: " + std::to_string(intakes_retracted);
-      // controllermenu::partner_print_array[2] = "LLS: " + std::to_string(left_intake_sensor.get_value()) + " RLS: " + std::to_string(right_intake_sensor.get_value());
+      controllermenu::partner_print_array[0] = "BIR: " + std::to_string(balls_in_robot) + " SQ: " + std::to_string(score_queue) + " IQ: " + std::to_string(intake_queue);
+      controllermenu::partner_print_array[1] = "IR: " + std::to_string(intakes_retracted);
+      controllermenu::partner_print_array[2] = "LLS: " + std::to_string(left_intake_sensor.get_value()) + " RLS: " + std::to_string(right_intake_sensor.get_value());
       if (ball_sensor_triggered) {
         ball_sensor_last = true;
         if (balls_in_robot < 3) {
@@ -528,12 +549,12 @@ controllerbuttons::Macro intakes_back(
 
 
 
-void add_ball_to_score_queue() {
-  rollers::score_queue++;
+void add_ball_to_robot() {
+  rollers::balls_in_robot++;
 }
 
-void remove_ball_from_score_queue() {
-  rollers::score_queue--;
+void remove_ball_from_robot() {
+  rollers::balls_in_robot--;
 }
 
 /*===========================================================================*/
@@ -548,13 +569,15 @@ void set_callbacks() {
   button_handler.master.down.released.set(rollers_stop);
   button_handler.master.up.pressed.set(top_roller_forward);
   button_handler.master.up.released.set(rollers_stop);
+  button_handler.master.a.pressed.set_macro(drive_test);
+  button_handler.master.b.pressed.set([&](){ drive_test.terminate(); });
 
   button_handler.partner.down.pressed.set(rollers_reverse);
   button_handler.partner.down.released.set(rollers_stop);
   button_handler.partner.up.pressed.set(rollers_forward);
   button_handler.partner.up.released.set(rollers_stop);
-  button_handler.partner.left.pressed.set(remove_ball_from_score_queue);
-  button_handler.partner.right.released.set(add_ball_to_score_queue);
+  button_handler.partner.left.pressed.set(remove_ball_from_robot);
+  button_handler.partner.right.released.set(add_ball_to_robot);
 
 }
 
