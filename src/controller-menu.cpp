@@ -14,23 +14,26 @@ using namespace controllerbuttons;
 
 namespace controllermenu {
 
-std::string controller_print_array [3];
+std::string master_print_array [3];
+std::string partner_print_array [3];
 
-void controller_print() {
+void controller_print(pros::Controller controller, std::string * array) {
   std::string array_last [3];
-  while (true) {
-    for (int i = 0; i < 3; i++) {
-      if (controller_print_array[i] != array_last[i]) {
-        array_last[i] = controller_print_array[i];
-        char print_str[20];
-        controller_print_array[i].resize(19);
-        sprintf(print_str, "%-19s", controller_print_array[i].c_str());
-        master.print(i, 0, print_str);
-        pros::delay(50);
+  pros::Task ([&](){
+    while (true) {
+      for (int i = 0; i < 3; i++) {
+        if (array[i] != array_last[i]) {
+          array_last[i] = array[i];
+          char print_str[20];
+          array[i].resize(19);
+          sprintf(print_str, "%-19s", array[i].c_str());
+          controller.print(i, 0, print_str);
+          pros::delay(50);
+        }
       }
+      pros::delay(10);
     }
-    pros::delay(10);
-  }
+  });
 }
 
 class MenuItem;
@@ -100,7 +103,7 @@ class MenuScroll {
       selection.replace(13, 1, ">");
       selection.replace(cursor_location * 3 + 1, 1, "o");
     }
-    controller_print_array[0] = selection;
+    master_print_array[0] = selection;
   }
 
   void set_callbacks() {
@@ -135,12 +138,12 @@ class MenuFolder : public MenuItem {
   void print() {
     if (folderScroll.number_of_items > 0) {
       folderScroll.print();
-      controller_print_array[1] = MenuItemTypeName.at(children[folderScroll.cursor_location]->item_type);
-      controller_print_array[2] = children[folderScroll.cursor_location]->name;
+      master_print_array[1] = MenuItemTypeName.at(children[folderScroll.cursor_location]->item_type);
+      master_print_array[2] = children[folderScroll.cursor_location]->name;
     } else {
-      controller_print_array[0] = "Folder is empty";
-      controller_print_array[1] = "";
-      controller_print_array[2] = "";
+      master_print_array[0] = "Folder is empty";
+      master_print_array[1] = "";
+      master_print_array[2] = "";
     }
   }
 
@@ -215,9 +218,9 @@ class MenuCreateAuton : public MenuItem {
         std::string x_str     = std::to_string((int)x);
         std::string y_str     = std::to_string((int)y);
         std::string theta_str = std::to_string((int)theta);
-        controller_print_array[0] = "x: " + x_str + " y: " + y_str + " t: " + theta_str;
-        controller_print_array[1] = "step " + std::to_string(auton.selected_step + 1) + " of " + std::to_string(auton.auton_steps.size());
-        // controller_print_array[2] = "x: " + std::to_string((int)auton.auton_steps["x"])
+        master_print_array[0] = "x: " + x_str + " y: " + y_str + " t: " + theta_str;
+        master_print_array[1] = "step " + std::to_string(auton.selected_step + 1) + " of " + std::to_string(auton.auton_steps.size());
+        // master_print_array[2] = "x: " + std::to_string((int)auton.auton_steps["x"])
         //     + " y: " + std::to_string((int)auton.auton_steps["y"])
         //     + " t: " + std::to_string((int)auton.auton_steps["theta"]);
         pros::delay(150);
@@ -297,9 +300,9 @@ class MenuAutonomous : public MenuFolder {
 };
 
 void MenuAction::print() {
-  controller_print_array[0] = message_one_;
-  controller_print_array[1] = menu_autonomous_->name;
-  controller_print_array[2] = message_two_;
+  master_print_array[0] = message_one_;
+  master_print_array[1] = menu_autonomous_->name;
+  master_print_array[2] = message_two_;
   function_();
 }
 
@@ -350,7 +353,8 @@ void createFolderStructure() {
 void init() {
   master.clear();
   pros::delay(50);
-  pros::Task controller_print_task (controller_print);
+  controller_print(master, master_print_array);
+  controller_print(partner, partner_print_array);
   // createFolderStructure();
   // current_item = root_folder;
   // current_item->set_callbacks();

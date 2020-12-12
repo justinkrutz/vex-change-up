@@ -1,5 +1,6 @@
 namespace controllermenu {
-extern std::string controller_print_array [3];
+extern std::string master_print_array [3];
+extern std::string partner_print_array [3];
 void init();
 void print_menu();
 void run_auton();
