@@ -30,11 +30,11 @@ void initialize() {
         // ADIEncoder{'E', 'F'}, // left encoder in ADI ports A & B
         // ADIEncoder{'A', 'B', true},  // right encoder in ADI ports C & D (reversed)
         // ADIEncoder{'C', 'D'}  // middle encoder in ADI ports E & F
-        ADIEncoder{'E', 'F'}, // left encoder in ADI ports A & B
+        ADIEncoder{'C', 'D'}, // left encoder in ADI ports A & B
         ADIEncoder{'A', 'B'},  // right encoder in ADI ports C & D (reversed)
-        ADIEncoder{'C', 'D'}  // middle encoder in ADI ports E & F
+        ADIEncoder{'E', 'F', true}  // middle encoder in ADI ports E & F
     )
-    .withOdometry({{2.75_in, 11.3_in, 4.8_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
+    .withOdometry({{2.75_in, 11.28125_in, 4.4375_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
     .buildOdometry();
   chassis->getModel()->setBrakeMode(okapi::AbstractMotor::brakeMode::brake);
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
@@ -107,14 +107,17 @@ void opcontrol() {
     // controllermenu::master_print_array[1] = "y: " + y_str;
     // controllermenu::master_print_array[2] = "t: " + theta_str;
 
-    // QLength x = chassis->getState().x;
-    // QLength y = chassis->getState().y;
-    // QAngle theta = chassis->getState().theta;
-    // controllermenu::master_print_array[0] = std::to_string(x.convert(inch));
-    // controllermenu::master_print_array[1] = std::to_string(y.convert(inch));
-    // controllermenu::master_print_array[2] = std::to_string(theta.convert(degree));
+    QLength x = chassis->getState().x;
+    QLength y = chassis->getState().y;
+    QAngle theta = chassis->getState().theta;
+    controllermenu::master_print_array[0] = "x: " + std::to_string(x.convert(inch));
+    controllermenu::master_print_array[1] = "y: " + std::to_string(y.convert(inch));
+    controllermenu::master_print_array[2] = "theta: " + std::to_string(theta.convert(degree));
     
-    
+    // controllermenu::master_print_array[0] = "tracker_left: " + std::to_string(tracker_left.get_value());
+    // controllermenu::master_print_array[1] = "tracker_right: " + std::to_string(tracker_right.get_value());
+    // controllermenu::master_print_array[2] = "tracker_back: " + std::to_string(tracker_back.get_value());
+
     // printf("tracker_left: %d tracker_right: %d tracker_back: %d\n", tracker_left.get_value(), tracker_right.get_value(), tracker_back.get_value());
     // x_model->xArcade(controller.getAnalog(ControllerAnalog::rightX),
     //                 controller.getAnalog(ControllerAnalog::rightY),

@@ -17,23 +17,32 @@ namespace controllermenu {
 std::string master_print_array [3];
 std::string partner_print_array [3];
 
-void controller_print(pros::Controller controller, std::string * array) {
-  std::string array_last [3];
-  pros::Task ([&](){
-    while (true) {
-      for (int i = 0; i < 3; i++) {
-        if (array[i] != array_last[i]) {
-          array_last[i] = array[i];
-          char print_str[20];
-          array[i].resize(19);
-          sprintf(print_str, "%-19s", array[i].c_str());
-          controller.print(i, 0, print_str);
-          pros::delay(50);
-        }
+void controller_print() {
+  std::string master_array_last [3];
+  std::string partner_array_last [3];
+  while (true) {
+    for (int i = 0; i < 3; i++) {
+      if (master_print_array[i] != master_array_last[i]) {
+        master_array_last[i] = master_print_array[i];
+        char print_str[20];
+        master_print_array[i].resize(19);
+        sprintf(print_str, "%-19s", master_print_array[i].c_str());
+        master.print(i, 0, print_str);
+        pros::delay(50);
       }
-      pros::delay(10);
     }
-  });
+    for (int i = 0; i < 3; i++) {
+      if (partner_print_array[i] != partner_array_last[i]) {
+        partner_array_last[i] = partner_print_array[i];
+        char print_str[20];
+        master_print_array[i].resize(19);
+        sprintf(print_str, "%-19s", partner_print_array[i].c_str());
+        master.print(i, 0, print_str);
+        pros::delay(50);
+      }
+    }
+    pros::delay(10);
+  }
 }
 
 class MenuItem;
@@ -353,8 +362,7 @@ void createFolderStructure() {
 void init() {
   master.clear();
   pros::delay(50);
-  controller_print(master, master_print_array);
-  controller_print(partner, partner_print_array);
+  pros::Task controller_print_task (controller_print);
   // createFolderStructure();
   // current_item = root_folder;
   // current_item->set_callbacks();
