@@ -84,7 +84,7 @@ namespace DriveToPosition {
   bool targetPositionEnabled = false;
   
   OdomState starting_position;
-  rampMathSettings move_settings = {20, 100, 20, 0.1, 0.1};
+  rampMathSettings move_settings = {20, 100, 20, 0.5, 0.5};
   rampMathSettings turn_settings = {20, 100, 20, 0.1, 0.1};
 
   double forward = 0;
@@ -118,8 +118,8 @@ namespace DriveToPosition {
     forward = move_speed * cos(direction.convert(radian));
     strafe  = move_speed * sin(direction.convert(radian));
     turn    = turn_speed;
-    controllermenu::master_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
-    controllermenu::master_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
+    // controllermenu::master_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
+    // controllermenu::master_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
   }
 
     void holdPosition() {
@@ -142,8 +142,8 @@ namespace DriveToPosition {
     forward = move_speed * cos(direction.convert(radian));
     strafe  = move_speed * sin(direction.convert(radian));
     turn    = turn_speed;
-    controllermenu::master_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
-    controllermenu::master_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
+    // controllermenu::master_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
+    // controllermenu::master_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
   }
 
   void update() {
@@ -176,7 +176,7 @@ namespace DriveToPosition {
           auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
           auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
           driveToPosition();
-          if (magnitude_real >= magnitude_target) {
+          if (magnitude_real >= magnitude_target && fabs(chassis->getState().theta.getValue() - target_state.theta.getValue()) < 3*degreeToRadian) {
             targets.pop();
           }
         } else {
@@ -190,7 +190,7 @@ namespace DriveToPosition {
 };
 
 #define DRIVER_SLEW 3
-#define AUTON_SLEW 1
+#define AUTON_SLEW 10
 
 double slew(double new_value, double old_value, double slew_rate = AUTON_SLEW) {
   if (new_value > old_value + slew_rate)
@@ -279,25 +279,6 @@ controllerbuttons::Macro count_up(
     },
     {&test_group});
 
-controllerbuttons::Macro drive_test(
-    [](){
-      // while (true) {
-      //   driveToPosition(0_in, 0_in, 0_deg);
-      //   controllerbuttons::wait(5);
-      // }
-      DriveToPosition::addPositionTarget(0_in, 0_in, 0_deg, 0_in);
-      DriveToPosition::addPositionTarget(20_in, 0_in, 0_deg, 0_in);
-      DriveToPosition::addPositionTarget(30_in, 0_in, 0_deg, 0_in);
-      DriveToPosition::addPositionTarget(40_in, 0_in, 0_deg, 0_in);
-      controllerbuttons::wait(3000);
-      DriveToPosition::addPositionTarget(0_in, 0_in, 0_deg, 0_in);
-    }, 
-    [](){
-      // set_drive.forward = 0;
-      // set_drive.strafe = 0;
-      // set_drive.turn = 0;
-    },
-    {&test_group});
 
 // Test function that prints to the terminal.
 void single_use_button() {
@@ -452,7 +433,7 @@ namespace rollers {
   int score_queue = 0;
   int intake_queue = 0;
   int balls_in_robot = 0;
-  bool ball_sensor_last = false;
+  bool ball_sensor_last = true;
 
   void main_task() {
     intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
@@ -557,6 +538,70 @@ void remove_ball_from_robot() {
   rollers::balls_in_robot--;
 }
 
+
+#define WAIT_UNTIL(condition) \
+while (!(condition)) {        \
+pros::delay(5);               \
+}
+
+
+controllerbuttons::Macro drive_test(
+    [&](){
+      // while (true) {
+      //   driveToPosition(0_in, 0_in, 0_deg);
+      //   controllerbuttons::wait(5);
+      // }
+      using namespace DriveToPosition;
+      using namespace controllerbuttons;
+      using namespace rollers;
+      balls_in_robot = 1;
+      addPositionTarget(26.3_in, 26.3_in, -90_deg);
+      addPositionTarget(26.3_in, 26.3_in, -135_deg);
+      addPositionTarget(20_in, 20_in, -135_deg);
+      WAIT_UNTIL(DriveToPosition::targets.size() == 1)
+      intake_queue++;
+      WAIT_UNTIL(intake_queue == 0);
+      intakes_back.start();
+      WAIT_UNTIL(!intakes_back.is_running());
+      addPositionTarget(0_in, 0_in, -135_deg);
+      wait(500);
+      DriveToPosition::targets.pop();
+      score_queue++;
+      wait(500);
+      addPositionTarget(30_in, 30_in, -180_deg);
+      addPositionTarget(30_in, 70.3_in, -180_deg);
+      addPositionTarget(0_in, 70.3_in, -180_deg);
+      WAIT_UNTIL(DriveToPosition::targets.size() == 1);
+      wait(500);
+      DriveToPosition::targets.pop();
+      score_queue++;
+      wait(500);
+      addPositionTarget(40_in, 74_in, -180_deg);
+      addPositionTarget(40_in, 112_in, -180_deg);
+      addPositionTarget(40_in, 112_in, -225_deg);
+      addPositionTarget(22_in, 138_in, -225_deg);
+      WAIT_UNTIL(DriveToPosition::targets.size() == 1);
+      intake_queue++;
+      WAIT_UNTIL(intake_queue == 0);
+      intakes_back.start();
+      addPositionTarget(30_in, 150_in, -225_deg);
+      WAIT_UNTIL(DriveToPosition::targets.size() == 1);
+      WAIT_UNTIL(!intakes_back.is_running());
+      addPositionTarget(6_in, 150.85_in, -225_deg);
+      wait(500);
+      DriveToPosition::targets.pop();
+      score_queue++;
+      wait(500);
+      addPositionTarget(22_in, 138_in, -225_deg);
+    }, 
+    [](){
+      // set_drive.forward = 0;
+      // set_drive.strafe = 0;
+      // set_drive.turn = 0;
+    },
+    {&test_group});
+
+
 /*===========================================================================*/
 
 void set_callbacks() {
@@ -577,7 +622,7 @@ void set_callbacks() {
   button_handler.partner.up.pressed.set(rollers_forward);
   button_handler.partner.up.released.set(rollers_stop);
   button_handler.partner.left.pressed.set(remove_ball_from_robot);
-  button_handler.partner.right.released.set(add_ball_to_robot);
+  button_handler.partner.right.pressed.set(add_ball_to_robot);
 
 }
 
