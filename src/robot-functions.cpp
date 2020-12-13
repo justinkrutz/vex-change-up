@@ -379,7 +379,7 @@ void intake_back(pros::Motor &motor, pros::ADIAnalogIn &sensor) {
   motor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   double start_pos = motor.get_position();
   int start_time = pros::millis();
-  while (sensor.get_value() > 20 && pros::millis() - start_time < 600) {
+  while (sensor.get_value() > 20 && pros::millis() - start_time < 800) {
     motor.move_velocity(MIN(-(motor.get_position() - start_pos) * 1.7 - 200, -10));
     controllerbuttons::wait(10);
   }
@@ -557,14 +557,16 @@ controllerbuttons::Macro drive_test(
       balls_in_robot = 1;
       addPositionTarget(26.3_in, 26.3_in, -90_deg);
       addPositionTarget(26.3_in, 26.3_in, -135_deg);
-      addPositionTarget(20_in, 20_in, -135_deg);
+      addPositionTarget(24_in, 24_in, -135_deg);
       WAIT_UNTIL(DriveToPosition::targets.size() == 1)
       intake_queue++;
       WAIT_UNTIL(intake_queue == 0);
       intakes_back.start();
       WAIT_UNTIL(!intakes_back.is_running());
+      addPositionTarget(26.3_in, 26.3_in, -135_deg);
       addPositionTarget(0_in, 0_in, -135_deg);
-      wait(500);
+      WAIT_UNTIL(DriveToPosition::targets.size() == 1)
+      wait(1000);
       DriveToPosition::targets.pop();
       score_queue++;
       wait(500);
@@ -584,7 +586,7 @@ controllerbuttons::Macro drive_test(
       intake_queue++;
       WAIT_UNTIL(intake_queue == 0);
       intakes_back.start();
-      addPositionTarget(30_in, 150_in, -225_deg);
+      addPositionTarget(30_in, 120_in, -225_deg);
       WAIT_UNTIL(DriveToPosition::targets.size() == 1);
       WAIT_UNTIL(!intakes_back.is_running());
       addPositionTarget(6_in, 150.85_in, -225_deg);
