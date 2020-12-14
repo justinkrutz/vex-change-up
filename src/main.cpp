@@ -17,6 +17,24 @@ std::shared_ptr<ThreeEncoderXDriveModel> x_model;
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
+
+bool run_auton = true;
+bool run_shawn = false;
+
+void no_auton() {
+  run_auton = false;
+}
+
+void yes_auton() {
+  run_auton = true;
+  run_shawn = false;
+}
+
+void shawn_auton_run() {
+  run_shawn = true;
+  run_auton = false;
+}
+
 void initialize() {
   chassis = ChassisControllerBuilder()
     .withMotors(
@@ -45,6 +63,9 @@ void initialize() {
   AutonManager::loadAutonsFromSD();
   controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
+  controllerbuttons::button_handler.master.y.pressed.set(yes_auton);
+  controllerbuttons::button_handler.master.x.pressed.set(no_auton);
+  controllerbuttons::button_handler.master.b.pressed.set(shawn_auton_run);
 }
 
 /**
@@ -76,8 +97,13 @@ void competition_initialize() {}
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void autonomous() {}
-
+void autonomous() {
+  if (run_auton) {
+    robotfunctions::drive_test.start();
+  } else if (run_shawn) {
+    robotfunctions::shawn_auton.start();
+  }
+}
 /**
  * Runs the operator control code. This function will be started in its own task
  * with the default priority and stack size whenever the robot is enabled via
@@ -113,7 +139,7 @@ void opcontrol() {
     controllermenu::master_print_array[0] = "x: " + std::to_string(x.convert(inch));
     controllermenu::master_print_array[1] = "y: " + std::to_string(y.convert(inch));
     controllermenu::master_print_array[2] = "theta: " + std::to_string(theta.convert(degree));
-    
+
     // controllermenu::master_print_array[0] = "tracker_left: " + std::to_string(tracker_left.get_value());
     // controllermenu::master_print_array[1] = "tracker_right: " + std::to_string(tracker_right.get_value());
     // controllermenu::master_print_array[2] = "tracker_back: " + std::to_string(tracker_back.get_value());

@@ -2,6 +2,7 @@
 #define ROBOT_FUNCTIONS_H
 
 #include "main.h"
+#include "controller-buttons.h"
 #include <bits/stdc++.h>
 
 // #define WARN(device, messageToPrint, warnIf)                                   \
@@ -46,9 +47,12 @@ void check_for_warnings();
 void set_callbacks();
 void motorTask();
 
+extern controllerbuttons::Macro drive_test;
+extern controllerbuttons::Macro shawn_auton;
+
 namespace rollers {
   extern int balls_in_queue;
-  
+
   void main_task();
 }
 

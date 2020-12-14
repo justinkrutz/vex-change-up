@@ -37,7 +37,7 @@ int rampMath(double input, double total_range, rampMathSettings s) {
   int end_output = abs(s.end_output);
   double ramp_up_p = fabs(s.ramp_up_p);
   double ramp_down_p = fabs(s.ramp_down_p);
-  
+
   double ramp_up_range = (mid_output - start_output)*ramp_up_p;
   double ramp_down_range = (mid_output - end_output)*ramp_down_p;
   double ramp_range_multiplier = std::min(1.0, total_range / (ramp_up_range + ramp_down_range));
@@ -82,7 +82,7 @@ std::queue<Target> targets = {};
 namespace DriveToPosition {
   std::queue<Position> targets;
   bool targetPositionEnabled = false;
-  
+
   OdomState starting_position;
   rampMathSettings move_settings = {20, 100, 20, 0.5, 0.5};
   rampMathSettings turn_settings = {20, 100, 20, 0.1, 0.1};
@@ -228,8 +228,14 @@ void motorTask()
     // double forward = move_m * cos(chassis->getState().theta.convert(radian) + theta);
     // double strafe  = move_m * -sin(chassis->getState().theta.convert(radian) + theta);
     // double turn    = ctr_t;
+    if (pros::competition::is_autonomous()) {
+      DriveToPosition::update();
+    } else {
+      DriveToPosition::forward = 0;
+      DriveToPosition::strafe = 0;
+      DriveToPosition::turn = 0;
+    }
 
-    DriveToPosition::update();
 
     double forward = DriveToPosition::forward + master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
     double strafe  = DriveToPosition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
@@ -238,7 +244,7 @@ void motorTask()
     double turn    = DriveToPosition::turn    + pow(abs(temp_turn / 100), 1.8) * 100 * sgn(temp_turn);
     double m = std::min(1.0, 100 / (fabs(forward) + fabs(strafe) + fabs(turn)));
 
-    
+
     double drive_fl_value = slew((forward + strafe + turn) * 2 * m, drive_fl_old);
     double drive_fr_value = slew((forward - strafe - turn) * 2 * m, drive_fr_old);
     double drive_bl_value = slew((forward - strafe + turn) * 2 * m, drive_bl_old);
@@ -273,9 +279,9 @@ controllerbuttons::Macro count_up(
         printf("Up %d\n", i);
         controllerbuttons::wait(20);
       }
-    }, 
+    },
     [](){
-      
+
     },
     {&test_group});
 
@@ -292,7 +298,7 @@ void single_use_button() {
 
 
 // state machine under development
-namespace intake { 
+namespace intake {
   #define ARM_RANGE 170
   double arm_target_pos = 0;
 
@@ -371,7 +377,7 @@ bool intakes_extended() {
       || (intake_sensors_last && !intake_sensors && intake_right.get_target_velocity() > 10);
   intake_sensors_last = intake_sensors;
   intakes_retracted = !result;
-  return result; 
+  return result;
 }
 
 
@@ -389,7 +395,7 @@ void intake_back(pros::Motor &motor, pros::ADIAnalogIn &sensor) {
 controllerbuttons::Macro left_intake_back(
     [](){
       intake_back(intake_left, left_intake_sensor);
-    }, 
+    },
     [](){
       intake_left.move_velocity(0);
     },
@@ -398,7 +404,7 @@ controllerbuttons::Macro left_intake_back(
 controllerbuttons::Macro right_intake_back(
     [](){
       intake_back(intake_right, right_intake_sensor);
-    }, 
+    },
     [](){
       intake_right.move_velocity(0);
     },
@@ -521,7 +527,7 @@ controllerbuttons::Macro intakes_back(
       rollers::intake_queue = 0;
       left_intake_back.start();
       right_intake_back.start();
-    }, 
+    },
     [](){
 
     },
@@ -560,9 +566,11 @@ controllerbuttons::Macro drive_test(
       addPositionTarget(24_in, 24_in, -135_deg);
       WAIT_UNTIL(DriveToPosition::targets.size() == 1)
       intake_queue++;
-      WAIT_UNTIL(intake_queue == 0);
+      // WAIT_UNTIL(intake_queue == 0);
+      wait(500);
       intakes_back.start();
-      WAIT_UNTIL(!intakes_back.is_running());
+      // WAIT_UNTIL(!intakes_back.is_running());
+      wait(500);
       addPositionTarget(26.3_in, 26.3_in, -135_deg);
       addPositionTarget(0_in, 0_in, -135_deg);
       WAIT_UNTIL(DriveToPosition::targets.size() == 1)
@@ -584,18 +592,21 @@ controllerbuttons::Macro drive_test(
       addPositionTarget(22_in, 138_in, -225_deg);
       WAIT_UNTIL(DriveToPosition::targets.size() == 1);
       intake_queue++;
-      WAIT_UNTIL(intake_queue == 0);
-      intakes_back.start();
+      // WAIT_UNTIL(intake_queue == 0);
+      wait(500);
       addPositionTarget(30_in, 120_in, -225_deg);
-      WAIT_UNTIL(DriveToPosition::targets.size() == 1);
-      WAIT_UNTIL(!intakes_back.is_running());
+      intakes_back.start();
+
+      // WAIT_UNTIL(!intakes_back.is_running());
+      wait(1000);
       addPositionTarget(6_in, 150.85_in, -225_deg);
+      WAIT_UNTIL(DriveToPosition::targets.size() == 1);
       wait(500);
       DriveToPosition::targets.pop();
       score_queue++;
       wait(500);
-      addPositionTarget(22_in, 138_in, -225_deg);
-    }, 
+      addPositionTarget(30_in, 138_in, -225_deg);
+    },
     [](){
       // set_drive.forward = 0;
       // set_drive.strafe = 0;
@@ -603,6 +614,44 @@ controllerbuttons::Macro drive_test(
     },
     {&test_group});
 
+    controllerbuttons::Macro shawn_auton(
+        [&](){
+          // while (true) {
+          //   driveToPosition(0_in, 0_in, 0_deg);
+          //   controllerbuttons::wait(5);
+          // }
+          chassis->setState({0_in, 0_in, 0_deg});
+          using namespace DriveToPosition;
+          using namespace controllerbuttons;
+          using namespace rollers;
+          balls_in_robot = 1;
+          addPositionTarget(0_in, -10.55_in, 0_deg);
+          addPositionTarget(0_in, -10.55_in, 45_deg);
+          WAIT_UNTIL(DriveToPosition::targets.size() == 1)
+          intake_queue = 3;
+          addPositionTarget(5_in, -5.55_in, 45_deg);
+          // WAIT_UNTIL(intake_queue == 0);
+          wait(1000);
+          // intakes_back.start();
+          // WAIT_UNTIL(!intakes_back.is_running());
+          addPositionTarget(26.3_in, 15.74_in, 45_deg);
+          WAIT_UNTIL(DriveToPosition::targets.size() == 1)
+          wait(1000);
+          DriveToPosition::targets.pop();
+          score_queue = 3;
+          wait(500);
+          addPositionTarget(0_in, -10.55_in, 45_deg);
+        },
+        [](){
+          // set_drive.forward = 0;
+          // set_drive.strafe = 0;
+          // set_drive.turn = 0;
+        },
+        {&test_group});
+
+void set_rectracted_false() {
+  intakes_retracted = false;
+}
 
 /*===========================================================================*/
 
@@ -616,8 +665,8 @@ void set_callbacks() {
   button_handler.master.down.released.set(rollers_stop);
   button_handler.master.up.pressed.set(top_roller_forward);
   button_handler.master.up.released.set(rollers_stop);
-  button_handler.master.a.pressed.set_macro(drive_test);
-  button_handler.master.b.pressed.set([&](){ drive_test.terminate(); });
+  // button_handler.master.a.pressed.set_macro(drive_test);
+  // button_handler.master.b.pressed.set([&](){ drive_test.terminate(); });
 
   button_handler.partner.down.pressed.set(rollers_reverse);
   button_handler.partner.down.released.set(rollers_stop);
@@ -625,6 +674,7 @@ void set_callbacks() {
   button_handler.partner.up.released.set(rollers_stop);
   button_handler.partner.left.pressed.set(remove_ball_from_robot);
   button_handler.partner.right.pressed.set(add_ball_to_robot);
+  button_handler.partner.b.pressed.set(set_rectracted_false);
 
 }
 
