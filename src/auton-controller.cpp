@@ -4,12 +4,16 @@
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
+#include "auton-controller.h"
 #include "auton-from-sd.h"
 #include <stdio.h>
 #include <complex.h>
 
-controllerbuttons::MacroGroup test_group;
-controllerbuttons::MacroGroup intake_group;
+#define TRACKING_ORIGIN_OFFSET 1.5_in
+
+namespace autoncontroller {
+
+controllerbuttons::MacroGroup auton_group;
 
 template <typename T> int sgn(T &&val) {
   if (val < 0) {
@@ -47,8 +51,6 @@ int rampMath(double input, double total_range, rampMathSettings s) {
   return mid_output;
 }
 
-bool targetPositionEnabled = false;
-
 struct Position {
   QLength x = 0_in;
   QLength y = 0_in;
@@ -57,6 +59,23 @@ struct Position {
   OdomState starting_state;
 };
 
+
+
+OdomState tracking_to_robot_coords (OdomState tracking_coords) {
+  QLength x_offset = cos(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
+  QLength y_offset = sin(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
+  QLength new_y = tracking_coords.y;
+
+  return {tracking_coords.x + x_offset, tracking_coords.y + y_offset, tracking_coords.theta};
+}
+
+OdomState robot_to_tracking_coords (OdomState robot_coords) {
+  QLength x_offset = cos(robot_coords.theta.convert(radian)) * -TRACKING_ORIGIN_OFFSET;
+  QLength y_offset = sin(robot_coords.theta.convert(radian)) * -TRACKING_ORIGIN_OFFSET;
+  QLength new_y = robot_coords.y;
+
+  return {robot_coords.x + x_offset, robot_coords.y + y_offset, robot_coords.theta};
+}
 // target pos
 // at start:
 //   starting pos
@@ -80,6 +99,7 @@ std::queue<Target> targets = {};
 namespace drivetoposition {
   std::queue<Position> targets;
   bool targetPositionEnabled = false;
+  bool final_target_reached = true;
 
   OdomState starting_position;
   rampMathSettings move_settings = {20, 100, 20, 0.5, 0.5};
@@ -90,10 +110,11 @@ namespace drivetoposition {
   double turn    = 0;
 
   void addPositionTarget(QLength x, QLength y, QAngle theta, QLength offset = 0_in) {
-    QLength x_new = cos(theta.convert(radian)) * offset;
-    QLength y_new = sin(theta.convert(radian)) * offset;
-    targets.push({x + x_new, y + y_new, theta});
+    QLength x_offset = cos(theta.convert(radian)) * offset;
+    QLength y_offset = sin(theta.convert(radian)) * offset;
+    targets.push({x + x_offset, y + y_offset, theta});
     targetPositionEnabled = true;
+    final_target_reached = false;
   };
 
   void driveToPosition() {
@@ -147,42 +168,30 @@ namespace drivetoposition {
   void update() {
     // controllermenu::master_print_array[2] = "targets: " + std::to_string(targets.size());
     if (targetPositionEnabled) {
-      if (targets.size() == 0) {
-        forward = 0;
-        strafe = 0;
-        turn = 0;
-      // } else if (targets.size() == 1) {
-      //   // driveToPosition(targets.front(),
-      //   //                 {100, 100, 20, 8, 8},
-      //   //                 {100, 100, 20, 100, 100});
-      //   driveToPosition();
-      //   // move_settings = {100, 100, 20, 8, 8},
-      //   // turn_settings = {100, 100, 20, 100, 100};
+      if (targets.front().is_new) {
+        targets.front().is_new = false;
+        targets.front().starting_state = chassis->getState();
+        }
+      Position target = targets.front();
+      if (targets.size() > 1) {
+        // move_settings.end_output = 100;
+        OdomState target_state{target.x, target.y, target.theta};
+        Point starting_point{target.starting_state.x, target.starting_state.y};
+        auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
+        auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
+        driveToPosition();
+        if (magnitude_real >= magnitude_target && fabs(chassis->getState().theta.getValue() - target_state.theta.getValue()) < 3*degreeToRadian) {
+          targets.pop();
+        }
       } else {
-        if (targets.front().is_new) {
-          targets.front().is_new = false;
-          targets.front().starting_state = chassis->getState();
-        }
-        Position target = targets.front();
-        // move_settings = {100, 100, 100, 8, 8},
-        // turn_settings = {100, 100, 100, 100, 100};
-
-        if (targets.size() > 1) {
-          // move_settings.end_output = 100;
-          OdomState target_state{target.x, target.y, target.theta};
-          Point starting_point{target.starting_state.x, target.starting_state.y};
-          auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
-          auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
-          driveToPosition();
-          if (magnitude_real >= magnitude_target && fabs(chassis->getState().theta.getValue() - target_state.theta.getValue()) < 3*degreeToRadian) {
-            targets.pop();
-          }
-        } else {
-          holdPosition();
-          // move_settings.end_output = 1;
-
-        }
+        holdPosition();
+        final_target_reached = true;
+        // move_settings.end_output = 1;
       }
+    } else {
+      forward = 0;
+      strafe = 0;
+      turn = 0;
     }
   }
 };
@@ -198,7 +207,7 @@ double slew(double new_value, double old_value, double slew_rate = AUTON_SLEW) {
   return new_value;
 }
 
-void motorTask()
+void motor_task()
 {
   std::shared_ptr<AbstractMotor> drive_fl = x_model->getTopLeftMotor();
   std::shared_ptr<AbstractMotor> drive_fr = x_model->getTopRightMotor();
@@ -226,14 +235,7 @@ void motorTask()
     // double forward = move_m * cos(chassis->getState().theta.convert(radian) + theta);
     // double strafe  = move_m * -sin(chassis->getState().theta.convert(radian) + theta);
     // double turn    = ctr_t;
-    if (pros::competition::is_autonomous()) {
-      drivetoposition::update();
-    } else {
-      drivetoposition::forward = 0;
-      drivetoposition::strafe = 0;
-      drivetoposition::turn = 0;
-    }
-
+    drivetoposition::update();
 
     double forward = drivetoposition::forward + master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
     double strafe  = drivetoposition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
@@ -262,14 +264,6 @@ void motorTask()
   }
 }
 
-
-// void intakeBalls(int balls) {
-// }
-
-// void scoreBalls(int balls) {
-// }
-
-
 controllerbuttons::Macro count_up(
     [](){
       printf("start\n");
@@ -281,7 +275,7 @@ controllerbuttons::Macro count_up(
     [](){
 
     },
-    {&test_group});
+    {&auton_group});
 
 
 // Test function that prints to the terminal.
@@ -299,13 +293,18 @@ pros::delay(5);               \
 
 controllerbuttons::Macro drive_test(
     [&](){
-      drivetoposition::addPositionTarget(26.3_in, 26.3_in, -90_deg);
-      drivetoposition::addPositionTarget(26.3_in, 26.3_in, -135_deg);
-      drivetoposition::addPositionTarget(24_in, 24_in, -135_deg);
+      chassis->setState({0_in, 0_in, 0_deg});
+      drivetoposition::addPositionTarget(20_in, 20_in, -90_deg);
+      drivetoposition::addPositionTarget(20_in, 20_in, 0_deg);
+      drivetoposition::addPositionTarget(20_in, 0_in, 0_deg);
+      drivetoposition::addPositionTarget(0_in, 0_in, 0_deg);
+      drivetoposition::addPositionTarget(0_in, 0_in, 360_deg);
+      WAIT_UNTIL(drivetoposition::final_target_reached);
     },
     [](){
+      drivetoposition::targetPositionEnabled = false;
     },
-    {&test_group});
+    {&auton_group});
 
 controllerbuttons::Macro main_auton(
     [&](){
@@ -366,7 +365,7 @@ controllerbuttons::Macro main_auton(
     },
     [](){
     },
-    {&test_group});
+    {&auton_group});
 
 controllerbuttons::Macro shawnton(
     [&](){
@@ -399,7 +398,7 @@ controllerbuttons::Macro shawnton(
     },
     [](){
     },
-    {&test_group});
+    {&auton_group});
 
 
 
@@ -409,3 +408,5 @@ void set_callbacks() {
   button_handler.master.a.pressed.set_macro(drive_test);
   button_handler.master.b.pressed.set([&](){ drive_test.terminate(); });
 }
+
+} // namespace autoncontroller

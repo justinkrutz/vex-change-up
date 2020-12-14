@@ -9,9 +9,9 @@ std::string get_new_auton_id(json autons);
 // void jsonTest();
 // void driveToClosestGoal();
 
-class AutonFromSD {
+class autonfromsd {
   public:
-  AutonFromSD(std::string auton_id);
+  autonfromsd(std::string auton_id);
 
   std::string auton_id;
   json auton_steps;

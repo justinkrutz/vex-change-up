@@ -137,24 +137,24 @@ std::string get_new_auton_id(json autons) {
 
 
 
-json AutonFromSD::all_autons = {};
+json autonfromsd::all_autons = {};
 
-void AutonFromSD::load_autons_from_SD() {
+void autonfromsd::load_autons_from_SD() {
   std::ifstream i("/usd/autonomous_routines.json");
   i >> all_autons;
   i.close();
 }
 
-void AutonFromSD::save_autons_to_SD() {
+void autonfromsd::save_autons_to_SD() {
   std::ofstream o("/usd/autonomous_routines.json");
   o << std::setw(2) << all_autons << std::endl;
   o.close();
 }
 
-AutonFromSD::AutonFromSD(std::string auton_id)
+autonfromsd::autonfromsd(std::string auton_id)
               : auton_id(auton_id), auton_steps(all_autons[auton_id]["steps"]){}
 
-void AutonFromSD::run() {
+void autonfromsd::run() {
   json last_waypoint = {};
   for (auto& step : auton_steps.items()) {
     if (step.value()["stepType"] == "waypoint") {
@@ -178,21 +178,21 @@ void AutonFromSD::run() {
   }
 }
 
-void AutonFromSD::save() {
+void autonfromsd::save() {
   all_autons[auton_id]["name"] = "test auton";
   all_autons[auton_id]["autonType"] = "match";
   all_autons[auton_id]["steps"] = auton_steps;
 }
 
-void AutonFromSD::next_step() {
+void autonfromsd::next_step() {
   selected_step = std::min(selected_step + 1, int(auton_steps.size() - 1));
 }
 
-void AutonFromSD::previous_step() {
+void autonfromsd::previous_step() {
   selected_step = std::max(selected_step - 1, 0);
 }
 
-void AutonFromSD::set_step_drive_to_goal_and_score(int balls_in, int balls_out) {
+void autonfromsd::set_step_drive_to_goal_and_score(int balls_in, int balls_out) {
   json step;
   step["stepType"] = "driveToGoalAndCycle";
   step["ballsIn"] = balls_in;
@@ -200,16 +200,16 @@ void AutonFromSD::set_step_drive_to_goal_and_score(int balls_in, int balls_out) 
   auton_steps[selected_step] = step;
 }
 
-void AutonFromSD::insert_step() {
+void autonfromsd::insert_step() {
   json step = {};
   auton_steps.insert(auton_steps.begin() + ++selected_step, step);
 }
 
-void AutonFromSD::remove_step() {
+void autonfromsd::remove_step() {
   auton_steps.erase(selected_step);
 }
 
-void AutonFromSD::set_step_waypoint() {
+void autonfromsd::set_step_waypoint() {
   auton_steps[selected_step]["stepType"] = "waypoint";
   QLength x = chassis->getState().x;
   QLength y = chassis->getState().y;

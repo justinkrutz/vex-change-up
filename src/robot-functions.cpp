@@ -11,12 +11,7 @@
 
 namespace robotfunctions {
 
-
-
-
-
-
-
+controllerbuttons::MacroGroup intake_group;
 
 // state machine under development
 namespace intake {

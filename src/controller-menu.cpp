@@ -242,7 +242,7 @@ class MenuCreateAuton : public MenuItem {
     button_handler.master.b.pressed.set ([this](){ back(); }, {"menu"});
     button_handler.master.a.pressed.set ([this](){
       auton.save();
-      AutonFromSD::save_autons_to_SD();
+      autonfromsd::save_autons_to_SD();
     }, {"menu"});
     button_handler.master.y.pressed.set ([this](){ auton.run(); }, {"menu"});
     button_handler.master.x.pressed.set ([this](){ auton.set_step_waypoint(); }, {"menu"});
@@ -257,8 +257,8 @@ class MenuCreateAuton : public MenuItem {
   }
 
   private:
-  AutonFromSD auton;
-  // std::string auton_id = get_new_auton_id(AutonFromSD::all_autons);
+  autonfromsd auton;
+  // std::string auton_id = get_new_auton_id(autonfromsd::all_autons);
 };
 
 // class MenuAutonomousSelect : public MenuItem {
@@ -341,10 +341,10 @@ std::vector<MenuItem *> getMenuAutonsFromJson(json autons, std::string auton_typ
 void createFolderStructure() {
   root_folder = new MenuFolder("", {
   new MenuFolder("Match Autons", {
-    getMenuAutonsFromJson(AutonFromSD::all_autons, "match")
+    getMenuAutonsFromJson(autonfromsd::all_autons, "match")
   }),
   new MenuFolder("Skills Autons", {
-    getMenuAutonsFromJson(AutonFromSD::all_autons, "skills")
+    getMenuAutonsFromJson(autonfromsd::all_autons, "skills")
   }),
   new MenuFolder("Auton Builders", {
     new MenuCreateAuton("Build Match"),

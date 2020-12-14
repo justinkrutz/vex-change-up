@@ -4,6 +4,7 @@
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
+#include "auton-controller.h"
 #include "auton-from-sd.h"
 
 // ChassisController chassis;
@@ -58,14 +59,15 @@ void initialize() {
   chassis->getModel()->setBrakeMode(okapi::AbstractMotor::brakeMode::brake);
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
   // x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
-  pros::Task(robotfunctions::motorTask);
+  pros::Task(autoncontroller::motor_task);
   robotfunctions::set_callbacks();
-  AutonFromSD::load_autons_from_SD();
+  autoncontroller::set_callbacks();
+  autonfromsd::load_autons_from_SD();
   controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
-  controllerbuttons::button_handler.master.y.pressed.set(yes_auton);
-  controllerbuttons::button_handler.master.x.pressed.set(no_auton);
-  controllerbuttons::button_handler.master.b.pressed.set(shawn_auton_run);
+  // controllerbuttons::button_handler.master.y.pressed.set(yes_auton);
+  // controllerbuttons::button_handler.master.x.pressed.set(no_auton);
+  // controllerbuttons::button_handler.master.b.pressed.set(shawn_auton_run);
 }
 
 /**
@@ -98,11 +100,11 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
-  if (run_auton) {
-    robotfunctions::main_auton.start();
-  } else if (run_shawn) {
-    robotfunctions::shawnton.start();
-  }
+  // if (run_auton) {
+  //   autoncontroller::main_auton.start();
+  // } else if (run_shawn) {
+  //   autoncontroller::shawnton.start();
+  // }
 }
 /**
  * Runs the operator control code. This function will be started in its own task
