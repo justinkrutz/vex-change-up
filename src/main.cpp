@@ -4,7 +4,7 @@
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
-#include "autonomous.h"
+#include "auton-from-sd.h"
 
 // ChassisController chassis;
 
@@ -53,14 +53,14 @@ void initialize() {
         ADIEncoder{'E', 'F', true}  // middle encoder in ADI ports E & F
     )
     .withOdometry({{2.75_in, 11.28125_in, 4.4375_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
+    // .withOdometry({{1626.17630113, 3.97430555556, 0.1127125, 1630.79264566}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
     .buildOdometry();
   chassis->getModel()->setBrakeMode(okapi::AbstractMotor::brakeMode::brake);
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
   // x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
-
   pros::Task(robotfunctions::motorTask);
   robotfunctions::set_callbacks();
-  AutonManager::loadAutonsFromSD();
+  AutonFromSD::load_autons_from_SD();
   controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
   controllerbuttons::button_handler.master.y.pressed.set(yes_auton);
@@ -99,9 +99,9 @@ void competition_initialize() {}
  */
 void autonomous() {
   if (run_auton) {
-    robotfunctions::drive_test.start();
+    robotfunctions::main_auton.start();
   } else if (run_shawn) {
-    robotfunctions::shawn_auton.start();
+    robotfunctions::shawnton.start();
   }
 }
 /**
@@ -119,7 +119,8 @@ void autonomous() {
  */
 void opcontrol() {
   printf("opcontrol\n");
-  chassis->setState({15.7411_in, 26.3036_in, -90_deg});
+  // chassis->setState({15.7411_in, 26.3036_in, -90_deg});
+  // chassis->setState({0_in, 0_in, 0_deg});
   Controller controller;
   while (true) {
     controllerbuttons::run_buttons();
@@ -136,9 +137,9 @@ void opcontrol() {
     QLength x = chassis->getState().x;
     QLength y = chassis->getState().y;
     QAngle theta = chassis->getState().theta;
-    controllermenu::master_print_array[0] = "x: " + std::to_string(x.convert(inch));
-    controllermenu::master_print_array[1] = "y: " + std::to_string(y.convert(inch));
-    controllermenu::master_print_array[2] = "theta: " + std::to_string(theta.convert(degree));
+    controllermenu::master_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
+    controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
+    controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
 
     // controllermenu::master_print_array[0] = "tracker_left: " + std::to_string(tracker_left.get_value());
     // controllermenu::master_print_array[1] = "tracker_right: " + std::to_string(tracker_right.get_value());

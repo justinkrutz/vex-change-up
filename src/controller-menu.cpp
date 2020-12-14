@@ -8,7 +8,7 @@ using json = nlohmann::ordered_json;
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
-#include "autonomous.h"
+#include "auton-from-sd.h"
 
 using namespace controllerbuttons;
 
@@ -242,14 +242,14 @@ class MenuCreateAuton : public MenuItem {
     button_handler.master.b.pressed.set ([this](){ back(); }, {"menu"});
     button_handler.master.a.pressed.set ([this](){
       auton.save();
-      AutonManager::saveAutonsToSD();
+      AutonFromSD::save_autons_to_SD();
     }, {"menu"});
     button_handler.master.y.pressed.set ([this](){ auton.run(); }, {"menu"});
-    button_handler.master.x.pressed.set ([this](){ auton.setStepWaypoint(); }, {"menu"});
-    button_handler.master.up.pressed.set ([this](){ auton.insertStep(); }, {"menu"});
-    button_handler.master.down.pressed.set ([this](){ auton.removeStep(); }, {"menu"});
-    button_handler.master.left.pressed.set ([this](){ auton.previousStep(); }, {"menu"});
-    button_handler.master.right.pressed.set ([this](){ auton.nextStep(); }, {"menu"});
+    button_handler.master.x.pressed.set ([this](){ auton.set_step_waypoint(); }, {"menu"});
+    button_handler.master.up.pressed.set ([this](){ auton.insert_step(); }, {"menu"});
+    button_handler.master.down.pressed.set ([this](){ auton.remove_step(); }, {"menu"});
+    button_handler.master.left.pressed.set ([this](){ auton.previous_step(); }, {"menu"});
+    button_handler.master.right.pressed.set ([this](){ auton.next_step(); }, {"menu"});
     button_handler.master.r1.pressed.set ([this](){ /*drive to nearest goal*/ }, {"menu"});
     button_handler.master.r2.pressed.set ([this](){ /*drive to and intake nearest ball*/ }, {"menu"});
     button_handler.master.l1.pressed.set ([this](){ /*score one ball if at goal*/ }, {"menu"});
@@ -257,8 +257,8 @@ class MenuCreateAuton : public MenuItem {
   }
 
   private:
-  AutonManager auton;
-  // std::string auton_id = getNewAutonId(AutonManager::all_autons);
+  AutonFromSD auton;
+  // std::string auton_id = get_new_auton_id(AutonFromSD::all_autons);
 };
 
 // class MenuAutonomousSelect : public MenuItem {
@@ -341,10 +341,10 @@ std::vector<MenuItem *> getMenuAutonsFromJson(json autons, std::string auton_typ
 void createFolderStructure() {
   root_folder = new MenuFolder("", {
   new MenuFolder("Match Autons", {
-    getMenuAutonsFromJson(AutonManager::all_autons, "match")
+    getMenuAutonsFromJson(AutonFromSD::all_autons, "match")
   }),
   new MenuFolder("Skills Autons", {
-    getMenuAutonsFromJson(AutonManager::all_autons, "skills")
+    getMenuAutonsFromJson(AutonFromSD::all_autons, "skills")
   }),
   new MenuFolder("Auton Builders", {
     new MenuCreateAuton("Build Match"),

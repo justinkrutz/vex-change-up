@@ -47,14 +47,21 @@ void check_for_warnings();
 void set_callbacks();
 void motorTask();
 
-extern controllerbuttons::Macro drive_test;
-extern controllerbuttons::Macro shawn_auton;
+extern controllerbuttons::Macro main_auton;
+extern controllerbuttons::Macro shawnton;
 
 namespace rollers {
-  extern int balls_in_queue;
+  extern int score_queue = 0;
+  extern int intake_queue = 0;
+  extern int balls_in_robot = 0;
+  extern bool ball_sensor_last = true;
 
   void main_task();
+  void score_ball();
+  void test_intake();
 }
+
+extern controllerbuttons::Macro intakes_back;
 
 } // namespace robotfunctions
 
