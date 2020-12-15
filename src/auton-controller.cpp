@@ -60,7 +60,6 @@ struct Position {
 };
 
 
-
 OdomState tracking_to_robot_coords (OdomState tracking_coords) {
   QLength x_offset = cos(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
   QLength y_offset = sin(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
@@ -75,6 +74,10 @@ OdomState robot_to_tracking_coords (OdomState robot_coords) {
   QLength new_y = robot_coords.y;
 
   return {robot_coords.x + x_offset, robot_coords.y + y_offset, robot_coords.theta};
+}
+
+OdomState robot_state () {
+  return tracking_to_robot_coords(chassis->getState());
 }
 // target pos
 // at start:
@@ -100,10 +103,14 @@ namespace drivetoposition {
   std::queue<Position> targets;
   bool targetPositionEnabled = false;
   bool final_target_reached = true;
+  bool target_heading_reached = false;
+  bool target_distance_reached = false;
 
   OdomState starting_position;
-  rampMathSettings move_settings = {20, 100, 20, 0.5, 0.5};
-  rampMathSettings turn_settings = {20, 100, 20, 0.1, 0.1};
+  // rampMathSettings move_settings = {20, 100, 20, 0.5, 0.5};
+  // rampMathSettings turn_settings = {20, 100, 20, 0.1, 0.1};
+  rampMathSettings move_settings = {20, 100, 20, 0.1, 0.1};
+  rampMathSettings turn_settings = {10, 50, 10, 0.1, 0.1};
 
   double forward = 0;
   double strafe  = 0;
@@ -120,20 +127,24 @@ namespace drivetoposition {
   void driveToPosition() {
     Position target = targets.front();
     Point target_point{target.x, target.y};
-    auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, chassis->getState());
+    QAngle direction = OdomMath::computeAngleToPoint(target_point, robot_state());
 
     OdomState target_state{target.x, target.y, target.theta};
     Point starting_point{target.starting_state.x, target.starting_state.y};
-    auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
-    auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
+    QLength traveled_distance = OdomMath::computeDistanceToPoint(starting_point, robot_state());
+    QLength total_distance = OdomMath::computeDistanceToPoint(starting_point, target_state);
+    // auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, robot_state());
+    // auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
     // auto [start_magnitude, start_direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, starting_position);
 
-    move_settings.start_output = std::max(20.0, sqrt(forward * forward + strafe * strafe));
-    double move_speed = rampMath(magnitude_real.convert(inch), magnitude_target.convert(inch), move_settings);
-    // double turn_speed = rampMath(direction.convert(radian), start_direction.convert(radian), turn_settings);
+    // move_settings.start_output = std::max(20.0, sqrt(forward * forward + strafe * strafe));
+    double move_speed = rampMath(traveled_distance.convert(inch), total_distance.convert(inch), move_settings);
+    QAngle angle_turned = robot_state().theta - target.starting_state.theta;
+    QAngle total_angle = target.theta - target.starting_state.theta;
+    // double turn_speed = sgn(total_angle.convert(radian)) * rampMath(angle_turned.convert(radian), total_angle.convert(radian), turn_settings);
     // double move_speed = std::min(100.0, magnitude.convert(inch)*10);
     // double move_speed = 0;
-    double turn_speed = std::min(100.0, 100 * (target.theta - chassis->getState().theta).convert(radian));
+    double turn_speed = std::min(100.0, 100 * (target.theta - robot_state().theta).convert(radian));
     forward = move_speed * cos(direction.convert(radian));
     strafe  = move_speed * sin(direction.convert(radian));
     turn    = turn_speed;
@@ -144,12 +155,12 @@ namespace drivetoposition {
     void holdPosition() {
     Position target = targets.front();
     Point target_point{target.x, target.y};
-    auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, chassis->getState());
+    auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, robot_state());
 
     OdomState target_state{target.x, target.y, target.theta};
     Point starting_point{target.starting_state.x, target.starting_state.y};
     auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
-    auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
+    auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, robot_state());
     // auto [start_magnitude, start_direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, starting_position);
 
     move_settings.start_output = std::max(20.0, sqrt(forward * forward + strafe * strafe));
@@ -157,7 +168,7 @@ namespace drivetoposition {
     // double turn_speed = rampMath(direction.convert(radian), start_direction.convert(radian), turn_settings);
     double move_speed = std::min(100.0, magnitude.convert(inch)*5);
     // double move_speed = 0;
-    double turn_speed = std::min(100.0, 100 * (target.theta - chassis->getState().theta).convert(radian));
+    double turn_speed = std::min(100.0, 100 * (target.theta - robot_state().theta).convert(radian));
     forward = move_speed * cos(direction.convert(radian));
     strafe  = move_speed * sin(direction.convert(radian));
     turn    = turn_speed;
@@ -167,10 +178,10 @@ namespace drivetoposition {
 
   void update() {
     // controllermenu::master_print_array[2] = "targets: " + std::to_string(targets.size());
-    if (targetPositionEnabled) {
+    if (targetPositionEnabled && targets.size() > 0) {
       if (targets.front().is_new) {
         targets.front().is_new = false;
-        targets.front().starting_state = chassis->getState();
+        targets.front().starting_state = robot_state();
         }
       Position target = targets.front();
       if (targets.size() > 1) {
@@ -178,10 +189,18 @@ namespace drivetoposition {
         OdomState target_state{target.x, target.y, target.theta};
         Point starting_point{target.starting_state.x, target.starting_state.y};
         auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
-        auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, chassis->getState());
+        auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, robot_state());
         driveToPosition();
-        if (magnitude_real >= magnitude_target && fabs(chassis->getState().theta.getValue() - target_state.theta.getValue()) < 3*degreeToRadian) {
+        if (magnitude_real >= magnitude_target) {
+          target_distance_reached = true;
+        }
+        if (fabs(robot_state().theta.convert(radian) - target_state.theta.convert(radian)) < 5*degreeToRadian) {
+        target_heading_reached = true;
+        }
+        if (target_heading_reached && target_distance_reached) {
           targets.pop();
+          target_heading_reached = false;
+          target_distance_reached = false;
         }
       } else {
         holdPosition();
@@ -192,6 +211,7 @@ namespace drivetoposition {
       forward = 0;
       strafe = 0;
       turn = 0;
+      targets = {};
     }
   }
 };
@@ -232,15 +252,15 @@ void motor_task()
     //   theta = 90 * degreeToRadian * sgn(ctr_s);
     // }
     // double move_m = sqrt(pow(ctr_f, 2) + pow(ctr_s, 2)) * sgn(ctr_f);
-    // double forward = move_m * cos(chassis->getState().theta.convert(radian) + theta);
-    // double strafe  = move_m * -sin(chassis->getState().theta.convert(radian) + theta);
+    // double forward = move_m * cos(robot_state().theta.convert(radian) + theta);
+    // double strafe  = move_m * -sin(robot_state().theta.convert(radian) + theta);
     // double turn    = ctr_t;
     drivetoposition::update();
 
     double forward = drivetoposition::forward + master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
-    double strafe  = drivetoposition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
+    double strafe  = drivetoposition::strafe  + master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
     // double turn    = drivetoposition::turn    + master.get_analog(ANALOG_LEFT_X) * 0.787401574803 * ((master.get_analog(ANALOG_LEFT_Y) * 0.787401574803) / 100 + 1.1);
-    double temp_turn    = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
+    double temp_turn    = master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
     double turn    = drivetoposition::turn    + pow(abs(temp_turn / 100), 1.8) * 100 * sgn(temp_turn);
     double m = std::min(1.0, 100 / (fabs(forward) + fabs(strafe) + fabs(turn)));
 
