@@ -156,6 +156,7 @@ namespace rollers {
   int intake_queue = 0;
   int balls_in_robot = 0;
   bool ball_sensor_last = true;
+  bool intake_continuous = false;
 
   void main_task() {
     intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
@@ -201,12 +202,14 @@ namespace rollers {
         bottom_roller.move_absolute(bottom_roller.get_target_position() + 500, 600);
         pros::delay(500);
       }
-      if (intake_queue > 0) {
+      if (intake_queue > 0 || intake_continuous) {
         intake_left.move_velocity(200);
         intake_right.move_velocity(200);
         if (ball_sensor_triggered) {
           pros::delay(200);
-          intake_queue--;
+          if (intake_queue > 0) {
+            intake_queue--;
+          }
           intake_left.move_relative(-30, 200);
           intake_right.move_relative(-30, 200);
         }
@@ -221,8 +224,13 @@ namespace rollers {
     }
   }
 
-  void test_intake() {
+  void add_ball_to_intake_queue() {
     intake_queue++;
+    intake_continuous = true;
+  }
+
+  void intake_continuous_false() {
+    intake_continuous = false;
   }
 
 }
@@ -270,7 +278,8 @@ void set_callbacks() {
   using namespace controllerbuttons;
   button_handler.master.l1.pressed.set(intake_toggle);
   button_handler.master.l2.pressed.set_macro(intakes_back);
-  button_handler.master.r1.pressed.set(rollers::test_intake);
+  button_handler.master.r1.pressed.set(rollers::add_ball_to_intake_queue);
+  button_handler.master.r1.released.set(rollers::intake_continuous_false);
   button_handler.master.r2.pressed.set(rollers::score_ball);
   button_handler.master.down.pressed.set(top_roller_reverse);
   button_handler.master.down.released.set(rollers_stop);

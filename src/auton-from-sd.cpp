@@ -1,6 +1,7 @@
 #include "main.h"
 #include "robot-functions.h"
 #include "auton-from-sd.h"
+#include "auton-controller.h"
 
 #include <bits/stdc++.h>
 #include "json.hpp"
@@ -37,48 +38,106 @@ std::vector<Ball> match_balls_on_field {
 
 std::vector<Ball> balls_on_field;
 
-/*     opposing alliance side
-   │             │
-   └─────────────┘
-┌───────────────────┐
-│7        8        9│
-│─────────╩─────────│
-│                   │
-│4════════5════════6│
-│                   │
-│─────────╦─────────│
-│1        2        3│
-└───────────────────┘
-   ┌─────────────┐
-   │             │
-      alliance     */
+/*        MATCH SETUP
+   │                       │
+   └───────────────────────┘
+┌─────────────────────────────┐
+│                             │
+│──────────────╩──────────────│
+│                             │
+│                             │
+│                             │
+│4═════D═════E═5═F═════G═════6│
+│              C              │
+│                             │
+│                             │
+│──A───────────╦───────────B──│
+│1             2             3│
+└─────────────────────────────┘
+   ┌───────────────────────┐
+   │                       │
+*/
 
+/*       SKILLS SETUP
+   │                       │
+   └───────────────────────┘
+┌──────────────╦──────────────┐
+│7             8             9│
+│──────M───────╩───────N──────│
+│K                           L│
+│              J              │
+│                             │
+│4═══F════G════5════H════I═══6│
+│                             │
+│              E              │
+│C                           D│
+│──────A───────╦───────B──────│
+│1             2             3│
+└──────────────╩──────────────┘
+   ┌───────────────────────┐
+   │                       │
+*/
 
-std::vector<Goal> match_goals {
-  {5.8, 5.8, {kOurs, kTheirs}},
-  {70.3, 5.8, {kOurs, kTheirs}},
-  {134.9, 5.8, {kOurs, kTheirs}},
-  {5.8, 70.3, {kOurs, kTheirs, kOurs}},
-  {70.3, 70.3, {}},
-  {134.9, 70.3, {kTheirs, kOurs, kTheirs}},
-  {5.8, 134.9, {kTheirs, kOurs}},
-  {70.3, 134.9, {kTheirs, kOurs}},
-  {134.9, 134.9, {kTheirs, kOurs}},
+#define DEFAULT_GOAL_OFFSET 12.13
+
+json goal_coords = {
+  {"1", {
+    {"x", 5.8129},
+    {"y", 5.8129},
+    {"defaultAngle", 225},
+    {"goalType", "corner"}
+  }},
+  {"2", {
+    {"x", 5.9272},
+    {"y", 70.3361},
+    {"defaultAngle", 180},
+    {"goalType", "side"}
+  }},
+  {"3", {
+    {"x", 5.8129},
+    {"y", 134.8593},
+    {"defaultAngle", 135},
+    {"goalType", "corner"}
+  }},
+  {"4", {
+    {"x", 70.3361},
+    {"y", 5.9272},
+    {"defaultAngle", 315},
+    {"goalType", "side"}
+  }},
+  {"5", {
+    {"x", 70.3361},
+    {"y", 70.3361},
+    {"defaultAngle", 0},
+    {"goalType", "center"}
+  }},
+  {"6", {
+    {"x", 70.3361},
+    {"y", 5.9272},
+    {"defaultAngle", 315},
+    {"goalType", "side"}
+  }},
+  {"7", {
+    {"x", 134.8593},
+    {"y", 5.8129},
+    {"defaultAngle", 315},
+    {"goalType", "corner"}
+  }},
+  {"8", {
+    {"x", 134.745},
+    {"y", 70.3361},
+    {"defaultAngle", 0},
+    {"goalType", "side"}
+  }},
+  {"9", {
+    {"x", 134.8593},
+    {"y", 134.8593},
+    {"defaultAngle", 45},
+    {"goalType", "corner"}
+  }}
 };
 
-std::vector<Goal> skills_goals {
-  {5.8, 5.8, {kTheirs, kTheirs}},
-  {70.3, 5.8, {kTheirs}},
-  {134.9, 5.8, {kTheirs, kTheirs}},
-  {5.8, 70.3, {kTheirs}},
-  {70.3, 70.3, {kTheirs, kTheirs, kTheirs}},
-  {134.9, 70.3, {kTheirs}},
-  {5.8, 134.9, {kTheirs, kTheirs}},
-  {70.3, 134.9, {kTheirs}},
-  {134.9, 134.9, {kTheirs, kTheirs}},
-};
-
-std::vector<Goal> goals;
+// std::vector<Goal> goals;
 
 double proximity (double x_one, double y_one, double x_two, double y_two) {
   return fabs(sqrt(pow(x_one - x_two, 2) + pow(y_one - y_two, 2)));
@@ -96,11 +155,11 @@ T closestObject(double x, double y, std::vector<T> objects) {
   return closest_object;
 }
 
-void driveToClosestGoal() {
+void driveToClosestGoal(json step) {
   QLength x_pos = chassis->getState().x;
   QLength y_pos = chassis->getState().y;
-  Goal goal = closestObject<Goal>(x_pos.convert(inch), y_pos.convert(inch), match_goals);
-  chassis->driveToPoint({goal.x * inch, goal.y * inch}, false, 14_in);
+  // Goal goal = closestObject<Goal>(x_pos.convert(inch), y_pos.convert(inch), match_goals);
+  // chassis->driveToPoint({goal.x * inch, goal.y * inch}, false, 14_in);
   // chassis->driveToPoint({10 * inch, 10 * inch});
   // chassis->driveToPoint({70.3 * inch, 134.9 * inch}, false, 14_in);
 }
@@ -154,6 +213,10 @@ void autonfromsd::save_autons_to_SD() {
 autonfromsd::autonfromsd(std::string auton_id)
               : auton_id(auton_id), auton_steps(all_autons[auton_id]["steps"]){}
 
+void drive_to_goal_and_cycle(std::string goal_id, int balls_in, int balls_out, QLength offset = 0_in) {
+  // driveToClosestGoal
+}
+
 void autonfromsd::run() {
   json last_waypoint = {};
   for (auto& step : auton_steps.items()) {
@@ -162,6 +225,7 @@ void autonfromsd::run() {
       QLength x = step.value()["x"] * inch;
       QLength y = step.value()["y"] * inch;
       QAngle theta = step.value()["theta"] * degree;
+      autoncontroller::drivetoposition::addPositionTarget(x, y, theta);
       // robotfunctions::driveToPosition(x, y, theta);
       last_waypoint = step.value();
     // }
@@ -173,7 +237,7 @@ void autonfromsd::run() {
       robotfunctions::intakeBalls(step.value()["ballsIn"]);
       robotfunctions::intakeBalls(step.value()["ballsOut"]);
     } else if (step.value()["stepType"] == "driveToGoalAndCycle") {
-      driveToClosestGoal();
+      drive_to_goal_and_cycle(step.value()["goal"], step.value()["ballsIn"], step.value()["ballsOut"], );
     }
   }
 }

@@ -51,13 +51,13 @@ int rampMath(double input, double total_range, rampMathSettings s) {
   return mid_output;
 }
 
-struct Position {
-  QLength x = 0_in;
-  QLength y = 0_in;
-  QAngle theta = 0_deg;
-  bool is_new = true;
-  OdomState starting_state;
-};
+// struct Position {
+//   QLength x = 0_in;
+//   QLength y = 0_in;
+//   QAngle theta = 0_deg;
+//   bool is_new = true;
+//   OdomState starting_state;
+// };
 
 
 OdomState tracking_to_robot_coords (OdomState tracking_coords) {
@@ -116,7 +116,7 @@ namespace drivetoposition {
   double strafe  = 0;
   double turn    = 0;
 
-  void addPositionTarget(QLength x, QLength y, QAngle theta, QLength offset = 0_in) {
+  void addPositionTarget(QLength x, QLength y, QAngle theta, QLength offset) {
     QLength x_offset = cos(theta.convert(radian)) * offset;
     QLength y_offset = sin(theta.convert(radian)) * offset;
     targets.push({x + x_offset, y + y_offset, theta});
@@ -258,9 +258,9 @@ void motor_task()
     drivetoposition::update();
 
     double forward = drivetoposition::forward + master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
-    double strafe  = drivetoposition::strafe  + master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
+    double strafe  = drivetoposition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
     // double turn    = drivetoposition::turn    + master.get_analog(ANALOG_LEFT_X) * 0.787401574803 * ((master.get_analog(ANALOG_LEFT_Y) * 0.787401574803) / 100 + 1.1);
-    double temp_turn    = master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
+    double temp_turn    = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
     double turn    = drivetoposition::turn    + pow(abs(temp_turn / 100), 1.8) * 100 * sgn(temp_turn);
     double m = std::min(1.0, 100 / (fabs(forward) + fabs(strafe) + fabs(turn)));
 
@@ -306,10 +306,10 @@ void single_use_button() {
 
 
 
-#define WAIT_UNTIL(condition) \
-while (!(condition)) {        \
-pros::delay(5);               \
-}
+// #define WAIT_UNTIL(condition) \
+// while (!(condition)) {        \
+// pros::delay(5);               \
+// }
 
 controllerbuttons::Macro drive_test(
     [&](){

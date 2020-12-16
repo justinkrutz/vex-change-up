@@ -10,7 +10,8 @@
         "y": 73.8
       },
       {
-        "stepType": "driveToBallAndIntake"
+        "stepType": "driveToBallAndIntake",
+        "ball": "A"
       },
       {
         "stepType": "waypoint",
@@ -20,14 +21,44 @@
       },
       {
         "stepType": "driveToGoalAndCycle",
+        "goal": "1",
         "ballsIn": 2,
         "ballsOut": 3
       }
     ]
   },
   "1": {
-    "name": "",
+    "name": "ShawnTon Left",
     "autonType": "match",
-    "steps": []
+    "steps": [
+      {
+        "stepType": "setPosition",
+        "theta": 270,
+        "x": 15.7411,
+        "y": 26.3036
+      },
+      {
+        "stepType": "waypoint",
+        "theta": 270,
+        "x": 26.3,
+        "y": 26.3
+      },
+      {
+        "stepType": "driveToBallAndIntake",
+        "ball": "A"
+      },
+      {
+        "stepType": "driveToGoalAndCycle",
+        "goal": "1",
+        "ballsIn": 2,
+        "ballsOut": 2
+      },
+      {
+        "stepType": "waypoint",
+        "theta": 270,
+        "x": 26.3,
+        "y": 26.3
+      }
+    ]
   }
 }
