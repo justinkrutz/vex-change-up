@@ -82,26 +82,26 @@ namespace intake {
 }
 
 
-bool intakes_retracted = true;
-bool intake_sensors_last = true;
+bool intakes_retracted = false;
+// bool intake_sensors_last = true;
 int intakes_retracted_time = 0;
 
 bool intakes_extended() {
-  bool intake_sensors = right_intake_sensor.get_value() < 20;
-  bool result = !intakes_retracted
-      || pros::millis() - intakes_retracted_time > 700
-      || (intake_sensors_last && !intake_sensors && intake_right.get_target_velocity() > 10);
-  intake_sensors_last = intake_sensors;
-  intakes_retracted = !result;
+  // bool intake_sensors = right_intake_sensor.get_value() < 20;
+  bool result = !intakes_retracted;
+      // || pros::millis() - intakes_retracted_time > 700
+      // || (intake_sensors_last && !intake_sensors && intake_right.get_target_velocity() > 10);
+  // intake_sensors_last = intake_sensors;
+  // intakes_retracted = !result;
   return result;
 }
 
 
-void intake_back(pros::Motor &motor, pros::ADIAnalogIn &sensor) {
+void intake_back(pros::Motor &motor) {
   motor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   double start_pos = motor.get_position();
   int start_time = pros::millis();
-  while (sensor.get_value() > 20 && pros::millis() - start_time < 800) {
+  while (pros::millis() - start_time < 600) {
     motor.move_velocity(MIN(-(motor.get_position() - start_pos) * 1.7 - 200, -10));
     controllerbuttons::wait(10);
   }
@@ -110,7 +110,7 @@ void intake_back(pros::Motor &motor, pros::ADIAnalogIn &sensor) {
 
 controllerbuttons::Macro left_intake_back(
     [](){
-      intake_back(intake_left, left_intake_sensor);
+      intake_back(intake_left);
     },
     [](){
       intake_left.move_velocity(0);
@@ -119,7 +119,7 @@ controllerbuttons::Macro left_intake_back(
 
 controllerbuttons::Macro right_intake_back(
     [](){
-      intake_back(intake_right, right_intake_sensor);
+      intake_back(intake_right);
     },
     [](){
       intake_right.move_velocity(0);
@@ -174,7 +174,7 @@ namespace rollers {
       // controllermenu::master_print_array[2] = "LLS: " + std::to_string(left_intake_sensor.get_value()) + " RLS: " + std::to_string(right_intake_sensor.get_value());
       controllermenu::partner_print_array[0] = "BIR: " + std::to_string(balls_in_robot) + " SQ: " + std::to_string(score_queue) + " IQ: " + std::to_string(intake_queue);
       controllermenu::partner_print_array[1] = "IR: " + std::to_string(intakes_retracted);
-      controllermenu::partner_print_array[2] = "LLS: " + std::to_string(left_intake_sensor.get_value()) + " RLS: " + std::to_string(right_intake_sensor.get_value());
+      // controllermenu::partner_print_array[2] = "LLS: " + std::to_string(left_intake_sensor.get_value()) + " RLS: " + std::to_string(right_intake_sensor.get_value());
       if (ball_sensor_triggered) {
         ball_sensor_last = true;
         if (balls_in_robot < 3) {
@@ -246,7 +246,7 @@ void intake_toggle(){
 
 controllerbuttons::Macro intakes_back(
     [](){
-      intakes_retracted = true;
+      // intakes_retracted = true;
       intakes_retracted_time = pros::millis();
       rollers::intake_queue = 0;
       left_intake_back.start();
@@ -281,11 +281,14 @@ void set_callbacks() {
   button_handler.master.r1.pressed.set(rollers::add_ball_to_intake_queue);
   button_handler.master.r1.released.set(rollers::intake_continuous_false);
   button_handler.master.r2.pressed.set(rollers::score_ball);
-  button_handler.master.down.pressed.set(top_roller_reverse);
+  // button_handler.master.down.pressed.set(top_roller_reverse);
+  button_handler.master.down.pressed.set(rollers_reverse);
   button_handler.master.down.released.set(rollers_stop);
-  button_handler.master.up.pressed.set(top_roller_forward);
+  // button_handler.master.up.pressed.set(top_roller_forward);
+  button_handler.master.up.pressed.set(rollers_forward);
   button_handler.master.up.released.set(rollers_stop);
 
+  button_handler.partner.r2.pressed.set(rollers::score_ball);
   button_handler.partner.down.pressed.set(rollers_reverse);
   button_handler.partner.down.released.set(rollers_stop);
   button_handler.partner.up.pressed.set(rollers_forward);

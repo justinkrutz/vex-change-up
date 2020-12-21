@@ -1,40 +1,102 @@
 #include "main.h"
 #include "robot-functions.h"
 #include "auton-from-sd.h"
-#include "auton-controller.h"
+#include "auton-drive.h"
 
 #include <bits/stdc++.h>
 #include "json.hpp"
 using json = nlohmann::ordered_json;
 
+#define DEFAULT_GOAL_OFFSET 13_in
+#define DEFAULT_BALL_OFFSET 10_in
+
 std::string selected_auton_id = "0";
 
-enum BallColor {kOurs, kTheirs };
+
+double proximity (double x_one, double y_one, double x_two, double y_two) {
+  return fabs(sqrt(pow(x_one - x_two, 2) + pow(y_one - y_two, 2)));
+}
+
+template <typename T>
+T closestObject(QLength x, QLength y, std::vector<T*> objects) {
+  T closest_object;
+  for (auto &object : objects) {
+    if (proximity(x, y, object.x, object.y) <
+        proximity(x, y, closest_object.x, closest_object.y)) {
+      closest_object = object;
+    }
+  }
+  return closest_object;
+}
+
+
 
 struct Ball {
-  double x;
-  double y;
-  BallColor ball_color;
+  const QLength x;
+  const QLength y;
+  const QLength offset;
+  enum Color {kOurColor, kOpposingColor};
+  Color color;
+  static std::vector<Ball*> Balls;
+
+  Ball(QLength x, QLength y, Color color) : x(x), y(y), offset(DEFAULT_GOAL_OFFSET), color(color) {
+    Balls.push_back(this);
+  }
+  Ball(QLength x, QLength y, QLength offset, Color color) : x(x), y(y), offset(offset), color(color) {
+    Balls.push_back(this);
+  }
 };
 
 struct Goal {
-  double x;
-  double y;
-  std::vector<BallColor> balls;
+  const QLength x;
+  const QLength y;
+  const QLength offset;
+  enum GoalType {kSide, kCorner, kCenter};
+  GoalType goal_type;
+  const std::vector<Ball::Color> balls;
+  
+  static std::vector<Goal*> goals;
+  Goal(QLength x, QLength y, GoalType goal_type, std::vector<Ball::Color> balls) : x(x), y(y), offset(DEFAULT_GOAL_OFFSET), goal_type(goal_type), balls(balls) {
+    goals.push_back(this);
+  }
+  Goal(QLength x, QLength y, QLength offset, GoalType goal_type, std::vector<Ball::Color> balls) : x(x), y(y), offset(offset), goal_type(goal_type), balls(balls) {
+    goals.push_back(this);
+  }
 };
 
-std::vector<Ball> match_balls_on_field {
-  {12,    12,   kOurs},
-  {128.7, 12,   kOurs},
-  {70.3,  61.5, kTheirs},
-  {35,    70.3, kOurs},
-  {61.5,  70.3, kOurs},
-  {79.1,  70.3, kTheirs},
-  {105.7, 70.3, kTheirs},
-  {12,    12,   kTheirs},
-  {128.7, 12,   kTheirs},
-  {70.3,  79.1, kOurs},
+std::vector<Goal*> Goal::goals = {};
+
+Goal closest_goal () {
+  QLength x = chassis->getState().x;
+  QLength y = chassis->getState().y;
+  return closestObject<Goal>(x, y, Goal::goals);
+}
+
+struct RobotPositionAtGoal {
+  OdomState position;
+  Goal goal;
 };
+
+std::vector<RobotPositionAtGoal> robot_positions_at_goals = {};
+
+void update_odom(OdomState odom_state) {
+  robot_positions_at_goals.back();
+}
+
+
+
+// std::vector<Ball> match_balls_on_field {
+//   {12,    12,   Ball::kOurColor},
+//   {128.7, 12,   Ball::kOurColor},
+//   {70.3,  61.5, Ball::kOpposingColor},
+//   {35,    70.3, Ball::kOurColor},
+//   {61.5,  70.3, Ball::kOurColor},
+//   {79.1,  70.3, Ball::kOpposingColor},
+//   {105.7, 70.3, Ball::kOpposingColor},
+//   {12,    12,   Ball::kOpposingColor},
+//   {128.7, 12,   Ball::kOpposingColor},
+//   {70.3,  79.1, Ball::kOurColor},
+// };
 
 std::vector<Ball> balls_on_field;
 
@@ -78,82 +140,17 @@ std::vector<Ball> balls_on_field;
    │                       │
 */
 
-#define DEFAULT_GOAL_OFFSET 12.13
-
-json goal_coords = {
-  {"1", {
-    {"x", 5.8129},
-    {"y", 5.8129},
-    {"defaultAngle", 225},
-    {"goalType", "corner"}
-  }},
-  {"2", {
-    {"x", 5.9272},
-    {"y", 70.3361},
-    {"defaultAngle", 180},
-    {"goalType", "side"}
-  }},
-  {"3", {
-    {"x", 5.8129},
-    {"y", 134.8593},
-    {"defaultAngle", 135},
-    {"goalType", "corner"}
-  }},
-  {"4", {
-    {"x", 70.3361},
-    {"y", 5.9272},
-    {"defaultAngle", 315},
-    {"goalType", "side"}
-  }},
-  {"5", {
-    {"x", 70.3361},
-    {"y", 70.3361},
-    {"defaultAngle", 0},
-    {"goalType", "center"}
-  }},
-  {"6", {
-    {"x", 70.3361},
-    {"y", 5.9272},
-    {"defaultAngle", 315},
-    {"goalType", "side"}
-  }},
-  {"7", {
-    {"x", 134.8593},
-    {"y", 5.8129},
-    {"defaultAngle", 315},
-    {"goalType", "corner"}
-  }},
-  {"8", {
-    {"x", 134.745},
-    {"y", 70.3361},
-    {"defaultAngle", 0},
-    {"goalType", "side"}
-  }},
-  {"9", {
-    {"x", 134.8593},
-    {"y", 134.8593},
-    {"defaultAngle", 45},
-    {"goalType", "corner"}
-  }}
-};
+Goal goal_1 (5.8129_in,   5.8129_in,   Goal::GoalType::kCorner, {Ball::Color::kOurColor});
+Goal goal_2 (5.9272_in,   70.3361_in,  Goal::GoalType::kSide,   {Ball::Color::kOurColor});
+Goal goal_3 (5.8129_in,   134.8593_in, Goal::GoalType::kCorner, {Ball::Color::kOurColor});
+Goal goal_4 (70.3361_in,  5.9272_in,   Goal::GoalType::kSide,   {Ball::Color::kOurColor});
+Goal goal_5 (70.3361_in,  70.3361_in,  Goal::GoalType::kCenter, {Ball::Color::kOurColor});
+Goal goal_6 (70.3361_in,  5.9272_in,   Goal::GoalType::kSide,   {Ball::Color::kOurColor});
+Goal goal_7 (134.8593_in, 5.8129_in,   Goal::GoalType::kCorner, {Ball::Color::kOurColor});
+Goal goal_8 (134.745_in,  70.3361_in,  Goal::GoalType::kSide,   {Ball::Color::kOurColor});
+Goal goal_9 (134.8593_in, 134.8593_in, Goal::GoalType::kCorner, {Ball::Color::kOurColor});
 
 // std::vector<Goal> goals;
-
-double proximity (double x_one, double y_one, double x_two, double y_two) {
-  return fabs(sqrt(pow(x_one - x_two, 2) + pow(y_one - y_two, 2)));
-}
-
-template <typename T>
-T closestObject(double x, double y, std::vector<T> objects) {
-  T closest_object;
-  for (auto &object : objects) {
-    if (proximity(x, y, object.x, object.y) <
-        proximity(x, y, closest_object.x, closest_object.y)) {
-      closest_object = object;
-    }
-  }
-  return closest_object;
-}
 
 void driveToClosestGoal(json step) {
   QLength x_pos = chassis->getState().x;
@@ -225,7 +222,7 @@ void autonfromsd::run() {
       QLength x = step.value()["x"] * inch;
       QLength y = step.value()["y"] * inch;
       QAngle theta = step.value()["theta"] * degree;
-      autoncontroller::drivetoposition::addPositionTarget(x, y, theta);
+      autondrive::drivetoposition::addPositionTarget(x, y, theta);
       // robotfunctions::driveToPosition(x, y, theta);
       last_waypoint = step.value();
     // }
@@ -237,7 +234,7 @@ void autonfromsd::run() {
       robotfunctions::intakeBalls(step.value()["ballsIn"]);
       robotfunctions::intakeBalls(step.value()["ballsOut"]);
     } else if (step.value()["stepType"] == "driveToGoalAndCycle") {
-      drive_to_goal_and_cycle(step.value()["goal"], step.value()["ballsIn"], step.value()["ballsOut"], );
+      // drive_to_goal_and_cycle(step.value()["goal"], step.value()["ballsIn"], step.value()["ballsOut"], );
     }
   }
 }

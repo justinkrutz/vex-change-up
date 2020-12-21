@@ -1,5 +1,5 @@
-#ifndef AUTON_CONTROLLER_H
-#define AUTON_CONTROLLER_H
+#ifndef AUTON_DRIVE_H
+#define AUTON_DRIVE_H
 
 #include "controller-buttons.h"
 
@@ -8,20 +8,32 @@ while (!(condition)) {        \
 pros::delay(5);               \
 }
 
-namespace autoncontroller {
+namespace autondrive {
 
-struct Position {
+class Target {
+ public:
+  Target(QLength x, QLength y, QAngle theta);
+
+  static double forward;
+  static double strafe;
+  static double turn;
+
   QLength x = 0_in;
   QLength y = 0_in;
   QAngle theta = 0_deg;
-  bool is_new = true;
   OdomState starting_state;
+  int millis_at_start;
+
+  bool is_new = true;
+  void init_if_new();
+  void drive();
+  void hold();
 };
 
 namespace drivetoposition {
 void addPositionTarget(QLength x, QLength y, QAngle theta, QLength offset = 0_in);
-bool targetPositionEnabled = false;
-bool final_target_reached = true;
+extern bool targetPositionEnabled;
+extern bool final_target_reached;
 }
 
 extern controllerbuttons::Macro main_auton;
@@ -29,6 +41,6 @@ extern controllerbuttons::Macro shawnton;
 
 void motor_task();
 void set_callbacks();
-} // namespace autoncontroller
+} // namespace autondrive
 
 #endif // AUTON_CONTROLLER_H

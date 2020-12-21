@@ -4,7 +4,7 @@
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
-#include "auton-controller.h"
+#include "auton-drive.h"
 #include "auton-from-sd.h"
 
 // ChassisController chassis;
@@ -59,9 +59,9 @@ void initialize() {
   chassis->getModel()->setBrakeMode(okapi::AbstractMotor::brakeMode::brake);
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
   // x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
-  pros::Task(autoncontroller::motor_task);
+  pros::Task(autondrive::motor_task);
   robotfunctions::set_callbacks();
-  autoncontroller::set_callbacks();
+  autondrive::set_callbacks();
   autonfromsd::load_autons_from_SD();
   controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
@@ -101,9 +101,9 @@ void competition_initialize() {}
  */
 void autonomous() {
   // if (run_auton) {
-  //   autoncontroller::main_auton.start();
+  //   autondrive::main_auton.start();
   // } else if (run_shawn) {
-  //   autoncontroller::shawnton.start();
+  //   autondrive::shawnton.start();
   // }
 }
 /**

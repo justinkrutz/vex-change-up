@@ -4,14 +4,14 @@
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
-#include "auton-controller.h"
+#include "auton-drive.h"
 #include "auton-from-sd.h"
 #include <stdio.h>
 #include <complex.h>
 
 #define TRACKING_ORIGIN_OFFSET 1.5_in
 
-namespace autoncontroller {
+namespace autondrive {
 
 controllerbuttons::MacroGroup auton_group;
 
@@ -83,15 +83,6 @@ OdomState robot_state () {
 // at start:
 //   starting pos
 
-
-
-struct Target {
-  Position start;
-  Position end;
-};
-
-std::queue<Target> targets = {};
-
 // namespace positiontarget{
 //   QLength x;
 //   QLength y;
@@ -99,8 +90,48 @@ std::queue<Target> targets = {};
 //   QLength offset;
 // } // positiontarget
 
+Target::Target(QLength x, QLength y, QAngle theta) : x(x), y(y), theta(theta) {};
+
+double Target::forward = 0;
+double Target::strafe = 0;
+double Target::turn = 0;
+
+void Target::init_if_new() {
+  if (is_new) {
+    is_new = false;
+    starting_state = robot_state();
+  }
+}
+
+void Target::drive() {
+    // Point target_point{x, y};
+    // QAngle direction = OdomMath::computeAngleToPoint(target_point, robot_state());
+
+    // OdomState target_state{x, y, theta};
+    // Point starting_point{starting_state.x, starting_state.y};
+    // QLength traveled_distance = OdomMath::computeDistanceToPoint(starting_point, robot_state());
+    // QLength total_distance = OdomMath::computeDistanceToPoint(starting_point, target_state);
+    // // auto [magnitude_real, direction_real] = OdomMath::computeDistanceAndAngleToPoint(starting_point, robot_state());
+    // // auto [magnitude_target, direction_target] = OdomMath::computeDistanceAndAngleToPoint(starting_point, target_state);
+    // // auto [start_magnitude, start_direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, starting_position);
+
+    // // move_settings.start_output = std::max(20.0, sqrt(forward * forward + strafe * strafe));
+    // double move_speed = rampMath(traveled_distance.convert(inch), total_distance.convert(inch), move_settings);
+    // QAngle angle_turned = robot_state().theta - starting_state.theta;
+    // QAngle total_angle = theta - starting_state.theta;
+    // // double turn_speed = sgn(total_angle.convert(radian)) * rampMath(angle_turned.convert(radian), total_angle.convert(radian), turn_settings);
+    // // double move_speed = std::min(100.0, magnitude.convert(inch)*10);
+    // // double move_speed = 0;
+    // double turn_speed = std::min(100.0, 100 * (theta - robot_state().theta).convert(radian));
+    // forward = move_speed * cos(direction.convert(radian));
+    // strafe  = move_speed * sin(direction.convert(radian));
+    // turn    = turn_speed;
+    // // controllermenu::master_print_array[0] = "dir: " + std::to_string(direction.convert(degree));
+    // // controllermenu::master_print_array[1] = "mag: " + std::to_string(magnitude.convert(inch));
+}
+
 namespace drivetoposition {
-  std::queue<Position> targets;
+  std::queue<Target> targets;
   bool targetPositionEnabled = false;
   bool final_target_reached = true;
   bool target_heading_reached = false;
@@ -125,7 +156,7 @@ namespace drivetoposition {
   };
 
   void driveToPosition() {
-    Position target = targets.front();
+    Target &target = targets.front();
     Point target_point{target.x, target.y};
     QAngle direction = OdomMath::computeAngleToPoint(target_point, robot_state());
 
@@ -153,7 +184,7 @@ namespace drivetoposition {
   }
 
     void holdPosition() {
-    Position target = targets.front();
+    Target target = targets.front();
     Point target_point{target.x, target.y};
     auto [magnitude, direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, robot_state());
 
@@ -179,11 +210,8 @@ namespace drivetoposition {
   void update() {
     // controllermenu::master_print_array[2] = "targets: " + std::to_string(targets.size());
     if (targetPositionEnabled && targets.size() > 0) {
-      if (targets.front().is_new) {
-        targets.front().is_new = false;
-        targets.front().starting_state = robot_state();
-        }
-      Position target = targets.front();
+      Target &target = targets.front();
+      target.init_if_new();
       if (targets.size() > 1) {
         // move_settings.end_output = 100;
         OdomState target_state{target.x, target.y, target.theta};
@@ -429,4 +457,4 @@ void set_callbacks() {
   button_handler.master.b.pressed.set([&](){ drive_test.terminate(); });
 }
 
-} // namespace autoncontroller
+} // namespace autondrive
