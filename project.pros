@@ -287,6 +287,11 @@
                 "version": "4.0.4"
             }
         },
-        "upload_options": {}
+        "upload_options": {
+            "compress_bin": true,
+            "description": "Created by 3018E Paracord",
+            "remote_name": "Main Program Dev",
+            "slot":2
+        }
     }
 }

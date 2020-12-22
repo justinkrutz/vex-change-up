@@ -51,7 +51,7 @@ namespace rollers {
   extern int score_queue;
   extern int intake_queue;
   extern int balls_in_robot;
-  extern bool ball_sensor_last;
+  extern bool bottom_ball_sensor_last;
 
   void main_task();
   void score_ball();

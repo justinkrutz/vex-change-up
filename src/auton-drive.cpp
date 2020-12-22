@@ -1,5 +1,6 @@
 #include "main.h"
 
+#include "utilities.h"
 #include "robot-config.h"
 #include "controller-buttons.h"
 #include "controller-menu.h"
@@ -9,19 +10,9 @@
 #include <stdio.h>
 #include <complex.h>
 
-#define TRACKING_ORIGIN_OFFSET 1.5_in
-
 namespace autondrive {
 
 controllerbuttons::MacroGroup auton_group;
-
-template <typename T> int sgn(T &&val) {
-  if (val < 0) {
-    return -1;
-  } else {
-    return 1;
-  }
-}
 
 struct rampMathSettings {
   int start_output;
@@ -244,17 +235,6 @@ namespace drivetoposition {
   }
 };
 
-#define DRIVER_SLEW 3
-#define AUTON_SLEW 10
-
-double slew(double new_value, double old_value, double slew_rate = AUTON_SLEW) {
-  if (new_value > old_value + slew_rate)
-    return old_value + slew_rate;
-  if (new_value < old_value - slew_rate)
-    return old_value - slew_rate;
-  return new_value;
-}
-
 void motor_task()
 {
   std::shared_ptr<AbstractMotor> drive_fl = x_model->getTopLeftMotor();
@@ -262,10 +242,10 @@ void motor_task()
   std::shared_ptr<AbstractMotor> drive_bl = x_model->getBottomLeftMotor();
   std::shared_ptr<AbstractMotor> drive_br = x_model->getBottomRightMotor();
 
-  double drive_fl_old = 0;
-  double drive_fr_old = 0;
-  double drive_bl_old = 0;
-  double drive_br_old = 0;
+  Slew drive_fl_slew(DRIVER_SLEW);
+  Slew drive_fr_slew(DRIVER_SLEW);
+  Slew drive_bl_slew(DRIVER_SLEW);
+  Slew drive_br_slew(DRIVER_SLEW);
 
   while(1)
   {
@@ -293,20 +273,15 @@ void motor_task()
     double m = std::min(1.0, 100 / (fabs(forward) + fabs(strafe) + fabs(turn)));
 
 
-    double drive_fl_value = slew((forward + strafe + turn) * 2 * m, drive_fl_old);
-    double drive_fr_value = slew((forward - strafe - turn) * 2 * m, drive_fr_old);
-    double drive_bl_value = slew((forward - strafe + turn) * 2 * m, drive_bl_old);
-    double drive_br_value = slew((forward + strafe - turn) * 2 * m, drive_br_old);
+    double drive_fl_value = drive_fl_slew.new_value((forward + strafe + turn) * 2 * m);
+    double drive_fr_value = drive_fr_slew.new_value((forward - strafe - turn) * 2 * m);
+    double drive_bl_value = drive_bl_slew.new_value((forward - strafe + turn) * 2 * m);
+    double drive_br_value = drive_br_slew.new_value((forward + strafe - turn) * 2 * m);
 
     drive_fl->moveVelocity(drive_fl_value);
     drive_fr->moveVelocity(drive_fr_value);
     drive_bl->moveVelocity(drive_bl_value);
     drive_br->moveVelocity(drive_br_value);
-
-    drive_fl_old = drive_fl_value;
-    drive_fr_old = drive_fr_value;
-    drive_bl_old = drive_bl_value;
-    drive_br_old = drive_br_value;
 
     pros::delay(5);
   }

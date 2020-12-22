@@ -67,9 +67,9 @@ struct Goal {
 std::vector<Goal*> Goal::goals = {};
 
 Goal closest_goal () {
-  QLength x = chassis->getState().x;
-  QLength y = chassis->getState().y;
-  return closestObject<Goal>(x, y, Goal::goals);
+  // QLength x = chassis->getState().x;
+  // QLength y = chassis->getState().y;
+  // return closestObject<Goal>(x, y, Goal::goals);
 }
 
 struct RobotPositionAtGoal {
