@@ -128,28 +128,6 @@ controllerbuttons::Macro right_intake_back(
 
 
 
-void top_roller_forward() {
-  top_roller.move_velocity(600);
-}
-
-void top_roller_reverse() {
-  top_roller.move_velocity(-600);
-}
-
-void rollers_forward() {
-  bottom_roller.move_velocity(600);
-  top_roller.move_velocity(600);
-}
-
-void rollers_reverse() {
-  bottom_roller.move_velocity(-600);
-  top_roller.move_velocity(-600);
-}
-
-void rollers_stop() {
-  bottom_roller.move_velocity(0);
-  top_roller.move_velocity(0);
-}
 
 class SmartMotorController {
   public:
@@ -269,18 +247,18 @@ void main_task() {
       }
       switch (balls_in_robot) {
         case 1:
-          top_roller.move_relative(1000, 300);
-          // top_roller_smart.add_target(1000, 50);
-          bottom_roller.move_relative(750, 600);
-          // bottom_roller_smart.add_target(750, 100);
+          // top_roller.move_relative(1000, 300);
+          top_roller_smart.add_target(1000, 50);
+          // bottom_roller.move_relative(750, 600);
+          bottom_roller_smart.add_target(750, 100);
           break;
         case 2:
-          bottom_roller.move_relative(750, 600);
-          // bottom_roller_smart.add_target(750, 100);
+          // bottom_roller.move_relative(750, 600);
+          bottom_roller_smart.add_target(750, 100);
           break;
         case 3:
-          bottom_roller.move_relative(270, 600);
-          // bottom_roller_smart.add_target(270, 100);
+          // bottom_roller.move_relative(270, 600);
+          bottom_roller_smart.add_target(270, 100);
           break;
       }
     } else if (bottom_ball_sensor.get_value() > 2200 && bottom_ball_sensor_last) {
@@ -294,10 +272,10 @@ void main_task() {
     if (score_queue > 0) {
       balls_in_robot--;
       score_queue--;
-      top_roller.move_absolute(top_roller.get_target_position() + 500, 600);
-      bottom_roller.move_absolute(bottom_roller.get_target_position() + 500, 600);
-      // bottom_roller_smart.add_target(500, 100);
-      // top_roller_smart.add_target(500, 100);
+      // top_roller.move_absolute(top_roller.get_target_position() + 500, 600);
+      // bottom_roller.move_absolute(bottom_roller.get_target_position() + 500, 600);
+      bottom_roller_smart.add_target(500, 100);
+      top_roller_smart.add_target(500, 100);
       
       pros::delay(500);
     }
@@ -316,6 +294,9 @@ void main_task() {
         intake_right.move_relative(-30, 200);
       }
     }
+
+    top_roller_smart.run();
+    bottom_roller_smart.run();
     pros::delay(5);
   }
 }
@@ -334,6 +315,31 @@ void add_ball_to_intake_queue() {
 void intake_continuous_false() {
   intake_continuous = false;
 }
+
+
+void top_roller_forward() {
+  top_roller_smart.manual_speed = 100;
+}
+
+void top_roller_reverse() {
+  top_roller_smart.manual_speed = -100;
+}
+
+void rollers_forward() {
+  bottom_roller_smart.manual_speed = 100;
+  top_roller_smart.manual_speed = 100;
+}
+
+void rollers_reverse() {
+  bottom_roller_smart.manual_speed = -100;
+  top_roller_smart.manual_speed = -100;
+}
+
+void rollers_stop() {
+  bottom_roller_smart.manual_speed = 0;
+  top_roller_smart.manual_speed = 0;
+}
+
 } // namespace rollers
 
 void intake_toggle(){
@@ -377,11 +383,12 @@ void set_retracted_false() {
 
 void set_callbacks() {
   using namespace controllerbuttons;
+  using namespace rollers;
   button_handler.master.l1.pressed.set(intake_toggle);
   button_handler.master.l2.pressed.set_macro(intakes_back);
-  button_handler.master.r1.pressed.set(rollers::add_ball_to_intake_queue);
-  button_handler.master.r1.released.set(rollers::intake_continuous_false);
-  button_handler.master.r2.pressed.set(rollers::score_ball);
+  button_handler.master.r1.pressed.set(add_ball_to_intake_queue);
+  button_handler.master.r1.released.set(intake_continuous_false);
+  button_handler.master.r2.pressed.set(score_ball);
   // button_handler.master.down.pressed.set(top_roller_reverse);
   button_handler.master.down.pressed.set(rollers_reverse);
   button_handler.master.down.released.set(rollers_stop);
@@ -389,7 +396,7 @@ void set_callbacks() {
   button_handler.master.up.pressed.set(rollers_forward);
   button_handler.master.up.released.set(rollers_stop);
 
-  button_handler.partner.r2.pressed.set(rollers::score_ball);
+  button_handler.partner.r2.pressed.set(score_ball);
   button_handler.partner.down.pressed.set(rollers_reverse);
   button_handler.partner.down.released.set(rollers_stop);
   button_handler.partner.up.pressed.set(rollers_forward);
