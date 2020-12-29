@@ -136,12 +136,12 @@ void opcontrol() {
     // controllermenu::master_print_array[1] = "y: " + y_str;
     // controllermenu::master_print_array[2] = "t: " + theta_str;
 
-    QLength x = chassis->getState().x;
-    QLength y = chassis->getState().y;
-    QAngle theta = chassis->getState().theta;
-    controllermenu::master_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
-    controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
-    controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
+    // QLength x = chassis->getState().x;
+    // QLength y = chassis->getState().y;
+    // QAngle theta = chassis->getState().theta;
+    // controllermenu::master_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
+    // controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
+    // controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
 
     // controllermenu::master_print_array[0] = "tracker_left: " + std::to_string(tracker_left.get_value());
     // controllermenu::master_print_array[1] = "tracker_right: " + std::to_string(tracker_right.get_value());
