@@ -13,7 +13,7 @@ extern pros::Motor top_roller;
 extern pros::ADIEncoder tracker_right;
 extern pros::ADIEncoder tracker_left;
 extern pros::ADIEncoder tracker_back;
-extern pros::ADIDigitalIn top_ball_sensor;
+extern pros::ADILineSensor top_ball_sensor;
 // extern pros::ADIAnalogIn left_intake_sensor;
 // extern pros::ADIAnalogIn right_intake_sensor;
 extern pros::ADILineSensor bottom_ball_sensor;
