@@ -13,21 +13,21 @@ using json = nlohmann::ordered_json;
 std::string selected_auton_id = "0";
 
 
-double proximity (double x_one, double y_one, double x_two, double y_two) {
-  return fabs(sqrt(pow(x_one - x_two, 2) + pow(y_one - y_two, 2)));
-}
+// double proximity (double x_one, double y_one, double x_two, double y_two) {
+//   return fabs(sqrt(pow(x_one - x_two, 2) + pow(y_one - y_two, 2)));
+// }
 
-template <typename T>
-T closestObject(QLength x, QLength y, std::vector<T*> objects) {
-  T closest_object;
-  for (auto &object : objects) {
-    if (proximity(x, y, object.x, object.y) <
-        proximity(x, y, closest_object.x, closest_object.y)) {
-      closest_object = object;
-    }
-  }
-  return closest_object;
-}
+// template <typename T>
+// T closestObject(QLength x, QLength y, std::vector<T*> objects) {
+//   T closest_object;
+//   for (auto &object : objects) {
+//     if (proximity(x, y, object.x, object.y) <
+//         proximity(x, y, closest_object.x, closest_object.y)) {
+//       closest_object = object;
+//     }
+//   }
+//   return closest_object;
+// }
 
 
 
@@ -66,11 +66,11 @@ struct Goal {
 
 std::vector<Goal*> Goal::goals = {};
 
-Goal closest_goal () {
-  QLength x = chassis->getState().x;
-  QLength y = chassis->getState().y;
-  return closestObject<Goal>(x, y, Goal::goals);
-}
+// Goal closest_goal () {
+//   QLength x = chassis->getState().x;
+//   QLength y = chassis->getState().y;
+//   return closestObject<Goal>(x, y, Goal::goals);
+// }
 
 struct RobotPositionAtGoal {
   OdomState position;
