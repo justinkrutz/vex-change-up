@@ -14,34 +14,6 @@ namespace autondrive {
 
 controllerbuttons::MacroGroup auton_group;
 
-struct rampMathSettings {
-  int start_output;
-  int mid_output;
-  int end_output;
-  double ramp_up_p;
-  double ramp_down_p;
-};
-
-int rampMath(double input, double total_range, rampMathSettings s) {
-  input = fabs(input);
-  total_range = fabs(total_range);
-  int start_output = abs(s.start_output);
-  int mid_output = abs(s.mid_output);
-  int end_output = abs(s.end_output);
-  double ramp_up_p = fabs(s.ramp_up_p);
-  double ramp_down_p = fabs(s.ramp_down_p);
-
-  double ramp_up_range = (mid_output - start_output)*ramp_up_p;
-  double ramp_down_range = (mid_output - end_output)*ramp_down_p;
-  double ramp_range_multiplier = std::min(1.0, total_range / (ramp_up_range + ramp_down_range));
-  if (start_output != mid_output && input < ramp_up_range * ramp_range_multiplier) {
-    return input / ramp_up_p + start_output;
-  } else if (end_output != mid_output && input > (total_range - ramp_down_range) * ramp_range_multiplier) {
-    return (total_range - input) / ramp_down_p + end_output;
-  }
-  return mid_output;
-}
-
 // struct Position {
 //   QLength x = 0_in;
 //   QLength y = 0_in;
@@ -127,10 +99,10 @@ namespace drivetoposition {
   bool target_distance_reached = false;
 
   OdomState starting_position;
-  // rampMathSettings move_settings = {20, 100, 20, 0.5, 0.5};
-  // rampMathSettings turn_settings = {20, 100, 20, 0.1, 0.1};
-  rampMathSettings move_settings = {20, 100, 20, 0.1, 0.1};
-  rampMathSettings turn_settings = {10, 50, 10, 0.1, 0.1};
+  // RampMathSettings move_settings = {20, 100, 20, 0.5, 0.5};
+  // RampMathSettings turn_settings = {20, 100, 20, 0.1, 0.1};
+  RampMathSettings move_settings = {20, 100, 20, 0.1, 0.1};
+  RampMathSettings turn_settings = {10, 50, 10, 0.1, 0.1};
 
   double forward = 0;
   double strafe  = 0;
