@@ -154,8 +154,8 @@ class SmartMotorController {
       if (target_queue.size() > 0)  {
         target_queue.front().init_if_new();
         auto_speed = target_queue.front().speed;
-        controllermenu::master_print_array[1] = "ST Pos " + std::to_string(target_queue.front().starting_pos);
-        controllermenu::master_print_array[2] = std::to_string(target_queue.front().is_complete()) + " RT " + std::to_string(target_queue.front().relative_target);
+        // controllermenu::master_print_array[1] = "ST Pos " + std::to_string(target_queue.front().starting_pos);
+        // controllermenu::master_print_array[2] = std::to_string(target_queue.front().is_complete()) + " RT " + std::to_string(target_queue.front().relative_target);
         if (target_queue.front().is_complete()) {
           target_queue.pop();
         }
@@ -171,7 +171,7 @@ class SmartMotorController {
     motor.move_velocity(slew.new_value(speed) * pct_to_velocity(motor));
     // controllermenu::master_print_array[0] = "AS " + std::to_string(auto_speed) + " S " + std::to_string(speed);
     // controllermenu::master_print_array[2] = "TQ.S " + std::to_string(target_queue.size());
-    controllermenu::master_print_array[0] = "Act Pos " + std::to_string(motor.get_position()) + " S " + std::to_string(speed);
+    // controllermenu::master_print_array[0] = "Act Pos " + std::to_string(motor.get_position()) + " S " + std::to_string(speed);
     // controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
     // controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
   }
@@ -211,8 +211,9 @@ class SmartMotorController {
     }
 
     bool is_complete() {
-      return motor_controller->motor.get_position() >= starting_pos + relative_target
-          || pros::millis() >= time_at_start + timeout;
+      return pros::millis() >= time_at_start + timeout
+      || (relative_target > 0 && motor_controller->motor.get_position() >= starting_pos + relative_target)
+      || (relative_target <= 0 && motor_controller->motor.get_position() <= starting_pos + relative_target);
     }
 
     SmartMotorController *motor_controller;
@@ -233,7 +234,7 @@ class SmartMotorController {
           gear_ratio = DEG_PER_SEC/18;
           break;
       }
-      return relative_target * gear_ratio;
+      return fabs(relative_target) * gear_ratio;
     }
     int timeout;
 
@@ -258,8 +259,8 @@ void main_task() {
   intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   bottom_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
-  top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
-  top_roller_smart.set_manual_speed(0, 100);
+  top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  top_roller_smart.set_manual_speed(0, 45);
   pros::delay(500);
   while (true) {
     // bool top_ball_sensor_triggered = !top_ball_sensor_last && top_ball_sensor.get_value();
@@ -275,9 +276,10 @@ void main_task() {
     if (top_ball_sensor_triggered) {
       top_ball_sensor_last = true;
       top_roller_smart.set_manual_speed(0, 0);
+      top_roller_smart.add_target(-10, -20);
     } else if (top_ball_sensor.get_value() > 2400 && top_ball_sensor_last) {
       top_ball_sensor_last = false;
-      top_roller_smart.set_manual_speed(0, 50);
+      top_roller_smart.set_manual_speed(0, 45);
     }
     if (score_queue > 0) {
       // balls_in_robot--;
