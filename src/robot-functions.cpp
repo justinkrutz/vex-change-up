@@ -182,7 +182,7 @@ namespace rollers {
         }
         switch (balls_in_robot) {
           case 1:
-            top_roller.move_relative(1000, 300);
+            top_roller.move_relative(1910, 300);
             bottom_roller.move_relative(750, 600);
             break;
           case 2:
@@ -198,9 +198,9 @@ namespace rollers {
       if (score_queue > 0) {
         score_queue--;
         balls_in_robot--;
-        top_roller.move_absolute(top_roller.get_target_position() + 500, 600);
-        bottom_roller.move_absolute(bottom_roller.get_target_position() + 500, 600);
-        pros::delay(500);
+        top_roller.move_absolute(top_roller.get_target_position() + 1500, 600);
+        bottom_roller.move_absolute(bottom_roller.get_target_position() + 1500, 600);
+        // pros::delay(500);
       }
       if (intake_queue > 0 || intake_continuous) {
         intake_left.move_velocity(200);
