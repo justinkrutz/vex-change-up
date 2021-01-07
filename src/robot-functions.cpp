@@ -285,7 +285,8 @@ void set_callbacks() {
   button_handler.master.l2.pressed.set_macro(intakes_back);
   button_handler.master.r1.pressed.set(rollers::add_ball_to_intake_queue);
   button_handler.master.r1.released.set(rollers::intake_continuous_false);
-  button_handler.master.r2.pressed.set(intake_clamp);
+  button_handler.master.r2.pressed.set(rollers::score_ball);
+  // button_handler.master.r2.pressed.set(intake_clamp);
   // button_handler.master.down.pressed.set(top_roller_reverse);
   button_handler.master.down.pressed.set(rollers_reverse);
   button_handler.master.down.released.set(rollers_stop);
