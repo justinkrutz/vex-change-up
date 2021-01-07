@@ -137,7 +137,7 @@ namespace drivetoposition {
     // double turn_speed = sgn(total_angle.convert(radian)) * rampMath(angle_turned.convert(radian), total_angle.convert(radian), turn_settings);
     // double move_speed = std::min(100.0, magnitude.convert(inch)*10);
     // double move_speed = 0;
-    double turn_speed = std::min(50.0, 50 * (target.theta - robot_state().theta).convert(radian));
+    double turn_speed = std::min(100.0, 25 * (target.theta - robot_state().theta).convert(radian));
     forward = move_speed * cos(direction.convert(radian));
     strafe  = move_speed * sin(direction.convert(radian));
     turn    = turn_speed;
@@ -161,7 +161,7 @@ namespace drivetoposition {
     // double turn_speed = rampMath(direction.convert(radian), start_direction.convert(radian), turn_settings);
     double move_speed = std::min(100.0, magnitude.convert(inch)*5);
     // double move_speed = 0;
-    double turn_speed = std::min(100.0, 100 * (target.theta - robot_state().theta).convert(radian));
+    double turn_speed = std::min(100.0, 25 * (target.theta - robot_state().theta).convert(radian));
     forward = move_speed * cos(direction.convert(radian));
     strafe  = move_speed * sin(direction.convert(radian));
     turn    = turn_speed;
@@ -288,11 +288,17 @@ void single_use_button() {
 controllerbuttons::Macro drive_test(
     [&](){
       chassis->setState(robot_to_tracking_coords({0_in, 0_in, 0_deg}));
-      drivetoposition::addPositionTarget(15_in, 15_in, -90_deg);
-      drivetoposition::addPositionTarget(15_in, 15_in, 0_deg);
-      drivetoposition::addPositionTarget(15_in, 0_in, 0_deg);
+      // drivetoposition::addPositionTarget(15_in, 15_in, -90_deg);
+      // pros::delay(3000);
+      // drivetoposition::addPositionTarget(15_in, 15_in, 0_deg);
+      // pros::delay(3000);
+      // drivetoposition::addPositionTarget(15_in, 0_in, 0_deg);
+      // pros::delay(3000);
       drivetoposition::addPositionTarget(0_in, 0_in, 0_deg);
+      pros::delay(3000);
       drivetoposition::addPositionTarget(0_in, 0_in, 360_deg);
+      pros::delay(3000);
+      drivetoposition::addPositionTarget(0_in, 0_in, 0_deg);
       WAIT_UNTIL(drivetoposition::final_target_reached);
     },
     [](){
@@ -302,23 +308,19 @@ controllerbuttons::Macro drive_test(
 
 controllerbuttons::Macro main_auton(
     [&](){
-      // while (true) {
-      //   driveToPosition(0_in, 0_in, 0_deg);
-      //   controllerbuttons::wait(5);
-      // }
       using namespace robotfunctions;
       using namespace drivetoposition;
-      using namespace controllerbuttons;
+      chassis->setState(robot_to_tracking_coords({15.7411_in, 26.3036_in, -90_deg}));
       using namespace rollers;
-      balls_in_robot = 1;
+      // balls_in_robot = 1;
       addPositionTarget(26.3_in, 26.3_in, -90_deg);
       addPositionTarget(26.3_in, 26.3_in, -135_deg);
       addPositionTarget(24_in, 24_in, -135_deg);
       WAIT_UNTIL(drivetoposition::targets.size() == 1)
-      intake_queue++;
+      // intake_queue++;
       // WAIT_UNTIL(intake_queue == 0);
       wait(500);
-      intakes_back.start();
+      // intakes_back.start();
       // WAIT_UNTIL(!intakes_back.is_running());
       wait(500);
       addPositionTarget(26.3_in, 26.3_in, -135_deg);
@@ -326,7 +328,7 @@ controllerbuttons::Macro main_auton(
       WAIT_UNTIL(drivetoposition::targets.size() == 1)
       wait(1000);
       drivetoposition::targets.pop();
-      score_queue++;
+      // score_queue++;
       wait(500);
       addPositionTarget(30_in, 30_in, -180_deg);
       addPositionTarget(30_in, 70.3_in, -180_deg);
@@ -334,18 +336,18 @@ controllerbuttons::Macro main_auton(
       WAIT_UNTIL(drivetoposition::targets.size() == 1);
       wait(500);
       drivetoposition::targets.pop();
-      score_queue++;
+      // score_queue++;
       wait(500);
       addPositionTarget(40_in, 74_in, -180_deg);
       addPositionTarget(40_in, 112_in, -180_deg);
       addPositionTarget(40_in, 112_in, -225_deg);
       addPositionTarget(22_in, 138_in, -225_deg);
       WAIT_UNTIL(drivetoposition::targets.size() == 1);
-      intake_queue++;
+      // intake_queue++;
       // WAIT_UNTIL(intake_queue == 0);
       wait(500);
       addPositionTarget(30_in, 120_in, -225_deg);
-      intakes_back.start();
+      // intakes_back.start();
 
       // WAIT_UNTIL(!intakes_back.is_running());
       wait(1000);
@@ -353,7 +355,7 @@ controllerbuttons::Macro main_auton(
       WAIT_UNTIL(drivetoposition::targets.size() == 1);
       wait(500);
       drivetoposition::targets.pop();
-      score_queue++;
+      // score_queue++;
       wait(500);
       addPositionTarget(30_in, 138_in, -225_deg);
     },
@@ -400,6 +402,7 @@ controllerbuttons::Macro shawnton(
 void set_callbacks() {
   using namespace controllerbuttons;
   button_handler.master.a.pressed.set_macro(drive_test);
+  button_handler.master.y.pressed.set_macro(main_auton);
   button_handler.master.b.pressed.set([&](){ drive_test.terminate(); });
 }
 

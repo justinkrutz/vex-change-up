@@ -6,6 +6,7 @@
 #include "robot-functions.h"
 #include "auton-drive.h"
 #include "auton-from-sd.h"
+#include "ball-system.h"
 
 // ChassisController chassis;
 
@@ -60,11 +61,13 @@ void initialize() {
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
   // x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
   pros::Task(autondrive::motor_task);
-  robotfunctions::set_callbacks();
+  // robotfunctions::set_callbacks();
+  ballsystem::set_callbacks();
+  ballsystem::init();
   autondrive::set_callbacks();
   autonfromsd::load_autons_from_SD();
   controllermenu::init();
-  pros::Task roller_task (robotfunctions::rollers::main_task);
+  // pros::Task roller_task (robotfunctions::rollers::main_task);
   // controllerbuttons::button_handler.master.y.pressed.set(yes_auton);
   // controllerbuttons::button_handler.master.x.pressed.set(no_auton);
   // controllerbuttons::button_handler.master.b.pressed.set(shawn_auton_run);
@@ -136,12 +139,14 @@ void opcontrol() {
     // controllermenu::master_print_array[1] = "y: " + y_str;
     // controllermenu::master_print_array[2] = "t: " + theta_str;
 
-    QLength x = chassis->getState().x;
-    QLength y = chassis->getState().y;
-    QAngle theta = chassis->getState().theta;
-    controllermenu::master_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
-    controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
-    controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
+    // QLength x = chassis->getState().x;
+    // QLength y = chassis->getState().y;
+    // QAngle theta = chassis->getState().theta;
+    // controllermenu::master_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
+    // controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
+    // controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
+
+    ballsystem::debug();
 
     // controllermenu::master_print_array[0] = "tracker_left: " + std::to_string(tracker_left.get_value());
     // controllermenu::master_print_array[1] = "tracker_right: " + std::to_string(tracker_right.get_value());
