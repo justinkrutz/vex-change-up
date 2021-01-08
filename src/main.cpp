@@ -52,22 +52,22 @@ void initialize() {
         // ADIEncoder{'C', 'D'}  // middle encoder in ADI ports E & F
         ADIEncoder{'C', 'D'}, // left encoder in ADI ports A & B
         ADIEncoder{'A', 'B'},  // right encoder in ADI ports C & D (reversed)
-        ADIEncoder{'E', 'F', true}  // middle encoder in ADI ports E & F
+        ADIEncoder{'E', 'F'}  // middle encoder in ADI ports E & F
     )
-    .withOdometry({{2.75_in, 11.28125_in, 4.4375_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
+    .withOdometry({{2.75_in, 11.28125_in, 0_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
     // .withOdometry({{1626.17630113, 3.97430555556, 0.1127125, 1630.79264566}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
     .buildOdometry();
   chassis->getModel()->setBrakeMode(okapi::AbstractMotor::brakeMode::brake);
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
   // x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
   pros::Task(autondrive::motor_task);
-  // robotfunctions::set_callbacks();
-  ballsystem::set_callbacks();
-  ballsystem::init();
+  robotfunctions::set_callbacks();
+  // ballsystem::set_callbacks();
+  // ballsystem::init();
   autondrive::set_callbacks();
   autonfromsd::load_autons_from_SD();
   controllermenu::init();
-  // pros::Task roller_task (robotfunctions::rollers::main_task);
+  pros::Task roller_task (robotfunctions::rollers::main_task);
   // controllerbuttons::button_handler.master.y.pressed.set(yes_auton);
   // controllerbuttons::button_handler.master.x.pressed.set(no_auton);
   // controllerbuttons::button_handler.master.b.pressed.set(shawn_auton_run);
@@ -139,18 +139,18 @@ void opcontrol() {
     // controllermenu::master_print_array[1] = "y: " + y_str;
     // controllermenu::master_print_array[2] = "t: " + theta_str;
 
-    // QLength x = chassis->getState().x;
-    // QLength y = chassis->getState().y;
-    // QAngle theta = chassis->getState().theta;
-    // controllermenu::master_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
-    // controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
-    // controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
+    QLength x = chassis->getState().x;
+    QLength y = chassis->getState().y;
+    QAngle theta = chassis->getState().theta;
+    controllermenu::master_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
+    controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
+    controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
 
     // ballsystem::debug();
 
-    // controllermenu::master_print_array[0] = "tracker_left: " + std::to_string(tracker_left.get_value());
-    // controllermenu::master_print_array[1] = "tracker_right: " + std::to_string(tracker_right.get_value());
-    // controllermenu::master_print_array[2] = "tracker_back: " + std::to_string(tracker_back.get_value());
+    // controllermenu::master_print_array[0] = "left: " + std::to_string(tracker_left.get_value());
+    // controllermenu::master_print_array[1] = "right: " + std::to_string(tracker_right.get_value());
+    // controllermenu::master_print_array[2] = "back: " + std::to_string(tracker_back.get_value());
 
     // printf("tracker_left: %d tracker_right: %d tracker_back: %d\n", tracker_left.get_value(), tracker_right.get_value(), tracker_back.get_value());
     // x_model->xArcade(controller.getAnalog(ControllerAnalog::rightX),

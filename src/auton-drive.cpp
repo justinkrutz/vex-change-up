@@ -64,13 +64,10 @@ void addPositionTarget(QLength x, QLength y, QAngle theta, QLength offset) {
   targets.push({x + x_offset, y + y_offset, theta});
   target_position_enabled = true;
   final_target_reached = false;
-  controllermenu::master_print_array[2] = "targets.size(): " + std::to_string(targets.size());
 };
 
 
 void update() {
-  controllermenu::master_print_array[0] = "TDR: " + std::to_string(target_distance_reached) + " THR: " + std::to_string(target_heading_reached);
-  controllermenu::master_print_array[1] = "targets.size(): " + std::to_string(targets.size());
   if (target_position_enabled && targets.size() > 0) {
     Target &target = targets.front();
     target.init_if_new();
