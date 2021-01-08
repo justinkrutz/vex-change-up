@@ -14,10 +14,6 @@ class Target {
  public:
   Target(QLength x, QLength y, QAngle theta);
 
-  static double forward;
-  static double strafe;
-  static double turn;
-
   QLength x = 0_in;
   QLength y = 0_in;
   QAngle theta = 0_deg;
@@ -30,12 +26,12 @@ class Target {
 
 namespace drivetoposition {
 void addPositionTarget(QLength x, QLength y, QAngle theta, QLength offset = 0_in);
-extern bool targetPositionEnabled;
+extern bool target_position_enabled;
 extern bool final_target_reached;
 }
 
-extern controllerbuttons::Macro main_auton;
-extern controllerbuttons::Macro shawnton;
+extern controllerbuttons::Macro left_home_row;
+extern controllerbuttons::Macro shawnton_right;
 
 void motor_task();
 void set_callbacks();

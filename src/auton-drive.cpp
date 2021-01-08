@@ -12,21 +12,7 @@
 
 namespace autondrive {
 
-// milliseconds to go from 0 to 100 percent power
-const double auton_slew = 500;
-const double driver_slew = 200;
-double chassis_slew = auton_slew;
-
-
 controllerbuttons::MacroGroup auton_group;
-
-// struct Position {
-//   QLength x = 0_in;
-//   QLength y = 0_in;
-//   QAngle theta = 0_deg;
-//   bool is_new = true;
-//   OdomState starting_state;
-// };
 
 OdomState tracking_to_robot_coords (OdomState tracking_coords) {
   QLength x_offset = cos(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
@@ -45,22 +31,8 @@ OdomState robot_to_tracking_coords (OdomState robot_coords) {
 OdomState robot_state() {
   return tracking_to_robot_coords(chassis->getState());
 }
-// target pos
-// at start:
-//   starting pos
 
-// namespace positiontarget{
-//   QLength x;
-//   QLength y;
-//   QAngle theta;
-//   QLength offset;
-// } // positiontarget
-
-Target::Target(QLength x, QLength y, QAngle theta) : x(x), y(y), theta(theta) {};
-
-double Target::forward = 0;
-double Target::strafe = 0;
-double Target::turn = 0;
+Target::Target(QLength x, QLength y, QAngle theta) : x(x), y(y), theta(theta) {}
 
 void Target::init_if_new() {
   if (is_new) {
@@ -71,7 +43,7 @@ void Target::init_if_new() {
 
 namespace drivetoposition {
 std::queue<Target> targets;
-bool targetPositionEnabled = false;
+bool target_position_enabled = false;
 bool final_target_reached = true;
 bool target_heading_reached = false;
 bool target_distance_reached = false;
@@ -90,14 +62,16 @@ void addPositionTarget(QLength x, QLength y, QAngle theta, QLength offset) {
   QLength x_offset = cos(theta.convert(radian)) * offset;
   QLength y_offset = sin(theta.convert(radian)) * offset;
   targets.push({x + x_offset, y + y_offset, theta});
-  targetPositionEnabled = true;
+  target_position_enabled = true;
   final_target_reached = false;
+  controllermenu::master_print_array[2] = "targets.size(): " + std::to_string(targets.size());
 };
 
 
 void update() {
-  // controllermenu::master_print_array[2] = "targets: " + std::to_string(targets.size());
-  if (targetPositionEnabled && targets.size() > 0) {
+  controllermenu::master_print_array[0] = "TDR: " + std::to_string(target_distance_reached) + " THR: " + std::to_string(target_heading_reached);
+  controllermenu::master_print_array[1] = "targets.size(): " + std::to_string(targets.size());
+  if (target_position_enabled && targets.size() > 0) {
     Target &target = targets.front();
     target.init_if_new();
 
@@ -124,10 +98,13 @@ void update() {
       target_heading_reached = true;
     }
 
+
     if (target_heading_reached && target_distance_reached) {
-      target_heading_reached, target_distance_reached = false;
       if (targets.size() > 1) {
+        target_heading_reached = false;
+        target_distance_reached = false;
         targets.pop();
+        return;
       } else {
         final_target_reached = true;
       }
@@ -165,11 +142,11 @@ void motor_task()
   std::shared_ptr<AbstractMotor> drive_bl = x_model->getBottomLeftMotor();
   std::shared_ptr<AbstractMotor> drive_br = x_model->getBottomRightMotor();
 
-  int time_last = 0;
-  double drive_fl_last = 0;
-  double drive_fr_last = 0;
-  double drive_bl_last = 0;
-  double drive_br_last = 0;
+  // int time_last = 0;
+  Slew drive_fl_slew(DRIVER_SLEW);
+  Slew drive_fr_slew(DRIVER_SLEW);
+  Slew drive_bl_slew(DRIVER_SLEW);
+  Slew drive_br_slew(DRIVER_SLEW);
 
   while(1)
   {
@@ -181,25 +158,42 @@ void motor_task()
     double turn    = drivetoposition::turn    + pow(abs(temp_turn / 100), 1.8) * 100 * sgn(temp_turn);
     double sync = std::min(1.0, 100 / (fabs(forward) + fabs(strafe) + fabs(turn)));
 
-    double drive_fl_pct = (forward + strafe + turn) * sync;
-    double drive_fr_pct = (forward - strafe - turn) * sync;
-    double drive_bl_pct = (forward - strafe + turn) * sync;
-    double drive_br_pct = (forward + strafe - turn) * sync;
-
-    double slew = 1;
-    if (fabs(drive_fl_pct - drive_fl_last) > (pros::millis() - time_last) / chassis_slew) {
-      slew == (pros::millis() - time_last) / chassis_slew;
-    }
+    double drive_fl_pct = drive_fl_slew.new_value((forward + strafe + turn) * sync);
+    double drive_fr_pct = drive_fr_slew.new_value((forward - strafe - turn) * sync);
+    double drive_bl_pct = drive_bl_slew.new_value((forward - strafe + turn) * sync);
+    double drive_br_pct = drive_br_slew.new_value((forward + strafe - turn) * sync);
 
     drive_fl->moveVelocity(drive_fl_pct * 2);
     drive_fr->moveVelocity(drive_fr_pct * 2);
     drive_bl->moveVelocity(drive_bl_pct * 2);
     drive_br->moveVelocity(drive_br_pct * 2);
 
-    time_last = pros::millis();
     pros::delay(5);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 controllerbuttons::Macro drive_test(
     [&](){
@@ -211,14 +205,15 @@ controllerbuttons::Macro drive_test(
       // drivetoposition::addPositionTarget(15_in, 0_in, 0_deg);
       // pros::delay(3000);
       drivetoposition::addPositionTarget(0_in, 0_in, 0_deg);
-      pros::delay(3000);
+      pros::delay(500);
       drivetoposition::addPositionTarget(0_in, 0_in, 360_deg);
-      pros::delay(3000);
+      pros::delay(500);
       drivetoposition::addPositionTarget(0_in, 0_in, 0_deg);
-      WAIT_UNTIL(drivetoposition::final_target_reached);
+      pros::delay(3000);
+      // WAIT_UNTIL(drivetoposition::final_target_reached);
     },
     [](){
-      drivetoposition::targetPositionEnabled = false;
+      drivetoposition::target_position_enabled = false;
     },
     {&auton_group});
 
@@ -280,7 +275,7 @@ controllerbuttons::Macro left_home_row(
     },
     {&auton_group});
 
-controllerbuttons::Macro shawnton(
+controllerbuttons::Macro shawnton_right(
     [&](){
       // while (true) {
       //   driveToPosition(0_in, 0_in, 0_deg);
