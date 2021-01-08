@@ -14,11 +14,16 @@
 class Slew {
  public:
   Slew(double slew_rate) : slew_rate(slew_rate) {}
-
-  double slew_rate;
+  
   double new_value(double desired_value);
+  double slew_rate;
+
  private:
   double old_value = 0;
+};
+
+class SlewGroup {
+
 };
 
 int pct_to_velocity(pros::Motor &motor);

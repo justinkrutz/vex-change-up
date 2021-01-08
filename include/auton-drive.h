@@ -26,8 +26,6 @@ class Target {
 
   bool is_new = true;
   void init_if_new();
-  void drive();
-  void hold();
 };
 
 namespace drivetoposition {
