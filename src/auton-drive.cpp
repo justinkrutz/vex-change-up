@@ -285,54 +285,62 @@ Macro left_home_row(
       addPositionTarget(32_in, 118_in, -225_deg);
       WAIT_UNTIL(final_target_reached)
       score_queue = 0;
+    },
+    [](){
+      target_position_enabled = false;
+    },
+    {&auton_group});
 
+Macro left_shawnton(
+    [&](){
+      chassis->setState(robot_to_tracking_coords({15.7416_in, 31.4911_in, -90_deg}));
 
+      addPositionTarget(26.319_in, 26.319_in, -90_deg);
+      addPositionTarget(26.319_in, 26.319_in, -135_deg);
+      addPositionTarget(16_in, 16_in, -135_deg);
+      WAIT_UNTIL(final_target_reached)
+      addPositionTarget(13.6_in, 13.6_in, -135_deg);
+      intake_left.move_relative(30, 200);
+      intake_right.move_relative(30, 200);
+      pros::delay(500);
+      intake_left.move_relative(-30, 200);
+      intake_right.move_relative(-30, 200);
+      top_roller_smart.add_target(45, 30);
+      pros::delay(500);
+      score_queue = 1;
+      pros::delay(200);
+      targets.pop();
+      pros::delay(500);
+      addPositionTarget(30_in, 30_in, -135_deg);
+      WAIT_UNTIL(final_target_reached)
+    },
+    [](){
+      target_position_enabled = false;
+    },
+    {&auton_group});
 
+Macro right_shawnton(
+    [&](){
+      chassis->setState(robot_to_tracking_coords({31.4911_in, 15.7416_in, -180_deg}));
 
-      // addPositionTarget(26.3_in, 26.3_in, -90_deg);
-      // addPositionTarget(26.3_in, 26.3_in, -135_deg);
-      // addPositionTarget(24_in, 24_in, -135_deg);
-      // WAIT_UNTIL(final_target_reached)
-      // WAIT_UNTIL(intake_queue == 0);
-      // wait(500);
-      // // intakes_back.start();
-      // // WAIT_UNTIL(!intakes_back.is_running());
-      // wait(500);
-      // addPositionTarget(26.3_in, 26.3_in, -135_deg);
-      // addPositionTarget(0_in, 0_in, -135_deg);
-      // WAIT_UNTIL(final_target_reached)
-      // wait(1000);
-      // targets.pop();
-      // // score_queue++;
-      // wait(500);
-      // addPositionTarget(30_in, 30_in, -180_deg);
-      // addPositionTarget(30_in, 70.3_in, -180_deg);
-      // addPositionTarget(0_in, 70.3_in, -180_deg);
-      // WAIT_UNTIL(final_target_reached);
-      // wait(500);
-      // targets.pop();
-      // // score_queue++;
-      // wait(500);
-      // addPositionTarget(40_in, 74_in, -180_deg);
-      // addPositionTarget(40_in, 112_in, -180_deg);
-      // addPositionTarget(40_in, 112_in, -225_deg);
-      // addPositionTarget(22_in, 138_in, -225_deg);
-      // WAIT_UNTIL(final_target_reached);
-      // // intake_queue++;
-      // // WAIT_UNTIL(intake_queue == 0);
-      // wait(500);
-      // addPositionTarget(30_in, 120_in, -225_deg);
-      // // intakes_back.start();
-
-      // // WAIT_UNTIL(!intakes_back.is_running());
-      // wait(1000);
-      // addPositionTarget(6_in, 150.85_in, -225_deg);
-      // WAIT_UNTIL(final_target_reached);
-      // wait(500);
-      // targets.pop();
-      // // score_queue++;
-      // wait(500);
-      // addPositionTarget(30_in, 138_in, -225_deg);
+      addPositionTarget(26.319_in, 26.319_in, -180_deg);
+      addPositionTarget(26.319_in, 26.319_in, -135_deg);
+      addPositionTarget(16_in, 16_in, -135_deg);
+      WAIT_UNTIL(final_target_reached)
+      addPositionTarget(13.6_in, 13.6_in, -135_deg);
+      intake_left.move_relative(30, 200);
+      intake_right.move_relative(30, 200);
+      pros::delay(500);
+      intake_left.move_relative(-30, 200);
+      intake_right.move_relative(-30, 200);
+      top_roller_smart.add_target(45, 30);
+      pros::delay(500);
+      score_queue = 1;
+      pros::delay(200);
+      targets.pop();
+      pros::delay(500);
+      addPositionTarget(30_in, 30_in, -135_deg);
+      WAIT_UNTIL(final_target_reached)
     },
     [](){
       target_position_enabled = false;
@@ -341,15 +349,6 @@ Macro left_home_row(
 
 Macro skills(
     [&](){
-    },
-    [](){
-      target_position_enabled = false;
-    },
-    {&auton_group});
-
-Macro universal(
-    [&](){
-
     },
     [](){
       target_position_enabled = false;

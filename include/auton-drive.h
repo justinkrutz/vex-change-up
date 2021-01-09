@@ -38,9 +38,6 @@ extern bool target_position_enabled;
 extern bool final_target_reached;
 }
 
-extern controllerbuttons::Macro left_home_row;
-extern controllerbuttons::Macro shawnton_right;
-
 void motor_task();
 void set_callbacks();
 } // namespace autondrive
@@ -49,10 +46,11 @@ namespace autonroutines {
 using namespace controllerbuttons;
 
 extern Macro none;
-extern Macro test;
 extern Macro left_home_row;
+extern Macro left_shawnton;
+extern Macro right_shawnton;
+extern Macro test;
 extern Macro skills;
-extern Macro universal;
 
 } // namespace autonroutines
 
