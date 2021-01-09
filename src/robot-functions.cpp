@@ -63,39 +63,10 @@ namespace intake {
     }
   }
 
-/*
-          switch (current_state) {
-            case State::kRetracted:
-              break;
-            case State::kReady:
-              break;
-            case State::kRunning:
-              break;
-            default:
-              break;
-          }
-*/
-
   void start() {
     pros::Task intake_loop (loop);
   }
 }
-
-
-bool intakes_retracted = false;
-// bool intake_sensors_last = true;
-int intakes_retracted_time = 0;
-
-bool intakes_extended() {
-  // bool intake_sensors = right_intake_sensor.get_value() < 20;
-  bool result = !intakes_retracted;
-      // || pros::millis() - intakes_retracted_time > 700
-      // || (intake_sensors_last && !intake_sensors && intake_right.get_target_velocity() > 10);
-  // intake_sensors_last = intake_sensors;
-  // intakes_retracted = !result;
-  return result;
-}
-
 
 void intake_back(pros::Motor &motor) {
   motor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
@@ -107,6 +78,19 @@ void intake_back(pros::Motor &motor) {
   }
   motor.move_velocity(0);
 }
+
+double nearest_nut(double pos) {
+  return pos - fmod(pos, 45);
+}
+
+void intake_splay(){
+  rollers::intake_queue = 0;
+  intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  intake_left.move_absolute(nearest_nut(intake_left.get_position() + 20) - 40, 200);
+  intake_right.move_absolute(nearest_nut(intake_right.get_position() + 20) - 40, 200);
+}
+
 
 controllerbuttons::Macro left_intake_back(
     [](){
@@ -154,8 +138,6 @@ class SmartMotorController {
       if (target_queue.size() > 0)  {
         target_queue.front().init_if_new();
         auto_speed = target_queue.front().speed;
-        // controllermenu::master_print_array[1] = "ST Pos " + std::to_string(target_queue.front().starting_pos);
-        // controllermenu::master_print_array[2] = std::to_string(target_queue.front().is_complete()) + " RT " + std::to_string(target_queue.front().relative_target);
         if (target_queue.front().is_complete()) {
           target_queue.pop();
         }
@@ -169,11 +151,6 @@ class SmartMotorController {
       }
     }
     motor.move_velocity(slew.new_value(speed) * pct_to_velocity(motor));
-    // controllermenu::master_print_array[0] = "AS " + std::to_string(auto_speed) + " S " + std::to_string(speed);
-    // controllermenu::master_print_array[2] = "TQ.S " + std::to_string(target_queue.size());
-    // controllermenu::master_print_array[0] = "Act Pos " + std::to_string(motor.get_position()) + " S " + std::to_string(speed);
-    // controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
-    // controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
   }
   void add_target(double target, int speed) {
     target_queue.push(Target(this, target, speed));
@@ -250,61 +227,69 @@ int score_queue = 0;
 int intake_queue = 0;
 int balls_in_robot = 0;
 bool top_ball_sensor_last = true;
-bool bottom_ball_sensor_last = true;
+bool bottom_ball_sensor_last = false;
 bool intake_continuous = false;
-SmartMotorController top_roller_smart(top_roller, 1.5, 5, 2);
-SmartMotorController bottom_roller_smart(bottom_roller, 1.5, 5, 2);
+// bool ball_at_top = true;
+bool ball_between_intake_and_rollers = false;
+int time_when_bottom_sensor_triggered = 0;
+double pos_when_ball_at_top = 0;
+SmartMotorController top_roller_smart(top_roller, 1.5, 100, 2);
+SmartMotorController bottom_roller_smart(bottom_roller, 1.5, 100, 2);
 
 void main_task() {
+  intake_left.set_zero_position(360);
+  intake_right.set_zero_position(360);
   intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   bottom_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-  top_roller_smart.set_manual_speed(0, 45);
-  pros::delay(500);
+  pros::delay(200);
   while (true) {
-    // bool top_ball_sensor_triggered = !top_ball_sensor_last && top_ball_sensor.get_value();
-    // bool top_ball_sensor_released = top_ball_sensor_last && !top_ball_sensor.get_value();
-    bool top_ball_sensor_triggered = intakes_extended() && !top_ball_sensor_last && top_ball_sensor.get_value() < 2200;
-    bool bottom_ball_sensor_triggered = intakes_extended() && !bottom_ball_sensor_last && bottom_ball_sensor.get_value() < 2000;
+    bool top_ball_sensor_triggered = !top_ball_sensor_last && top_ball_sensor.get_value() < 2200;
+    bool top_ball_sensor_released = top_ball_sensor.get_value() > 2400 && top_ball_sensor_last
+                                    && fabs(pos_when_ball_at_top - top_roller.get_position()) > 100;
+
+    bool bottom_ball_sensor_triggered = !bottom_ball_sensor_last && bottom_ball_sensor.get_value() < 2000;
+    bool bottom_ball_sensor_released = bottom_ball_sensor.get_value() > 2200 && bottom_ball_sensor_last;
+
     if (bottom_ball_sensor_triggered) {
       bottom_ball_sensor_last = true;
-      bottom_roller_smart.add_target(720, 100);
-    } else if (bottom_ball_sensor.get_value() > 2200 && bottom_ball_sensor_last) {
+      bottom_roller_smart.set_manual_speed(0, 100);
+    } else if (bottom_ball_sensor_released) {
       bottom_ball_sensor_last = false;
+      bottom_roller_smart.set_manual_speed(0, 0);
+      bottom_roller_smart.add_target(700, 100);
     }
+
     if (top_ball_sensor_triggered) {
       top_ball_sensor_last = true;
       top_roller_smart.set_manual_speed(0, 0);
-      top_roller_smart.add_target(-10, -20);
-    } else if (top_ball_sensor.get_value() > 2400 && top_ball_sensor_last) {
+      bottom_roller_smart.set_manual_speed(0, 0);
+      // top_roller_smart.add_target(-10, -20);
+    } else if (top_ball_sensor_released) {
       top_ball_sensor_last = false;
-      top_roller_smart.set_manual_speed(0, 45);
+      top_roller_smart.set_manual_speed(0, 100);
+      bottom_roller_smart.set_manual_speed(0, 25);
     }
+
     if (score_queue > 0) {
-      // balls_in_robot--;
-      // score_queue--;
-      // top_roller.move_absolute(top_roller.get_target_position() + 500, 600);
-      // bottom_roller.move_absolute(bottom_roller.get_target_position() + 500, 600);
+      score_queue--;
+      bottom_roller_smart.set_manual_speed(0, 0);
       bottom_roller_smart.add_target(500, 100);
-      top_roller_smart.add_target(500, 100);
-      
-      // pros::delay(500);
+      top_roller_smart.add_target(167, 100);
     }
-    // if (top_ball_sensor_released && ) {
-    //   balls_in_robot--;
-    // }
-    if (intake_queue > 0 || intake_continuous) {
-      intake_left.move_velocity(200);
-      intake_right.move_velocity(200);
-      if (bottom_ball_sensor_triggered) {
-        pros::delay(200);
-        if (intake_queue > 0) {
-          intake_queue--;
-        }
-        intake_left.move_relative(-30, 200);
-        intake_right.move_relative(-30, 200);
+
+    if (intake_queue > 0) {
+      if (bottom_ball_sensor_triggered && intake_queue > 1) {
+        intake_queue--;
+      } 
+      if (bottom_ball_sensor_released && intake_queue == 1) {
+        intake_splay();
+      } else {
+        intake_left.move_velocity(200);
+        intake_right.move_velocity(200);
       }
+      
     }
 
     top_roller_smart.run();
@@ -314,9 +299,7 @@ void main_task() {
 }
 
 void score_ball() {
-  if (balls_in_robot > 0) {
-    score_queue++;
-  }
+  score_queue++;
 }
 
 void add_ball_to_intake_queue() {
@@ -354,19 +337,8 @@ void rollers_stop() {
 
 } // namespace rollers
 
-void intake_toggle(){
-  rollers::intake_queue = 0;
-  intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-  intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-  rollers::intake_queue = 0;
-  intake_left.move_relative(-40, 200);
-  intake_right.move_relative(-40, 200);
-}
-
 controllerbuttons::Macro intakes_back(
     [](){
-      // intakes_retracted = true;
-      intakes_retracted_time = pros::millis();
       rollers::intake_queue = 0;
       left_intake_back.start();
       right_intake_back.start();
@@ -387,16 +359,13 @@ void remove_ball_from_robot() {
   rollers::balls_in_robot--;
 }
 
-void set_retracted_false() {
-  intakes_retracted = false;
-}
 
 /*===========================================================================*/
 
 void set_callbacks() {
   using namespace controllerbuttons;
   using namespace rollers;
-  button_handler.master.l1.pressed.set(intake_toggle);
+  button_handler.master.l1.pressed.set(intake_splay);
   button_handler.master.l2.pressed.set_macro(intakes_back);
   button_handler.master.r1.pressed.set(add_ball_to_intake_queue);
   button_handler.master.r1.released.set(intake_continuous_false);
@@ -415,8 +384,6 @@ void set_callbacks() {
   button_handler.partner.up.released.set(rollers_stop);
   button_handler.partner.left.pressed.set(remove_ball_from_robot);
   button_handler.partner.right.pressed.set(add_ball_to_robot);
-  button_handler.partner.b.pressed.set(set_retracted_false);
-
 }
 
 } // namespace robotfunctions
