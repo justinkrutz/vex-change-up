@@ -403,12 +403,12 @@ Macro left_home_row_old(
       score_queue = 1;
       pros::delay(200);
       targets.pop();
-      addPositionTarget(32_in, 72_in, -180_deg);
+      addPositionTarget(32_in, 72_in, -270_deg);
 
-      addPositionTarget(32_in, 118_in, -180_deg);
-      addPositionTarget(32_in, 118_in, -225_deg);
+      addPositionTarget(32_in, 109_in, -270_deg);
+      addPositionTarget(32_in, 109_in, -225_deg);
       WAIT_UNTIL(final_target_reached)
-      addPositionTarget(6_in, 150.85_in, -225_deg);
+      addPositionTarget(5.8_in, 134_in, -225_deg);
       pros::delay(1000);
       score_queue = 1;
       pros::delay(200);
