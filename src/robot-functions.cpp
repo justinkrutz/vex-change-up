@@ -13,61 +13,6 @@ namespace robotfunctions {
 
 controllerbuttons::MacroGroup intake_group;
 
-// state machine under development
-namespace intake {
-  #define ARM_RANGE 170
-  double arm_target_pos = 0;
-
-  enum class State {kRetracted, kReady, kRunning};
-  State target_state = State::kRetracted;
-  State current_state = State::kRetracted;
-
-  double target_pct = 0;
-  pros::motor_brake_mode_e brake_mode = pros::E_MOTOR_BRAKE_BRAKE;
-
-  void loop() {
-    while(true) {
-
-      switch (target_state) {
-        case State::kRetracted:
-          switch (current_state) {
-            case State::kReady:
-              // break;
-            case State::kRunning:
-              break;
-          }
-          break;
-        case State::kReady:
-          switch (current_state) {
-            case State::kRetracted:
-              break;
-            case State::kRunning:
-              target_pct = 0;
-              break;
-          }
-          break;
-        case State::kRunning:
-          switch (current_state) {
-            case State::kRetracted:
-              // break;
-            case State::kReady:
-              target_pct = 100;
-              break;
-          }
-          break;
-      }
-      intake_left.move_velocity(target_pct * 2);
-      intake_right.move_velocity(target_pct * 2);
-      intake_left.set_brake_mode(brake_mode);
-      intake_right.set_brake_mode(brake_mode);
-    }
-  }
-
-  void start() {
-    pros::Task intake_loop (loop);
-  }
-}
-
 void intake_back(pros::Motor &motor) {
   motor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   double start_pos = motor.get_position();
@@ -113,19 +58,14 @@ controllerbuttons::Macro right_intake_back(
 
 
 
-class SmartMotorController {
-  public:
-  SmartMotorController(pros::Motor &motor, double timeout_ratio, double slew, int manual_controlls)
+// class SmartMotorController {
+  // public:
+  SmartMotorController::SmartMotorController(pros::Motor &motor, double timeout_ratio, double slew, int manual_controlls)
       : motor(motor),
       timeout_ratio(timeout_ratio),
       slew(slew) {}
 
-  pros::Motor &motor;
-  double timeout_ratio;
-  int auto_speed = 0;
-  Slew slew;
-
-  void run() {
+  void SmartMotorController::run() {
     int speed = 0;
     bool all_manuals_are_zero = true;
     for (auto&& manual_speed : all_manual_speeds ) {
@@ -152,34 +92,31 @@ class SmartMotorController {
     }
     motor.move_velocity(slew.new_value(speed) * pct_to_velocity(motor));
   }
-  void add_target(double target, int speed) {
+
+  void SmartMotorController::add_target(double target, int speed) {
     target_queue.push(Target(this, target, speed));
   }
 
-  void add_target(double target, int speed, double timeout) {
+  void SmartMotorController::add_target(double target, int speed, double timeout) {
     target_queue.push(Target(this, target, speed, timeout));
   }
-  int all_manual_speeds[2];
-  // std::vector<int> all_manual_speeds = {0};
 
-  void set_manual_speed (int index, int speed) {
+  void SmartMotorController::set_manual_speed (int index, int speed) {
     all_manual_speeds[index] = speed;
   }
 
-  class Target {
-    public:
-    Target(SmartMotorController *motor_controller, double relative_target, int speed, int timeout)
+    SmartMotorController::Target::Target(SmartMotorController *motor_controller, double relative_target, int speed, int timeout)
         : motor_controller(motor_controller),
         relative_target(relative_target),
         speed(speed),
         timeout(timeout) {}
-    Target(SmartMotorController *motor_controller, double relative_target, int speed)
+    SmartMotorController::Target::Target(SmartMotorController *motor_controller, double relative_target, int speed)
         : motor_controller(motor_controller),
         relative_target(relative_target),
         speed(speed),
         timeout(auto_timeout()) {}
 
-    void init_if_new() {
+    void SmartMotorController::Target::init_if_new() {
       if (is_new) {
         is_new = false;
         time_at_start = pros::millis();
@@ -187,17 +124,13 @@ class SmartMotorController {
       }
     }
 
-    bool is_complete() {
+    bool SmartMotorController::Target::is_complete() {
       return pros::millis() >= time_at_start + timeout
       || (relative_target > 0 && motor_controller->motor.get_position() >= starting_pos + relative_target)
       || (relative_target <= 0 && motor_controller->motor.get_position() <= starting_pos + relative_target);
     }
 
-    SmartMotorController *motor_controller;
-    double relative_target;
-    int speed;
-    bool is_new = true;
-    int auto_timeout() {
+    int SmartMotorController::Target::auto_timeout() {
       int gear_ratio;
       switch (motor_controller->motor.get_gearing()) {
         case pros::E_MOTOR_GEARSET_36:
@@ -213,14 +146,6 @@ class SmartMotorController {
       }
       return fabs(relative_target) * gear_ratio;
     }
-    int timeout;
-
-    int time_at_start;
-    double starting_pos;
-  };
-
-  std::queue<Target> target_queue = {};
-};
 
 namespace rollers {
 int score_queue = 0;
@@ -275,7 +200,7 @@ void main_task() {
       score_queue--;
       bottom_roller_smart.set_manual_speed(0, 0);
       bottom_roller_smart.add_target(500, 100);
-      top_roller_smart.add_target(167, 100);
+      top_roller_smart.add_target(140, 100);
     }
 
     if (intake_queue > 0) {

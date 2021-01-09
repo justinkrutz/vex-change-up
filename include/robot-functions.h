@@ -3,30 +3,47 @@
 
 #include "main.h"
 #include "controller-buttons.h"
+#include "utilities.h"
 #include <bits/stdc++.h>
 
-// #define WARN(device, messageToPrint, warnIf)                                   \
-//   if (warnIf) {                                                                \
-//     const char *deviceChar = "" #device;                                       \
-//     Controller1.Screen.clearScreen();                                          \
-//     Controller1.Screen.setCursor(1, 0);                                        \
-//     Controller1.Screen.print(deviceChar);                                      \
-//     Controller1.Screen.setCursor(2, 0);                                        \
-//     Controller1.Screen.print(messageToPrint);                                  \
-//     wait(1, sec);                                                              \
-//   }
-//
-// #define WARN_BOOL(device, member)                                              \
-//   {                                                                            \
-//     const char *message = "Not " #member;                                      \
-//     WARN(device, message, !device.member)                                      \
-//   }
-//
-// #define WARN_RANGE(device, member, lowerRange, upperRange)                     \
-//   WARN(device, "Out of Range",                                                 \
-//        !(device.member > lowerRange && device.member < upperRange))
-
 namespace robotfunctions {
+
+class SmartMotorController {
+  public:
+  SmartMotorController(pros::Motor &motor, double timeout_ratio, double slew, int manual_controlls);
+
+  pros::Motor &motor;
+  double timeout_ratio;
+  int auto_speed = 0;
+  Slew slew;
+
+  void run();
+  void add_target(double target, int speed);
+  void add_target(double target, int speed, double timeout);
+  int all_manual_speeds[2];
+  void set_manual_speed (int index, int speed);
+
+  class Target {
+    public:
+    Target(SmartMotorController *motor_controller, double relative_target, int speed, int timeout);
+    Target(SmartMotorController *motor_controller, double relative_target, int speed);
+    void init_if_new();
+    bool is_complete();
+
+    SmartMotorController *motor_controller;
+    double relative_target;
+    int speed;
+    bool is_new = true;
+    int auto_timeout();
+    int timeout;
+
+    int time_at_start;
+    double starting_pos;
+  };
+
+  std::queue<Target> target_queue = {};
+};
+
 struct {
   double forward;
   double strafe;
@@ -52,6 +69,9 @@ namespace rollers {
   extern int intake_queue;
   extern int balls_in_robot;
   extern bool bottom_ball_sensor_last;
+
+  extern SmartMotorController top_roller_smart;
+  extern SmartMotorController bottom_roller_smart;
 
   void main_task();
   void score_ball();

@@ -51,7 +51,7 @@ bool target_distance_reached = false;
 OdomState starting_position;
 // RampMathSettings move_settings = {20, 100, 20, 0.5, 0.5};
 // RampMathSettings turn_settings = {20, 100, 20, 0.1, 0.1};
-RampMathSettings move_settings = {20, 100, 10, 0.1, 0.4};
+RampMathSettings move_settings = {20, 100, 15, 0.1, 0.2};
 RampMathSettings turn_settings = {10, 50, 10, 0.1, 0.1};
 
 double forward = 0;
@@ -239,8 +239,9 @@ Macro left_home_row(
       addPositionTarget(26.319_in, 26.319_in, -90_deg);
       addPositionTarget(26.319_in, 26.319_in, -135_deg);
       WAIT_UNTIL(final_target_reached)
-      intake_queue = 2;
+      intake_queue = 3;
       pros::delay(500);
+      top_roller_smart.add_target(45, 30);
       addPositionTarget(16_in, 16_in, -135_deg);
       WAIT_UNTIL(final_target_reached)
       addPositionTarget(13.6_in, 13.6_in, -135_deg);
@@ -251,31 +252,39 @@ Macro left_home_row(
       addPositionTarget(30_in, 30_in, -135_deg);
 
       WAIT_UNTIL(final_target_reached)
+      intake_queue = 0;
       intakes_back.start();
-      addPositionTarget(30_in, 70.33_in, -180_deg);
-      addPositionTarget(22_in, 70.33_in, -180_deg);
+      addPositionTarget(30_in, 72_in, -180_deg);
+      // addPositionTarget(22_in, 72_in, -180_deg);
 
       WAIT_UNTIL(final_target_reached)
-      addPositionTarget(17_in, 70.33_in, -180_deg);
-      pros::delay(200);
+      addPositionTarget(17_in, 72_in, -180_deg);
+      pros::delay(600);
       score_queue = 1;
       pros::delay(200);
       targets.pop();
-      addPositionTarget(32_in, 70.33_in, -180_deg);
+      addPositionTarget(32_in, 72_in, -180_deg);
 
-      addPositionTarget(32_in, 109_in, -180_deg);
+      // addPositionTarget(32_in, 109_in, -180_deg);
+      addPositionTarget(32_in, 118_in, -180_deg);
+      // WAIT_UNTIL(final_target_reached)
+      // intake_queue = 2;
+      // pros::delay(500);
+      // addPositionTarget(32_in, 109_in, -225_deg);
+      addPositionTarget(32_in, 118_in, -225_deg);
+      // addPositionTarget(17_in, 133.7_in, -225_deg);
       WAIT_UNTIL(final_target_reached)
-      intake_queue = 2;
-      addPositionTarget(32_in, 109_in, -225_deg);
-      addPositionTarget(17_in, 123.7_in, -225_deg);
-      WAIT_UNTIL(final_target_reached)
-      addPositionTarget(13.6_in, 127_in, -225_deg);
-      pros::delay(200);
-      score_queue = 2;
+      // addPositionTarget(13.6_in, 127_in, -225_deg);
+      addPositionTarget(6_in, 150.85_in, -225_deg);
+      pros::delay(1000);
+      score_queue = 1;
       pros::delay(200);
       targets.pop();
-      pros::delay(2000);
-      addPositionTarget(32_in, 109_in, -180_deg);
+      // pros::delay(200);
+      // addPositionTarget(32_in, 109_in, -180_deg);
+      addPositionTarget(32_in, 118_in, -225_deg);
+      WAIT_UNTIL(final_target_reached)
+      score_queue = 0;
 
 
 
