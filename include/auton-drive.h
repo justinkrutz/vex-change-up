@@ -10,6 +10,8 @@ pros::delay(5);               \
 
 namespace autondrive {
 
+OdomState robot_to_tracking_coords (OdomState robot_coords);
+
 class Target {
  public:
   Target(QLength x, QLength y, QAngle theta);
@@ -36,5 +38,16 @@ extern controllerbuttons::Macro shawnton_right;
 void motor_task();
 void set_callbacks();
 } // namespace autondrive
+
+namespace autonroutines {
+using namespace controllerbuttons;
+
+extern Macro none;
+extern Macro test;
+extern Macro left_home_row;
+extern Macro skills;
+extern Macro universal;
+
+} // namespace autonroutines
 
 #endif // AUTON_CONTROLLER_H

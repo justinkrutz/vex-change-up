@@ -9,9 +9,9 @@ using json = nlohmann::ordered_json;
 #include "controller-menu.h"
 #include "robot-functions.h"
 #include "auton-from-sd.h"
+#include "auton-drive.h"
 
 using namespace controllerbuttons;
-
 namespace controllermenu {
 
 std::string master_print_array [3];
@@ -85,7 +85,7 @@ class MenuItem {
 
   MenuItem * findParent(MenuItem *current_folder = (MenuItem *) root_folder);
 
-  void back();
+  virtual void back();
 };
 
 class MenuScroll {
@@ -291,22 +291,23 @@ class MenuCreateAuton : public MenuItem {
 
 class MenuAutonomous : public MenuFolder {
   public:
-  MenuAutonomous(std::string name, std::string json_key) 
+  MenuAutonomous(std::string name, controllerbuttons::Macro routine) 
       : MenuFolder(name, {
           new MenuAction(this, "Select", "Selected:", "Waiting for enable", [this](){ select(); }),
-          new MenuAction(this, "Run", "Running","Press 'B' to abort", [this](){ run(); }),
-          new MenuAction(this, "Edit", "Editing", "Press 'A' to save", [this](){ edit(); })
+          new MenuAction(this, "Test", "Running","Press 'B' to abort", [this](){ run(); })
         },
-        kAutonomous),
-        json_key(json_key) {}
+        kAutonomous), 
+        routine_(routine) {}
 
-  void select() {}
-  void run() {}
-  void edit() {}
+  void select();
+  void run();
 
-  private:
-  std::string json_key;
+
+  private:;
+  controllerbuttons::Macro routine_;
 };
+
+extern MenuAutonomous &selected_auton;
 
 void MenuAction::print() {
   master_print_array[0] = message_one_;
@@ -315,58 +316,57 @@ void MenuAction::print() {
   function_();
 }
 
-
-
-
-
-
-
-std::vector<MenuItem *> getMenuAutonsFromJson(json autons, std::string auton_type) {
-  std::vector<MenuItem *> auton_items;
-  for (auto & auton : autons.items()) {
-    // printf("autonType: %s\n", auton.value()["autonType"]);
-    if (auton.value()["autonType"] == auton_type) {
-      std::string auton_name;
-      if (auton.value()["name"] == "") {
-        auton_name = "Untitled-" + auton.key();
-      } else {
-        auton_name = auton.value()["name"];
-      }
-      auton_items.push_back(new MenuAutonomous(auton_name, auton.key()));
-    }
-  }
-  return auton_items;
+void MenuAutonomous::select() {
+  selected_auton = *this;
 }
 
-void createFolderStructure() {
+void MenuAutonomous::run() {
+  routine_.start();
+}
+
+// std::vector<MenuItem *> getMenuAutonsFromJson(json autons, std::string auton_type) {
+//   std::vector<MenuItem *> auton_items;
+//   for (auto & auton : autons.items()) {
+//     // printf("autonType: %s\n", auton.value()["autonType"]);
+//     if (auton.value()["autonType"] == auton_type) {
+//       std::string auton_name;
+//       if (auton.value()["name"] == "") {
+//         auton_name = "Untitled-" + auton.key();
+//       } else {
+//         auton_name = auton.value()["name"];
+//       }
+//       auton_items.push_back(new MenuAutonomous(auton_name, auton.key()));
+//     }
+//   }
+//   return auton_items;
+// }
+
+MenuAutonomous default_auton("None", autonroutines::none);
+
+MenuAutonomous &selected_auton = default_auton;
+
+void create_folder_structure() {
   root_folder = new MenuFolder("", {
-  new MenuFolder("Match Autons", {
-    getMenuAutonsFromJson(autonfromsd::all_autons, "match")
-  }),
-  new MenuFolder("Skills Autons", {
-    getMenuAutonsFromJson(autonfromsd::all_autons, "skills")
-  }),
-  new MenuFolder("Auton Builders", {
-    new MenuCreateAuton("Build Match"),
-    // new Autonomous("Build Skills"),
-  }),
-  // new MenuFolder("Other", {
-  // }),
-  // new MenuFolder("Actions", {
-  // }),
-  // new MenuFolder("Settings", {
-  // })
-});
+    new MenuAutonomous("Left home row", autonroutines::left_home_row),
+    new MenuAutonomous("Universal", autonroutines::universal),
+    new MenuAutonomous("Skills", autonroutines::skills),
+    new MenuAutonomous("None", autonroutines::none),
+    new MenuAutonomous("Test", autonroutines::test)
+  });
+}
+
+void run_auton() {
+  selected_auton.run();
 }
 
 void init() {
   master.clear();
   pros::delay(50);
   pros::Task controller_print_task (controller_print);
-  // createFolderStructure();
-  // current_item = root_folder;
-  // current_item->set_callbacks();
-  // current_item->print();
+  create_folder_structure();
+  current_item = root_folder;
+  current_item->set_callbacks();
+  current_item->print();
 }
 
 } // namespace controllermenu

@@ -20,21 +20,13 @@ std::shared_ptr<ThreeEncoderXDriveModel> x_model;
  * to keep execution time for this mode under a few seconds.
  */
 
-bool run_auton = true;
-bool run_shawn = false;
-
-void no_auton() {
-  run_auton = false;
-}
-
-void yes_auton() {
-  run_auton = true;
-  run_shawn = false;
-}
-
-void shawn_auton_run() {
-  run_shawn = true;
-  run_auton = false;
+void set_drive_callbacks() {
+  controllerbuttons::button_handler.clear_group("menu");
+  robotfunctions::set_callbacks();
+  autondrive::set_callbacks();
+  controllermenu::master_print_array[0] = "";
+  controllermenu::master_print_array[1] = "";
+  controllermenu::master_print_array[2] = "";
 }
 
 void initialize() {
@@ -61,16 +53,14 @@ void initialize() {
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
   // x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
   pros::Task(autondrive::motor_task);
-  robotfunctions::set_callbacks();
+  // robotfunctions::set_callbacks();
   // ballsystem::set_callbacks();
   // ballsystem::init();
-  autondrive::set_callbacks();
+  // autondrive::set_callbacks();
   autonfromsd::load_autons_from_SD();
   controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
-  // controllerbuttons::button_handler.master.y.pressed.set(yes_auton);
-  // controllerbuttons::button_handler.master.x.pressed.set(no_auton);
-  // controllerbuttons::button_handler.master.b.pressed.set(shawn_auton_run);
+  controllerbuttons::button_handler.master.r2.pressed.set(set_drive_callbacks);
 }
 
 /**
@@ -103,11 +93,16 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
-  // if (run_auton) {
-  //   autondrive::left_home_row.start();
-  // } else if (run_shawn) {
-  //   autondrive::shawnton_right.start();
-  // }
+  controllermenu::run_auton();
+  while (true) {
+    QLength x = chassis->getState().x;
+    QLength y = chassis->getState().y;
+    QAngle theta = chassis->getState().theta;
+    controllermenu::master_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
+    controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
+    controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
+    pros::delay(150);
+  }
 }
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -123,39 +118,15 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 void opcontrol() {
+  if (pros::competition::is_connected()) {
+    set_drive_callbacks();
+  }
   printf("opcontrol\n");
-  // chassis->setState({15.7411_in, 26.3036_in, -90_deg});
-  // chassis->setState({0_in, 0_in, 0_deg});
+  chassis->setState(autondrive::robot_to_tracking_coords({0_in, 0_in, 0_deg}));
   Controller controller;
   while (true) {
     controllerbuttons::run_buttons();
-    // double x = chassis->getState().x.convert(inch);
-    // double y = chassis->getState().y.convert(inch);
-    // double theta = chassis->getState().theta.convert(degree);
-    // std::string x_str     = std::to_string(x);
-    // std::string y_str     = std::to_string(y);
-    // std::string theta_str = std::to_string(theta);
-    // controllermenu::master_print_array[0] = "x: " + x_str;
-    // controllermenu::master_print_array[1] = "y: " + y_str;
-    // controllermenu::master_print_array[2] = "t: " + theta_str;
-
-    QLength x = chassis->getState().x;
-    QLength y = chassis->getState().y;
-    QAngle theta = chassis->getState().theta;
-    controllermenu::master_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
-    controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
-    controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
-
     // ballsystem::debug();
-
-    // controllermenu::master_print_array[0] = "left: " + std::to_string(tracker_left.get_value());
-    // controllermenu::master_print_array[1] = "right: " + std::to_string(tracker_right.get_value());
-    // controllermenu::master_print_array[2] = "back: " + std::to_string(tracker_back.get_value());
-
-    // printf("tracker_left: %d tracker_right: %d tracker_back: %d\n", tracker_left.get_value(), tracker_right.get_value(), tracker_back.get_value());
-    // x_model->xArcade(controller.getAnalog(ControllerAnalog::rightX),
-    //                 controller.getAnalog(ControllerAnalog::rightY),
-    //                 controller.getAnalog(ControllerAnalog::leftX));
     pros::delay(10);
   }
 }
