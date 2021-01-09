@@ -302,9 +302,12 @@ void create_folder_structure() {
     new MenuAutonomous("Left Home Row", autonroutines::left_home_row),
     new MenuAutonomous("Left ShawnTon", autonroutines::left_shawnton),
     new MenuAutonomous("Right ShawnTon", autonroutines::right_shawnton),
-    new MenuAutonomous("Skills", autonroutines::skills),
-    new MenuAutonomous("None", autonroutines::none),
-    new MenuAutonomous("Test", autonroutines::test)
+    new MenuFolder("Other", {
+      new MenuAutonomous("Skills", autonroutines::skills),
+      new MenuAutonomous("None", autonroutines::none),
+      new MenuAutonomous("Test", autonroutines::test),
+      new MenuAutonomous("Left Home Row Old", autonroutines::left_home_row_old)
+    })
   });
 }
 

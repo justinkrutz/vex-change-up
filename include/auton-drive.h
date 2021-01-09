@@ -16,6 +16,8 @@ while (!(condition) && pros::millis() - wait_until_timeout_start < timeout) { \
 
 namespace autondrive {
 
+extern controllerbuttons::MacroGroup auton_group;
+
 OdomState robot_to_tracking_coords (OdomState robot_coords);
 
 class Target {
@@ -47,6 +49,7 @@ using namespace controllerbuttons;
 
 extern Macro none;
 extern Macro left_home_row;
+extern Macro left_home_row_old;
 extern Macro left_shawnton;
 extern Macro right_shawnton;
 extern Macro test;
