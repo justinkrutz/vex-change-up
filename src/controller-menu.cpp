@@ -261,34 +261,6 @@ class MenuCreateAuton : public MenuItem {
   // std::string auton_id = get_new_auton_id(autonfromsd::all_autons);
 };
 
-// class MenuAutonomousSelect : public MenuItem {
-//   MenuAutonomousSelect(MenuAutonomous *menu_autonomous) : MenuItem(kAutonomousSelect, "Select for match"), menu_autonomous(menu_autonomous) {}
-
-//   void print();
-//   private:
-//   MenuAutonomous *menu_autonomous;
-// };
-
-// class MenuAutonomousRun : public MenuItem {
-//   public:
-//   MenuAutonomousRun(MenuAutonomous *menu_autonomous) : MenuItem(kAutonomousRun, "Run immediately"), menu_autonomous(menu_autonomous) {}
-
-//   void print();
-//   private:
-//   MenuAutonomous *menu_autonomous;
-// };
-
-// class MenuAutonomousEdit : public MenuItem {
-//   public:
-//   MenuAutonomousEdit(MenuAutonomous *menu_autonomous) : MenuItem(kAutonomousEdit, "Changes saved to SD"), menu_autonomous(menu_autonomous) {}
-
-//   void print();
-//   private:
-//   MenuAutonomous *menu_autonomous;
-// };
-
-
-
 class MenuAutonomous : public MenuFolder {
   public:
   MenuAutonomous(std::string name, controllerbuttons::Macro routine) 
@@ -300,8 +272,10 @@ class MenuAutonomous : public MenuFolder {
         routine_(routine) {}
 
   void select();
-  void run();
-
+  
+  void run() {
+    routine_.start();
+  }
 
   private:;
   controllerbuttons::Macro routine_;
@@ -319,28 +293,6 @@ void MenuAction::print() {
 void MenuAutonomous::select() {
   selected_auton = *this;
 }
-
-void MenuAutonomous::run() {
-  routine_.start();
-}
-
-// std::vector<MenuItem *> getMenuAutonsFromJson(json autons, std::string auton_type) {
-//   std::vector<MenuItem *> auton_items;
-//   for (auto & auton : autons.items()) {
-//     // printf("autonType: %s\n", auton.value()["autonType"]);
-//     if (auton.value()["autonType"] == auton_type) {
-//       std::string auton_name;
-//       if (auton.value()["name"] == "") {
-//         auton_name = "Untitled-" + auton.key();
-//       } else {
-//         auton_name = auton.value()["name"];
-//       }
-//       auton_items.push_back(new MenuAutonomous(auton_name, auton.key()));
-//     }
-//   }
-//   return auton_items;
-// }
-
 MenuAutonomous default_auton("None", autonroutines::none);
 
 MenuAutonomous &selected_auton = default_auton;

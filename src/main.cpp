@@ -39,9 +39,6 @@ void initialize() {
     )
     .withDimensions(AbstractMotor::gearset::green, {{3.25_in, 11.381_in}, imev5GreenTPR})
     .withSensors(
-        // ADIEncoder{'E', 'F'}, // left encoder in ADI ports A & B
-        // ADIEncoder{'A', 'B', true},  // right encoder in ADI ports C & D (reversed)
-        // ADIEncoder{'C', 'D'}  // middle encoder in ADI ports E & F
         ADIEncoder{'C', 'D'}, // left encoder in ADI ports A & B
         ADIEncoder{'A', 'B'},  // right encoder in ADI ports C & D (reversed)
         ADIEncoder{'E', 'F'}  // middle encoder in ADI ports E & F

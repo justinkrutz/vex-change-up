@@ -225,7 +225,6 @@ class SmartMotorController {
 namespace rollers {
 int score_queue = 0;
 int intake_queue = 0;
-int balls_in_robot = 0;
 bool top_ball_sensor_last = true;
 bool bottom_ball_sensor_last = false;
 bool intake_continuous = false;
@@ -349,17 +348,6 @@ controllerbuttons::Macro intakes_back(
     {&intake_group},
     {&left_intake_back, &right_intake_back});
 
-
-
-void add_ball_to_robot() {
-  rollers::balls_in_robot++;
-}
-
-void remove_ball_from_robot() {
-  rollers::balls_in_robot--;
-}
-
-
 /*===========================================================================*/
 
 void set_callbacks() {
@@ -370,10 +358,8 @@ void set_callbacks() {
   button_handler.master.r1.pressed.set(add_ball_to_intake_queue);
   button_handler.master.r1.released.set(intake_continuous_false);
   button_handler.master.r2.pressed.set(score_ball);
-  // button_handler.master.down.pressed.set(top_roller_reverse);
   button_handler.master.down.pressed.set(rollers_reverse);
   button_handler.master.down.released.set(rollers_stop);
-  // button_handler.master.up.pressed.set(top_roller_forward);
   button_handler.master.up.pressed.set(rollers_forward);
   button_handler.master.up.released.set(rollers_stop);
 
@@ -382,8 +368,10 @@ void set_callbacks() {
   button_handler.partner.down.released.set(rollers_stop);
   button_handler.partner.up.pressed.set(rollers_forward);
   button_handler.partner.up.released.set(rollers_stop);
-  button_handler.partner.left.pressed.set(remove_ball_from_robot);
-  button_handler.partner.right.pressed.set(add_ball_to_robot);
+  button_handler.master.x.pressed.set(top_roller_forward);
+  button_handler.master.x.released.set(rollers_stop);
+  button_handler.master.b.pressed.set(top_roller_reverse);
+  button_handler.master.b.released.set(rollers_stop);
 }
 
 } // namespace robotfunctions

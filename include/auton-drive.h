@@ -5,7 +5,13 @@
 
 #define WAIT_UNTIL(condition) \
 while (!(condition)) {        \
-pros::delay(5);               \
+  pros::delay(5);             \
+}
+
+#define WAIT_UNTIL_T(condition, timeout) \
+int wait_until_timeout_start = pros::millis(); \
+while (!(condition) && pros::millis() - wait_until_timeout_start < timeout) { \
+  pros::delay(5); \
 }
 
 namespace autondrive {
