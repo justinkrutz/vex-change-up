@@ -154,7 +154,8 @@ void motor_task()
     drivetoposition::update();
 
     double forward = button_forward + drivetoposition::forward + master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
-    double strafe  = button_strafe + drivetoposition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
+    double strafe  = button_strafe + drivetoposition::strafe;
+    // double strafe  = button_strafe + drivetoposition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
     double temp_turn  = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
     double turn    = button_turn + drivetoposition::turn    + pow(abs(temp_turn / 100), 1.8) * 100 * sgn(temp_turn);
     double sync = std::min(1.0, 100 / (fabs(forward) + fabs(strafe) + fabs(turn)));
@@ -232,7 +233,7 @@ Macro test(
     },
     {&auton_group});
 
-Macro left_home_row(
+Macro home_row_three(
     [&](){
       chassis->setState(robot_to_tracking_coords({15.7416_in, 31.4911_in, -90_deg}));
 
@@ -271,6 +272,8 @@ Macro left_home_row(
       pros::delay(200);
       targets.pop();
       pros::delay(20);
+      chassis->setState(robot_to_tracking_coords({20.75_in, 71.63_in, -171.5_deg}));
+
       move_settings.start_output = 100;
       move_settings.end_output = 50;
       addPositionTarget(32_in, 72_in, -180_deg);
@@ -283,17 +286,19 @@ Macro left_home_row(
       // addPositionTarget(32_in, 109_in, -225_deg);
       addPositionTarget(32_in, 116_in, -225_deg);
       WAIT_UNTIL(final_target_reached)
-      intake_queue = 10;
+      intake_queue = 1;
       pros::delay(500);
       addPositionTarget(23_in, 126_in, -225_deg);
       WAIT_UNTIL(final_target_reached)
       pros::delay(300);
       intake_queue = 0;
       intakes_back.start();
-      pros::delay(300);
+      pros::delay(30);
+      intakes_back.terminate();
+      pros::delay(270);
       // addPositionTarget(13.6_in, 127_in, -225_deg);
       addPositionTarget(6_in, 150.85_in, -225_deg);
-      pros::delay(1000);
+      pros::delay(500);
       score_queue = 1;
       pros::delay(200);
       targets.pop();
@@ -302,6 +307,59 @@ Macro left_home_row(
       // addPositionTarget(32_in, 109_in, -180_deg);
       addPositionTarget(32_in, 118_in, -225_deg);
       WAIT_UNTIL(final_target_reached)
+      score_queue = 0;
+    },
+    [](){
+      target_position_enabled = false;
+    },
+    {&auton_group});
+
+Macro home_row_two(
+    [&](){
+      chassis->setState(robot_to_tracking_coords({15.7416_in, 31.4911_in, -90_deg}));
+
+      move_settings.start_output = 100;
+      move_settings.end_output = 20;
+      
+      addPositionTarget(26.319_in, 26.319_in, -90_deg);
+      addPositionTarget(26.319_in, 26.319_in, -135_deg);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 10;
+      pros::delay(400);
+      top_roller_smart.add_target(45, 30);
+      addPositionTarget(20.4_in, 20.4_in, -135_deg);
+      WAIT_UNTIL(final_target_reached)
+      pros::delay(400);
+      intake_queue = 0;
+      intakes_back.start();
+      pros::delay(300);
+      addPositionTarget(16_in, 16_in, -135_deg);
+      WAIT_UNTIL(final_target_reached)
+      addPositionTarget(13.6_in, 13.6_in, -135_deg);
+      pros::delay(200);
+      score_queue = 1;
+      pros::delay(200);
+      targets.pop();
+      // addPositionTarget(30_in, 30_in, -135_deg);
+      addPositionTarget(26_in, 72_in, -180_deg);
+      // addPositionTarget(22_in, 72_in, -180_deg);
+
+      WAIT_UNTIL(final_target_reached)
+      addPositionTarget(17_in, 72_in, -180_deg);
+      move_settings.start_output = 20;
+      move_settings.end_output = 20;
+      pros::delay(500);
+      score_queue = 1;
+      pros::delay(200);
+      targets.pop();
+      pros::delay(20);
+      chassis->setState(robot_to_tracking_coords({20.75_in, 71.63_in, -171.5_deg}));
+
+      move_settings.start_output = 100;
+      move_settings.end_output = 50;
+      addPositionTarget(32_in, 72_in, -180_deg);
+      WAIT_UNTIL(final_target_reached)
+      move_settings.end_output = 20;
       score_queue = 0;
     },
     [](){
@@ -342,7 +400,10 @@ Macro right_shawnton(
       chassis->setState(robot_to_tracking_coords({31.4911_in, 15.7416_in, -180_deg}));
 
       addPositionTarget(26.319_in, 26.319_in, -180_deg);
+      WAIT_UNTIL(final_target_reached)
       addPositionTarget(26.319_in, 26.319_in, -135_deg);
+      pros::delay(500);
+      targets.pop();
       addPositionTarget(16_in, 16_in, -135_deg);
       WAIT_UNTIL(final_target_reached)
       addPositionTarget(13.6_in, 13.6_in, -135_deg);
@@ -403,12 +464,12 @@ Macro left_home_row_old(
       score_queue = 1;
       pros::delay(200);
       targets.pop();
-      addPositionTarget(32_in, 72_in, -270_deg);
+      addPositionTarget(32_in, 72_in, -180_deg);
 
-      addPositionTarget(32_in, 109_in, -270_deg);
-      addPositionTarget(32_in, 109_in, -225_deg);
+      addPositionTarget(32_in, 118_in, -180_deg);
+      addPositionTarget(32_in, 118_in, -225_deg);
       WAIT_UNTIL(final_target_reached)
-      addPositionTarget(5.8_in, 134_in, -225_deg);
+      addPositionTarget(6_in, 150.85_in, -225_deg);
       pros::delay(1000);
       score_queue = 1;
       pros::delay(200);

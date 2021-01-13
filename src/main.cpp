@@ -93,12 +93,6 @@ void autonomous() {
   controllermenu::run_auton();
 
   // while (true) {
-  //   QLength x = chassis->getState().x;
-  //   QLength y = chassis->getState().y;
-  //   QAngle theta = chassis->getState().theta;
-  //   controllermenu::master_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
-  //   controllermenu::master_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
-  //   controllermenu::master_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
   //   pros::delay(150);
   // }
 }
@@ -125,6 +119,12 @@ void opcontrol() {
   while (true) {
     controllerbuttons::run_buttons();
     // ballsystem::debug();
+    QLength x = chassis->getState().x;
+    QLength y = chassis->getState().y;
+    QAngle theta = chassis->getState().theta;
+    controllermenu::partner_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
+    controllermenu::partner_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
+    controllermenu::partner_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
     pros::delay(10);
   }
 }

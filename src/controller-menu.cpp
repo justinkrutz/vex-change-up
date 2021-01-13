@@ -299,7 +299,8 @@ MenuAutonomous &selected_auton = default_auton;
 
 void create_folder_structure() {
   root_folder = new MenuFolder("", {
-    new MenuAutonomous("Left Home Row", autonroutines::left_home_row),
+    new MenuAutonomous("Home Row Three", autonroutines::home_row_three),
+    new MenuAutonomous("Home Row Two", autonroutines::home_row_two),
     new MenuAutonomous("Left ShawnTon", autonroutines::left_shawnton),
     new MenuAutonomous("Right ShawnTon", autonroutines::right_shawnton),
     new MenuFolder("Other", {

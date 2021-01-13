@@ -236,12 +236,12 @@ void intake_continuous_false() {
 }
 
 
-void top_roller_forward() {
-  top_roller_smart.set_manual_speed(1, 100);
+void bottom_roller_forward() {
+  bottom_roller_smart.set_manual_speed(1, 100);
 }
 
-void top_roller_reverse() {
-  top_roller_smart.set_manual_speed(1, -100);
+void bottom_roller_reverse() {
+  bottom_roller_smart.set_manual_speed(1, -100);
 }
 
 void rollers_forward() {
@@ -287,16 +287,20 @@ void set_callbacks() {
   button_handler.master.down.released.set(rollers_stop);
   button_handler.master.up.pressed.set(rollers_forward);
   button_handler.master.up.released.set(rollers_stop);
+  button_handler.master.x.pressed.set(bottom_roller_forward);
+  button_handler.master.x.released.set(rollers_stop);
+  button_handler.master.b.pressed.set(bottom_roller_reverse);
+  button_handler.master.b.released.set(rollers_stop);
 
   button_handler.partner.r2.pressed.set(score_ball);
   button_handler.partner.down.pressed.set(rollers_reverse);
   button_handler.partner.down.released.set(rollers_stop);
   button_handler.partner.up.pressed.set(rollers_forward);
   button_handler.partner.up.released.set(rollers_stop);
-  button_handler.master.x.pressed.set(top_roller_forward);
-  button_handler.master.x.released.set(rollers_stop);
-  button_handler.master.b.pressed.set(top_roller_reverse);
-  button_handler.master.b.released.set(rollers_stop);
+  button_handler.partner.x.pressed.set(bottom_roller_forward);
+  button_handler.partner.x.released.set(rollers_stop);
+  button_handler.partner.b.pressed.set(bottom_roller_reverse);
+  button_handler.partner.b.released.set(rollers_stop);
 }
 
 } // namespace robotfunctions

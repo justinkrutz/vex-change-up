@@ -48,7 +48,8 @@ namespace autonroutines {
 using namespace controllerbuttons;
 
 extern Macro none;
-extern Macro left_home_row;
+extern Macro home_row_three;
+extern Macro home_row_two;
 extern Macro left_home_row_old;
 extern Macro left_shawnton;
 extern Macro right_shawnton;
