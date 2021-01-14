@@ -10,9 +10,9 @@ pros::Motor intake_left (10, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCO
 pros::Motor intake_right (20, pros::E_MOTOR_GEARSET_18, true, pros::E_MOTOR_ENCODER_DEGREES);
 pros::Motor bottom_roller (9, pros::E_MOTOR_GEARSET_06, false, pros::E_MOTOR_ENCODER_DEGREES);
 pros::Motor top_roller (8, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODER_DEGREES);
-pros::ADIEncoder tracker_right ('A', 'B', false);
-pros::ADIEncoder tracker_left ('C', 'D', false);
-pros::ADIEncoder tracker_back ('E', 'F', false);
+pros::Rotation tracker_left (11);
+pros::Rotation tracker_back (12);
+pros::Rotation tracker_right (13);
 pros::ADILineSensor top_ball_sensor ('G');
 // pros::ADIAnalogIn left_intake_sensor ('G');
 // pros::ADIAnalogIn right_intake_sensor ('H');

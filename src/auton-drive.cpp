@@ -15,17 +15,19 @@ namespace autondrive {
 controllerbuttons::MacroGroup auton_group;
 
 OdomState tracking_to_robot_coords (OdomState tracking_coords) {
-  QLength x_offset = cos(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
-  QLength y_offset = sin(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
+  // QLength x_offset = cos(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
+  // QLength y_offset = sin(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
 
-  return {tracking_coords.x + x_offset, tracking_coords.y + y_offset, tracking_coords.theta};
+  // return {tracking_coords.x + x_offset, tracking_coords.y + y_offset, tracking_coords.theta};
+  return tracking_coords;
 }
 
 OdomState robot_to_tracking_coords (OdomState robot_coords) {
-  QLength x_offset = cos(robot_coords.theta.convert(radian)) * -TRACKING_ORIGIN_OFFSET;
-  QLength y_offset = sin(robot_coords.theta.convert(radian)) * -TRACKING_ORIGIN_OFFSET;
+  // QLength x_offset = cos(robot_coords.theta.convert(radian)) * -TRACKING_ORIGIN_OFFSET;
+  // QLength y_offset = sin(robot_coords.theta.convert(radian)) * -TRACKING_ORIGIN_OFFSET;
 
-  return {robot_coords.x + x_offset, robot_coords.y + y_offset, robot_coords.theta};
+  // return {robot_coords.x + x_offset, robot_coords.y + y_offset, robot_coords.theta};
+  return robot_coords;
 }
 
 OdomState robot_state() {
@@ -154,8 +156,8 @@ void motor_task()
     drivetoposition::update();
 
     double forward = button_forward + drivetoposition::forward + master.get_analog(ANALOG_RIGHT_Y) * 0.787401574803;
-    double strafe  = button_strafe + drivetoposition::strafe;
-    // double strafe  = button_strafe + drivetoposition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
+    // double strafe  = button_strafe + drivetoposition::strafe;
+    double strafe  = button_strafe + drivetoposition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
     double temp_turn  = master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
     double turn    = button_turn + drivetoposition::turn    + pow(abs(temp_turn / 100), 1.8) * 100 * sgn(temp_turn);
     double sync = std::min(1.0, 100 / (fabs(forward) + fabs(strafe) + fabs(turn)));
@@ -272,7 +274,7 @@ Macro home_row_three(
       pros::delay(200);
       targets.pop();
       pros::delay(20);
-      chassis->setState(robot_to_tracking_coords({20.75_in, 71.63_in, -171.5_deg}));
+      // chassis->setState(robot_to_tracking_coords({20.75_in, 71.63_in, -171.5_deg}));
 
       move_settings.start_output = 100;
       move_settings.end_output = 50;

@@ -20,16 +20,22 @@ std::shared_ptr<ThreeEncoderXDriveModel> x_model;
  * to keep execution time for this mode under a few seconds.
  */
 
+bool menu_enabled = true;
+
 void set_drive_callbacks() {
+  menu_enabled = false;
   controllerbuttons::button_handler.clear_group("menu");
   robotfunctions::set_callbacks();
   autondrive::set_callbacks();
-  controllermenu::master_print_array[0] = "";
-  controllermenu::master_print_array[1] = "";
-  controllermenu::master_print_array[2] = "";
+  // controllermenu::master_print_array[0] = "";
+  // controllermenu::master_print_array[1] = "";
+  // controllermenu::master_print_array[2] = "";
 }
 
 void initialize() {
+  tracker_left.reset_position();
+  tracker_right.reset_position();
+  tracker_back.reset_position();
   chassis = ChassisControllerBuilder()
     .withMotors(
         15,  // Top left
@@ -39,12 +45,11 @@ void initialize() {
     )
     .withDimensions(AbstractMotor::gearset::green, {{3.25_in, 11.381_in}, imev5GreenTPR})
     .withSensors(
-        ADIEncoder{'C', 'D'}, // left encoder in ADI ports A & B
-        ADIEncoder{'A', 'B'},  // right encoder in ADI ports C & D (reversed)
-        ADIEncoder{'E', 'F'}  // middle encoder in ADI ports E & F
+        RotationSensor{11, true}, // left encoder
+        RotationSensor{13},  // right encoder
+        RotationSensor{12}  // middle encoder
     )
-    .withOdometry({{2.75_in, 11.28125_in, 0_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
-    // .withOdometry({{1626.17630113, 3.97430555556, 0.1127125, 1630.79264566}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
+    .withOdometry({{2.75_in, 12.0873_in, 6.04365_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
     .buildOdometry();
   chassis->getModel()->setBrakeMode(okapi::AbstractMotor::brakeMode::brake);
   x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
@@ -114,17 +119,18 @@ void opcontrol() {
     set_drive_callbacks();
   }
   printf("opcontrol\n");
-  chassis->setState(autondrive::robot_to_tracking_coords({0_in, 0_in, 0_deg}));
   Controller controller;
   while (true) {
     controllerbuttons::run_buttons();
     // ballsystem::debug();
-    QLength x = chassis->getState().x;
-    QLength y = chassis->getState().y;
-    QAngle theta = chassis->getState().theta;
-    controllermenu::partner_print_array[0] = std::to_string(x.convert(inch)) + " " + std::to_string(tracker_left.get_value());
-    controllermenu::partner_print_array[1] = std::to_string(y.convert(inch)) + " " + std::to_string(tracker_right.get_value());
-    controllermenu::partner_print_array[2] = std::to_string(theta.convert(degree)) + " " + std::to_string(tracker_back.get_value());
+    if (!menu_enabled) {
+      QLength x = chassis->getState().x;
+      QLength y = chassis->getState().y;
+      QAngle theta = chassis->getState().theta;
+      controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(x.convert(inch));
+      controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(y.convert(inch)));
+      controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(theta.convert(degree));
+    }
     pros::delay(10);
   }
 }
