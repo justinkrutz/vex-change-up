@@ -618,7 +618,7 @@ Macro skills(
 
     Macro shawnton_three(
     [&](){
-      // chassis->setState(robot_to_tracking_coords({31.4911_in, 15.7416_in, 90_deg}));
+      chassis->setState(robot_to_tracking_coords({15.7416_in, 109.181_in, 90_deg}));
 
       add_position_target(23.49_in, 117.18_in, 90_deg);
       add_position_target(5.8129_in, 134.8593_in, 135_deg, 25_in);
