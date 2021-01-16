@@ -204,16 +204,16 @@ void main_task() {
     }
 
     if (intake_queue > 0) {
-      if (bottom_ball_sensor_triggered && intake_queue > 1) {
-        intake_queue--;
-      } 
-      if (bottom_ball_sensor_released && intake_queue == 1) {
-        intake_splay();
+      if (bottom_ball_sensor_released) {
+        if (intake_queue == 1) {
+          intake_splay();
+        } else {
+          intake_queue--;
+        }
       } else {
         intake_left.move_velocity(200);
         intake_right.move_velocity(200);
       }
-      
     }
 
     top_roller_smart.run();

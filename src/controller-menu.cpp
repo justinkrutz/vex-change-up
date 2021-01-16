@@ -144,7 +144,10 @@ class MenuFolder : public MenuItem {
     button_handler.master.b.pressed.set ([this](){ back(); },   {"menu"});
   }
 
+  virtual void abort() {}
+
   void print() {
+    abort();
     if (folderScroll.number_of_items > 0) {
       folderScroll.print();
       master_print_array[1] = MenuItemTypeName.at(children[folderScroll.cursor_location]->item_type);
@@ -272,6 +275,10 @@ class MenuAutonomous : public MenuFolder {
         routine_(routine) {}
 
   void select();
+
+  void abort() {
+    autondrive::auton_group.terminate();
+  }
   
   void run() {
     routine_.start();
@@ -307,7 +314,6 @@ void create_folder_structure() {
       new MenuAutonomous("Skills", autonroutines::skills),
       new MenuAutonomous("None", autonroutines::none),
       new MenuAutonomous("Test", autonroutines::test),
-      new MenuAutonomous("Left Home Row Old", autonroutines::left_home_row_old)
     })
   });
 }

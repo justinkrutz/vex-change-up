@@ -35,7 +35,7 @@ class Target {
 };
 
 namespace drivetoposition {
-void addPositionTarget(QLength x, QLength y, QAngle theta, QLength offset = 0_in);
+void add_position_target(QLength x, QLength y, QAngle theta, QLength offset = 0_in);
 extern bool target_position_enabled;
 extern bool final_target_reached;
 }
@@ -50,7 +50,6 @@ using namespace controllerbuttons;
 extern Macro none;
 extern Macro home_row_three;
 extern Macro home_row_two;
-extern Macro left_home_row_old;
 extern Macro left_shawnton;
 extern Macro right_shawnton;
 extern Macro test;
