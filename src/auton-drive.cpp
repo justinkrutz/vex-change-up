@@ -616,4 +616,61 @@ Macro skills(
     },
     {&auton_group});
 
+    Macro shawnton_three(
+    [&](){
+      // chassis->setState(robot_to_tracking_coords({31.4911_in, 15.7416_in, 90_deg}));
+
+      add_position_target(23.49_in, 117.18_in, 90_deg);
+      add_position_target(5.8129_in, 134.8593_in, 135_deg, 25_in);
+      add_position_target(5.8129_in, 134.8593_in, 135_deg, 16_in);
+      WAIT_UNTIL(final_target_reached)
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      wait(800);
+      intakes_back.start();
+      wait(400);
+      add_position_target(5.8129_in, 134.8593_in, 135_deg, 6_in);
+      wait(300);
+      score_queue = 1;
+      wait(300);
+      targets.pop();
+      stop_scoring();
+
+      add_position_target(5.8129_in, 134.8593_in, 135_deg, 16_in);
+      add_position_target(29.8129_in, 134.8593_in, 0_deg);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      // wait(500);
+      add_position_target(70.3361_in, 134.745_in, 45_deg, 16_in);
+      WAIT_UNTIL(final_target_reached)
+      add_position_target(70.3361_in, 134.745_in, 45_deg, 6_in);
+      wait(500);
+      targets.pop();
+      add_position_target(70.3361_in, 134.745_in, 45_deg, 16_in);
+      WAIT_UNTIL(final_target_reached)
+      intakes_back.start();
+      wait(400);
+      add_position_target(70.3361_in, 134.745_in, 45_deg, 6_in);
+      wait(300);
+      score_queue = 1;
+      wait(300);
+      targets.pop();
+      stop_scoring();
+
+      add_position_target(50.3361_in, 114.745_in, 45_deg);
+      add_position_target(50.3361_in, 114.745_in, 0_deg);
+      add_position_target(50.3361_in, 70.3361_in, 0_deg);
+      WAIT_UNTIL(final_target_reached)
+      add_position_target(70.3361_in, 70.3361_in, 0_deg, -6_in);
+      wait(500);
+      score_queue = 1;
+      wait(300);
+      targets.pop();
+      WAIT_UNTIL(final_target_reached)
+    },
+    [](){
+      target_position_enabled = false;
+    },
+    {&auton_group});
+
 } // namespace autonroutines

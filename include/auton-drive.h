@@ -54,6 +54,7 @@ extern Macro left_shawnton;
 extern Macro right_shawnton;
 extern Macro test;
 extern Macro skills;
+extern Macro shawnton_three;
 
 } // namespace autonroutines
 
