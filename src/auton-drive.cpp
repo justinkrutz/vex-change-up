@@ -426,6 +426,14 @@ Macro right_shawnton(
     },
     {&auton_group});
 
+void stop_scoring() {
+  score_queue = 0;
+  top_roller_smart.target_queue = {};
+  // top_roller_smart.set_manual_speed(0, 0);
+  // top_roller_smart.set_manual_speed(1, 0);
+  top_roller_smart.auto_speed = 0;
+}
+
 Macro skills(
     [&](){
       chassis->setState(robot_to_tracking_coords({13.491_in, 34.9911_in, 0_deg}));
@@ -445,7 +453,7 @@ Macro skills(
       wait(300);
       targets.pop();
 
-      score_queue = 0;
+      stop_scoring();
       add_position_target(5.9272_in, 70.3361_in, -180_deg, 20_in);
       WAIT_UNTIL(final_target_reached)
       add_position_target(5.9272_in, 70.3361_in, -180_deg, 6_in);
@@ -454,7 +462,7 @@ Macro skills(
       wait(400);
       targets.pop();
 
-      score_queue = 0;
+      stop_scoring();
       // move_settings.end_output = 100;
       add_position_target(23_in, 70.3361_in, -180_deg);
       add_position_target(23_in, 90_in, -270_deg);
@@ -467,16 +475,16 @@ Macro skills(
       add_position_target(5.8129_in, 134.8593_in, -225_deg, 24.5_in);
       WAIT_UNTIL(final_target_reached)
       add_position_target(5.8129_in, 134.8593_in, -225_deg, 6_in);
-      wait(700);
+      wait(1000);
       score_queue = 1;
       wait(400);
       targets.pop();
 
-      score_queue = 0;
+      stop_scoring();
       add_position_target(23_in, 117.18_in, -270_deg);
       WAIT_UNTIL(final_target_reached)
       intake_right.move_relative(180, 200);
-      add_position_target(34.8361_in, 125.6722_in, -270_deg);
+      add_position_target(34.8361_in, 123.6722_in, -270_deg);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
       wait(1000);
@@ -495,11 +503,11 @@ Macro skills(
       wait(700);
       targets.pop();
 
-      score_queue = 0;
+      stop_scoring();
       add_position_target(70.3361_in, 117.4624_in, -270_deg);
       WAIT_UNTIL(final_target_reached)
       intake_right.move_relative(180, 200);
-      add_position_target(105.8361_in, 125.6722_in, -270_deg);
+      add_position_target(105.8361_in, 123.6722_in, -270_deg);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
       wait(1000);
@@ -512,7 +520,7 @@ Macro skills(
       wait(300);
       targets.pop();
 
-      score_queue = 0;
+      stop_scoring();
       add_position_target(118_in, 125_in, -360_deg);
       add_position_target(118_in, 125_in, -450_deg);
       add_position_target(117.6361_in, 105.6361_in, -450_deg, 10_in);
@@ -529,7 +537,7 @@ Macro skills(
       wait(200);
       targets.pop();
 
-      score_queue = 0;
+      stop_scoring();
       add_position_target(117.6361_in, 70.3361_in, -360_deg);
       add_position_target(117.6361_in, 35.0361_in, -450_deg, 10_in);
       WAIT_UNTIL(final_target_reached)
@@ -545,7 +553,7 @@ Macro skills(
       wait(400);
       targets.pop();
 
-      score_queue = 0;
+      stop_scoring();
       add_position_target(117.1816_in, 23.4906_in, -450_deg);
       WAIT_UNTIL(final_target_reached)
       intake_right.move_relative(180, 200);
@@ -568,7 +576,7 @@ Macro skills(
       wait(700);
       targets.pop();
 
-      score_queue = 0;
+      stop_scoring();
       add_position_target(70.3361_in, 23.3361_in, -450_deg);
       add_position_target(70.3361_in, 23.3361_in, -270_deg);
       add_position_target(70.3361_in, 46.8361_in, -270_deg, 10_in);
@@ -583,18 +591,22 @@ Macro skills(
       wait(200);
       targets.pop();
 
-      button_strafe = 50;
-      button_turn = -34.2;
-      button_forward = 10;
+      button_strafe = 10;
+      button_turn = -6.84;
+      button_forward = 3;
       wait(2000);
-      button_strafe = -50;
-      button_turn = 40;
-      button_forward = 10;
+      button_strafe = -10;
+      button_turn = 6.84;
+      button_forward = 3;
+      wait(3000);
+      score_queue = 1;
+      button_strafe = 10;
+      button_turn = -6.84;
+      button_forward = 3;
       wait(4000);
       goal_turn_release();
 
       intakes_back.start();
-      score_queue = 1;
     },
     [](){
       goal_turn_release();
