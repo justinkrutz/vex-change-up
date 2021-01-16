@@ -492,8 +492,8 @@ Macro skills(
       add_position_target(70.3361_in, 117.4624_in, -360_deg, 12_in);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
-      wait(1000);
       add_position_target(70.3361_in, 117.4624_in, -360_deg);
+      wait(1000);
       intakes_back.start();
       add_position_target(70.3361_in, 117.4624_in, -270_deg);
       WAIT_UNTIL(final_target_reached)
@@ -523,7 +523,7 @@ Macro skills(
       stop_scoring();
       add_position_target(118_in, 125_in, -360_deg);
       add_position_target(118_in, 125_in, -450_deg);
-      add_position_target(117.6361_in, 105.6361_in, -450_deg, 10_in);
+      add_position_target(117.6361_in, 105.6361_in, -450_deg, 12_in);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
       add_position_target(117.6361_in, 70.3361_in, -450_deg);
@@ -539,7 +539,7 @@ Macro skills(
 
       stop_scoring();
       add_position_target(117.6361_in, 70.3361_in, -360_deg);
-      add_position_target(117.6361_in, 35.0361_in, -450_deg, 10_in);
+      add_position_target(117.6361_in, 35.0361_in, -450_deg, 12_in);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
       add_position_target(117.1816_in, 23.4906_in, -450_deg);
@@ -565,15 +565,15 @@ Macro skills(
       add_position_target(70.3361_in, 23.3361_in, -540_deg, 11_in);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
-      wait(1000);
       add_position_target(70.3361_in, 23.3361_in, -540_deg);
+      wait(1000);
       intakes_back.start();
       add_position_target(70.3361_in, 23.3361_in, -450_deg);
       WAIT_UNTIL(final_target_reached)
       add_position_target(70.3361_in, 5.9272_in, -450_deg, 6_in);
       wait(600);
       score_queue = 2;
-      wait(700);
+      wait(1700);
       targets.pop();
 
       stop_scoring();
@@ -599,11 +599,13 @@ Macro skills(
       button_turn = 6.84;
       button_forward = 3;
       wait(3000);
+      intake_queue = 1;
       score_queue = 1;
       button_strafe = 10;
       button_turn = -6.84;
       button_forward = 3;
-      wait(4000);
+      // wait(4000);
+      WAIT_UNTIL(intake_queue == 0)
       goal_turn_release();
 
       intakes_back.start();
