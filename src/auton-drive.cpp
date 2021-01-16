@@ -640,7 +640,7 @@ Macro skills(
       WAIT_UNTIL(final_target_reached)
       add_position_target(5.8129_in, 134.8593_in, 135_deg, 6_in);
       intake_queue++;
-      wait(300);
+      wait(500);
       score_queue = 1;
       wait(200);
       targets.pop();
@@ -655,18 +655,17 @@ Macro skills(
       add_position_target(70.3361_in, 134.745_in, 40_deg, 20_in);
       WAIT_UNTIL(final_target_reached)
       add_position_target(70.3361_in, 134.745_in, 40_deg, 6_in);
-      wait(500);
+      wait(800);
       targets.pop();
 
       add_position_target(70.3361_in, 134.745_in, 30_deg, 20_in);
       WAIT_UNTIL(final_target_reached)
       intakes_back.start();
-      intakes_back.start();
-      wait(400);
+      wait(200);
       add_position_target(70.3361_in, 134.745_in, 30_deg, 6_in);
       wait(800);
       score_queue = 1;
-      wait(300);
+      wait(200);
       targets.pop();
       stop_scoring();
 
@@ -674,16 +673,22 @@ Macro skills(
       // add_position_target(41.393_in, 114.745_in, 40_deg);
       add_position_target(41.393_in, 114.745_in, 0_deg);
       add_position_target(41.393_in, 70.3361_in, 0_deg);
+      // add_position_target(70.3361_in, 70.3361_in, 0_deg, 16_in);
+      // wait(300);
+      // intake_queue = 1;
+      // wait(500);
+      // intakes_back.start();
+      // wait(100);
       WAIT_UNTIL(final_target_reached)
-      add_position_target(70.3361_in, 70.3361_in, 0_deg, 16_in);
-      wait(300);
-      intake_queue = 1;
-      wait(500);
-      intakes_back.start();
-      wait(100);
       add_position_target(70.3361_in, 70.3361_in, 0_deg, 6_in);
       wait(500);
       score_queue = 1;
+      wait(500);
+      intake_left.move_relative(50, 200);
+      intake_right.move_relative(50, 200);
+      wait(800);
+      intake_left.move_relative(-50, 200);
+      intake_right.move_relative(-50, 200);
       wait(300);
       targets.pop();
       WAIT_UNTIL(final_target_reached)
