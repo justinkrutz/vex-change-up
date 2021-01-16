@@ -63,6 +63,7 @@ void initialize() {
   controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
   controllerbuttons::button_handler.master.r2.pressed.set(set_drive_callbacks);
+  odomerrorcorrection::start();
 }
 
 /**
@@ -120,6 +121,9 @@ void opcontrol() {
   }
   printf("opcontrol\n");
   Controller controller;
+
+  chassis->setState({15.7416_in, 31.4911_in, -90_deg});
+
   while (true) {
     controllerbuttons::run_buttons();
     // ballsystem::debug();
@@ -128,7 +132,7 @@ void opcontrol() {
       QLength y = chassis->getState().y;
       QAngle theta = chassis->getState().theta;
       controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(x.convert(inch));
-      controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(y.convert(inch)));
+      controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(y.convert(inch));
       controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(theta.convert(degree));
     }
     pros::delay(10);

@@ -29,3 +29,8 @@ class autonfromsd {
   static void load_autons_from_SD();
   static void save_autons_to_SD();
 };
+
+namespace odomerrorcorrection {
+extern Point last_point;
+void start();
+}

@@ -13,8 +13,6 @@ pros::Motor top_roller (8, pros::E_MOTOR_GEARSET_18, false, pros::E_MOTOR_ENCODE
 pros::Rotation tracker_left (11);
 pros::Rotation tracker_back (12);
 pros::Rotation tracker_right (13);
+pros::ADILineSensor goal_sensor ('A');
 pros::ADILineSensor top_ball_sensor ('G');
-// pros::ADIAnalogIn left_intake_sensor ('G');
-// pros::ADIAnalogIn right_intake_sensor ('H');
 pros::ADILineSensor bottom_ball_sensor ('H');
-// pros::Imu imu_sensor (6);

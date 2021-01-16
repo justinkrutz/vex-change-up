@@ -1,7 +1,9 @@
 #include "main.h"
+#include "robot-config.h"
 #include "robot-functions.h"
 #include "auton-from-sd.h"
 #include "auton-drive.h"
+#include "controller-menu.h"
 
 #include <bits/stdc++.h>
 #include "json.hpp"
@@ -13,16 +15,28 @@ using json = nlohmann::ordered_json;
 std::string selected_auton_id = "0";
 
 
-double proximity (double x_one, double y_one, double x_two, double y_two) {
-  return fabs(sqrt(pow(x_one - x_two, 2) + pow(y_one - y_two, 2)));
-}
+// double proximity (double x_one, double y_one, double x_two, double y_two) {
+//   return fabs(sqrt(pow(x_one - x_two, 2) + pow(y_one - y_two, 2)));
+// }
+
+// template <typename T>
+// T closestObject(QLength x, QLength y, std::vector<T> &objects) {
+//   T closest_object;
+//   for (auto &object : objects) {
+//     if (proximity(x, y, object.x, object.y) <
+//         proximity(x, y, closest_object.x, closest_object.y)) {
+//       closest_object = object;
+//     }
+//   }
+//   return closest_object;
+// }
 
 template <typename T>
-T closestObject(QLength x, QLength y, std::vector<T*> objects) {
+T closestObject(QLength x, QLength y, std::vector<T> &objects) {
   T closest_object;
   for (auto &object : objects) {
-    if (proximity(x, y, object.x, object.y) <
-        proximity(x, y, closest_object.x, closest_object.y)) {
+    if (OdomMath::computeDistanceToPoint({x, y}, {object.x, object.y}) <
+        OdomMath::computeDistanceToPoint({x, y}, {closest_object.x, closest_object.y})) {
       closest_object = object;
     }
   }
@@ -149,6 +163,18 @@ Goal goal_6 (70.3361_in,  5.9272_in,   Goal::GoalType::kSide,   {Ball::Color::kO
 Goal goal_7 (134.8593_in, 5.8129_in,   Goal::GoalType::kCorner, {Ball::Color::kOurColor});
 Goal goal_8 (134.745_in,  70.3361_in,  Goal::GoalType::kSide,   {Ball::Color::kOurColor});
 Goal goal_9 (134.8593_in, 134.8593_in, Goal::GoalType::kCorner, {Ball::Color::kOurColor});
+
+std::vector<Point> goal_points {
+  {5.8129_in, 5.8129_in},
+  {5.9272_in, 70.3361_in},
+  {5.8129_in, 134.8593_in},
+  {70.3361_in, 5.9272_in},
+  {70.3361_in, 70.3361_in},
+  {70.3361_in, 134.8593_in},
+  {134.8593_in, 5.8129_in},
+  {134.745_in, 70.3361_in},
+  {134.8593_in, 134.8593_in}
+};
 
 // std::vector<Goal> goals;
 
@@ -290,3 +316,69 @@ void autonfromsd::set_step_waypoint() {
 //   o.close();
 //   std::cout << "all_autons after: " << all_autons.dump(2) << "\n";
 // }
+
+namespace odomerrorcorrection {
+
+Point last_point;
+
+bool first_goal_reached = false;
+
+bool goal_sensor_last = true;
+bool waiting = false;
+int time_triggered;
+const int kWaitTime = 100;
+const QLength kGoalOffset = 12.2274_in;
+
+void loop() {
+  while (true) {
+    bool goal_sensor_triggered = !goal_sensor_last && goal_sensor.get_value() < 2600;
+    bool goal_sensor_released = goal_sensor.get_value() > 2800 && goal_sensor_last;
+
+    if (goal_sensor_triggered) {
+      goal_sensor_last = true;
+      waiting = true;
+      time_triggered = pros::millis();
+    } else if (goal_sensor_released) {
+      goal_sensor_last = false;
+    }
+
+    if (waiting && pros::millis() - time_triggered > kWaitTime) {
+      waiting = false;
+
+      OdomState odom = chassis->getState();
+      Point closest_goal = closestObject<Point>(odom.x, odom.y, goal_points);
+      if (!first_goal_reached) {
+        controllermenu::partner_print_array[0] = "x " + std::to_string(closest_goal.x.convert(inch));
+        controllermenu::partner_print_array[1] = "y " + std::to_string(closest_goal.y.convert(inch));
+        first_goal_reached = true;
+        last_point = closest_goal;
+        continue;
+      } else if (closest_goal.x != last_point.x || closest_goal.y != last_point.y) {
+        QAngle desired_angle = OdomMath::computeAngleToPoint(closest_goal, {last_point.x, last_point.y, 0_deg});
+        QLength measured_x = odom.x + cos(odom.theta) * kGoalOffset;
+        QLength measured_y = odom.y + sin(odom.theta) * kGoalOffset;
+        Point measured_point = {measured_x, measured_y};
+        QAngle measured_angle = OdomMath::computeAngleToPoint(measured_point, {last_point.x, last_point.y, 0_deg});
+        controllermenu::partner_print_array[0] = "d " + std::to_string(desired_angle.convert(degree)) + " x " + std::to_string(measured_x.convert(inch));
+        controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(measured_y.convert(inch));
+        last_point = closest_goal;
+
+        QAngle error = measured_angle - desired_angle;
+        QAngle new_theta = odom.theta - error;
+        QLength new_x = closest_goal.x - kGoalOffset * cos(new_theta);
+        QLength new_y = closest_goal.y - kGoalOffset * sin(new_theta);
+        controllermenu::partner_print_array[2] = "e " + std::to_string(error.convert(degree));
+        chassis->setState({new_x, new_y, new_theta});
+
+      }
+    }
+    pros::delay(5);
+  }
+
+}
+
+void start() {
+  pros::Task task(loop);
+}
+
+}
