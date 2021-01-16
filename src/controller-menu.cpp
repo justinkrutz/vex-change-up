@@ -313,6 +313,7 @@ void create_folder_structure() {
     new MenuFolder("Other", {
       new MenuAutonomous("Skills", autonroutines::skills),
       new MenuAutonomous("ShawnTon 3.0", autonroutines::shawnton_three),
+      new MenuAutonomous("shawnton_cycle", autonroutines::shawnton_cycle),
       new MenuAutonomous("None", autonroutines::none),
       new MenuAutonomous("Test", autonroutines::test),
     })
