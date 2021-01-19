@@ -641,8 +641,10 @@ Macro skills(
       add_position_target(5.8129_in, 134.8593_in, 135_deg, 6_in);
       intake_queue++;
       wait(500);
-      score_queue = 1;
+      // score_queue = 1;
+      top_roller_smart.set_manual_speed(1, 600);
       wait(200);
+      top_roller_smart.set_manual_speed(1, 0);
       targets.pop();
       stop_scoring();
 
@@ -681,7 +683,7 @@ Macro skills(
       // wait(100);
       WAIT_UNTIL(final_target_reached)
       add_position_target(70.3361_in, 70.3361_in, 0_deg, 6_in);
-      wait(500);
+      wait(1200);
       score_queue = 1;
       wait(500);
       intake_left.move_relative(50, 200);
