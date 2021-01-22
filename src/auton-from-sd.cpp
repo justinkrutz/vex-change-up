@@ -332,8 +332,8 @@ const QLength kDetectionDistance = 15_in;
 
 void loop() {
   while (true) {
-    bool goal_sensor_triggered = !goal_sensor_last && goal_sensor.get_value() < 2600;
-    bool goal_sensor_released = goal_sensor.get_value() > 2800 && goal_sensor_last;
+    bool goal_sensor_triggered = !goal_sensor_last && goal_sensor_one.get_value() < 2600;
+    bool goal_sensor_released = goal_sensor_one.get_value() > 2800 && goal_sensor_last;
 
     if (goal_sensor_triggered) {
       goal_sensor_last = true;
@@ -345,7 +345,7 @@ void loop() {
 
     if (waiting && pros::millis() - time_triggered > kWaitTime) {
       waiting = false;
-      if (goal_sensor.get_value() < 2600) {
+      if (goal_sensor_one.get_value() < 2600) {
         OdomState odom = chassis->getState();
         Point closest_goal = closestObject<Point>(odom.x, odom.y, goal_points);
 
@@ -355,23 +355,23 @@ void loop() {
 
         if (distance_to_goal > kDetectionDistance + kGoalOffset) { // do nothing
         } else if (!first_goal_reached) {
-          controllermenu::partner_print_array[0] = "x " + std::to_string(closest_goal.x.convert(inch));
-          controllermenu::partner_print_array[1] = "y " + std::to_string(closest_goal.y.convert(inch));
+          // controllermenu::partner_print_array[0] = "x " + std::to_string(closest_goal.x.convert(inch));
+          // controllermenu::partner_print_array[1] = "y " + std::to_string(closest_goal.y.convert(inch));
           first_goal_reached = true;
           last_point = closest_goal;
         } else if (closest_goal.x != last_point.x || closest_goal.y != last_point.y) {
           QAngle desired_angle = OdomMath::computeAngleToPoint(closest_goal, {last_point.x, last_point.y, 0_deg});
           Point measured_point = {measured_x, measured_y};
           QAngle measured_angle = OdomMath::computeAngleToPoint(measured_point, {last_point.x, last_point.y, 0_deg});
-          controllermenu::partner_print_array[0] = "d " + std::to_string(desired_angle.convert(degree)) + " x " + std::to_string(measured_x.convert(inch));
-          controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(measured_y.convert(inch));
+          // controllermenu::partner_print_array[0] = "d " + std::to_string(desired_angle.convert(degree)) + " x " + std::to_string(measured_x.convert(inch));
+          // controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(measured_y.convert(inch));
           last_point = closest_goal;
 
           QAngle error = measured_angle - desired_angle;
           QAngle new_theta = odom.theta - error;
           QLength new_x = closest_goal.x - kGoalOffset * cos(new_theta);
           QLength new_y = closest_goal.y - kGoalOffset * sin(new_theta);
-          controllermenu::partner_print_array[2] = "e " + std::to_string(error.convert(degree));
+          // controllermenu::partner_print_array[2] = "e " + std::to_string(error.convert(degree));
           chassis->setState({new_x, new_y, new_theta});
         }
       }

@@ -67,9 +67,7 @@ void set_callbacks();
 namespace rollers {
   extern int score_queue;
   extern int intake_queue;
-  extern int balls_in_robot;
-  extern bool bottom_ball_sensor_last;
-
+  
   extern SmartMotorController top_roller_smart;
   extern SmartMotorController bottom_roller_smart;
 

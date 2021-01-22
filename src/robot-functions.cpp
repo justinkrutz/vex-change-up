@@ -126,8 +126,8 @@ controllerbuttons::Macro right_intake_back(
 
     bool SmartMotorController::Target::is_complete() {
       return pros::millis() >= time_at_start + timeout
-      || (relative_target > 0 && motor_controller->motor.get_position() >= starting_pos + relative_target)
-      || (relative_target <= 0 && motor_controller->motor.get_position() <= starting_pos + relative_target);
+          || (relative_target > 0 && motor_controller->motor.get_position() >= starting_pos + relative_target)
+          || (relative_target <= 0 && motor_controller->motor.get_position() <= starting_pos + relative_target);
     }
 
     int SmartMotorController::Target::auto_timeout() {
@@ -150,15 +150,72 @@ controllerbuttons::Macro right_intake_back(
 namespace rollers {
 int score_queue = 0;
 int intake_queue = 0;
-bool top_ball_sensor_last = true;
-bool bottom_ball_sensor_last = false;
 bool intake_continuous = false;
-// bool ball_at_top = true;
 bool ball_between_intake_and_rollers = false;
 int time_when_bottom_sensor_triggered = 0;
 double pos_when_ball_at_top = 0;
 SmartMotorController top_roller_smart(top_roller, 1.5, 100, 2);
 SmartMotorController bottom_roller_smart(bottom_roller, 1.5, 100, 2);
+
+class ObjectSensor {
+ public:
+  
+  ObjectSensor(pros::ADILineSensor &sensor, int found_threshold, int lost_threshold)
+               : sensor(sensor),
+               found_threshold(found_threshold),
+               lost_threshold(lost_threshold) {}
+  
+  bool get_new_found(bool additional_argument = true) {
+    if (!is_detected && sensor.get_value() < found_threshold && additional_argument) {
+      is_detected = true;
+      return true;
+    }
+  }
+  
+  bool get_new_lost(bool additional_argument = true) {
+    if (is_detected && sensor.get_value() > lost_threshold && additional_argument ) {
+      is_detected = false;
+      return true;
+    }
+  }
+
+  const pros::ADILineSensor &sensor;
+  int found_threshold, lost_threshold;
+  bool is_detected = true;
+};
+
+const int kBallColorBlue[2] = {212, 252};
+const int kBallColorRed[2] = {350, 30};
+const double kBallSaturation = 0.5;
+
+enum ActualColor {kRed, kBlue};
+enum AllianceColor {kOurColor, kOpposingColor};
+
+AllianceColor get_ball_color(ActualColor match_color) {
+  // optical_sensor.set_led_pwm(100);
+  int hue = optical_sensor.get_hue();
+  int saturation = optical_sensor.get_saturation();
+  // optical_sensor.set_led_pwm(0);
+  if (saturation < kBallSaturation) {
+    return kOurColor;
+  }
+
+  ActualColor actual_color = match_color;
+
+  if (hue > kBallColorBlue[0] && hue < kBallColorBlue[1]) {
+    actual_color = kBlue;
+  } else if (hue > kBallColorRed[0] || hue < kBallColorRed[1]) {
+    actual_color = kRed;
+  }
+  
+  if (actual_color == match_color) {
+    return kOurColor;
+  }
+  return kOpposingColor;
+}
+
+ActualColor match_color = kRed;
+std::deque<AllianceColor> balls_in_robot = {kOurColor};
 
 void main_task() {
   intake_left.set_zero_position(360);
@@ -167,33 +224,44 @@ void main_task() {
   intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   bottom_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+
+  ObjectSensor goal_one    (goal_sensor_one,    1000, 2700);
+  ObjectSensor goal_two    (goal_sensor_two,    1000, 2700);
+
+  ObjectSensor ball_score  (ball_sensor_score,  2000, 2200);
+  ObjectSensor ball_top    (ball_sensor_top,    2200, 2400);
+  ObjectSensor ball_middle (ball_sensor_middle, 1000, 2200);
+  ObjectSensor ball_bottom (ball_sensor_bottom, 1000, 2200);
+  ObjectSensor ball_intake (ball_sensor_intake, 1000, 2200);
+
   pros::delay(200);
   while (true) {
-    bool top_ball_sensor_triggered = !top_ball_sensor_last && top_ball_sensor.get_value() < 2200;
-    bool top_ball_sensor_released = top_ball_sensor.get_value() > 2400 && top_ball_sensor_last
-                                    && fabs(pos_when_ball_at_top - top_roller.get_position()) > 100;
+    bool ball_top_found = true;
+    // bool ball_top_found = ball_top.get_new_found();
+    bool ball_top_lost = ball_top.get_new_lost(fabs(pos_when_ball_at_top - top_roller.get_position()) > 150);
+    
+    bool ball_bottom_found = ball_bottom.get_new_found();
+    // bool ball_bottom_lost = ball_bottom.get_new_lost();
 
-    bool bottom_ball_sensor_triggered = !bottom_ball_sensor_last && bottom_ball_sensor.get_value() < 2000;
-    bool bottom_ball_sensor_released = bottom_ball_sensor.get_value() > 2200 && bottom_ball_sensor_last;
+    bool ball_intake_found = ball_intake.get_new_found();
+    // bool ball_intake_lost = ball_intake.get_new_lost();
 
-    if (bottom_ball_sensor_triggered) {
-      bottom_ball_sensor_last = true;
+    if (ball_intake_found) {
       bottom_roller_smart.set_manual_speed(0, 100);
-    } else if (bottom_ball_sensor_released) {
-      bottom_ball_sensor_last = false;
+    } else if (ball_intake_found) {
       bottom_roller_smart.set_manual_speed(0, 0);
-      bottom_roller_smart.add_target(700, 100);
+      balls_in_robot.push_front(get_ball_color(match_color));
+      
     }
 
-    if (top_ball_sensor_triggered) {
-      top_ball_sensor_last = true;
+    if (ball_top_found) {
       top_roller_smart.set_manual_speed(0, 0);
       bottom_roller_smart.set_manual_speed(0, 0);
       // top_roller_smart.add_target(-10, -20);
-    } else if (top_ball_sensor_released) {
-      top_ball_sensor_last = false;
+    } else if (ball_top_lost) {
       top_roller_smart.set_manual_speed(0, 100);
-      bottom_roller_smart.set_manual_speed(0, 25);
+      bottom_roller_smart.set_manual_speed(0, 50);
+      balls_in_robot.pop_back();
     }
 
     if (score_queue > 0) {
@@ -204,7 +272,7 @@ void main_task() {
     }
 
     if (intake_queue > 0) {
-      if (bottom_ball_sensor_released) {
+      if (ball_bottom_found) {
         if (intake_queue == 1) {
           intake_splay();
         } else {
@@ -218,6 +286,12 @@ void main_task() {
 
     top_roller_smart.run();
     bottom_roller_smart.run();
+    std::string ball_string = "";
+    for (int i = 0; i < balls_in_robot.size(); i++)
+    {
+      ball_string += std::to_string(balls_in_robot[i]) + " ";
+    }
+    controllermenu::master_print_array[0] = ball_string;
     pros::delay(5);
   }
 }

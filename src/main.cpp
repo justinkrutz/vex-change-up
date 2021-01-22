@@ -124,6 +124,7 @@ void opcontrol() {
 
   chassis->setState({15.7416_in, 31.4911_in, -90_deg});
 
+  optical_sensor.set_led_pwm(100);
   while (true) {
     controllerbuttons::run_buttons();
     // ballsystem::debug();
@@ -131,9 +132,17 @@ void opcontrol() {
       QLength x = chassis->getState().x;
       QLength y = chassis->getState().y;
       QAngle theta = chassis->getState().theta;
-      controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(x.convert(inch));
-      controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(y.convert(inch));
-      controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(theta.convert(degree));
+      // controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(x.convert(inch));
+      // controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(y.convert(inch));
+      // controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(theta.convert(degree));
+      
+      // controllermenu::master_print_array[0] = std::to_string(optical_sensor.get_raw().red)   + " " + std::to_string(optical_sensor.get_rgb().red);
+      // controllermenu::master_print_array[1] = std::to_string(optical_sensor.get_raw().green) + " " + std::to_string(optical_sensor.get_rgb().green);
+      // controllermenu::master_print_array[2] = std::to_string(optical_sensor.get_raw().blue)  + " " + std::to_string(optical_sensor.get_rgb().blue);
+      
+      // controllermenu::partner_print_array[0] = std::to_string(optical_sensor.get_raw().clear) + " " + std::to_string(optical_sensor.get_proximity());
+      // controllermenu::partner_print_array[1] = std::to_string(optical_sensor.get_rgb().brightness);
+      // controllermenu::partner_print_array[2] = std::to_string(optical_sensor.get_hue()) + " " + std::to_string(optical_sensor.get_saturation());
     }
     pros::delay(10);
   }

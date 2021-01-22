@@ -13,6 +13,15 @@ extern pros::Motor top_roller;
 extern pros::Rotation tracker_left;
 extern pros::Rotation tracker_back;
 extern pros::Rotation tracker_right;
-extern pros::ADILineSensor goal_sensor;
-extern pros::ADILineSensor top_ball_sensor;
-extern pros::ADILineSensor bottom_ball_sensor;
+
+extern pros::Optical optical_sensor;
+
+
+extern pros::ADILineSensor goal_sensor_one;
+extern pros::ADILineSensor goal_sensor_two;
+
+extern pros::ADILineSensor ball_sensor_score;
+extern pros::ADILineSensor ball_sensor_top;
+extern pros::ADILineSensor ball_sensor_middle;
+extern pros::ADILineSensor ball_sensor_bottom;
+extern pros::ADILineSensor ball_sensor_intake;
