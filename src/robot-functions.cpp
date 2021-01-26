@@ -87,7 +87,10 @@ controllerbuttons::Macro right_intake_back(
       speed = auto_speed;
     } else {
       for (auto&& manual_speed : all_manual_speeds ) {
-        if (manual_speed != 0) speed = manual_speed;
+        if (manual_speed != 0) {
+          speed = manual_speed;
+          break;
+        }
       }
     }
     motor.move_velocity(slew.new_value(speed) * pct_to_velocity(motor));
@@ -152,8 +155,9 @@ int score_queue = 0;
 int intake_queue = 0;
 bool intake_continuous = false;
 bool ball_between_intake_and_rollers = false;
-int time_when_bottom_sensor_triggered = 0;
+int time_when_last_ball_lost = 0;
 double pos_when_ball_at_top = 0;
+double pos_when_ball_at_bottom = 0;
 SmartMotorController top_roller_smart(top_roller, 1.5, 100, 2);
 SmartMotorController bottom_roller_smart(bottom_roller, 1.5, 100, 2);
 
@@ -170,23 +174,27 @@ class ObjectSensor {
       is_detected = true;
       return true;
     }
+    return false;
   }
   
   bool get_new_lost(bool additional_argument = true) {
-    if (is_detected && sensor.get_value() > lost_threshold && additional_argument ) {
+    if (is_detected && sensor.get_value() > lost_threshold && additional_argument) {
       is_detected = false;
       return true;
     }
+    return false;
   }
 
   const pros::ADILineSensor &sensor;
-  int found_threshold, lost_threshold;
+  int found_threshold;
+  int lost_threshold;
   bool is_detected = true;
 };
 
 const int kBallColorBlue[2] = {212, 252};
 const int kBallColorRed[2] = {350, 30};
-const double kBallSaturation = 0.5;
+const double kBallSaturation = 0;
+// const double kBallSaturation = 0.5;
 
 enum ActualColor {kRed, kBlue};
 enum AllianceColor {kOurColor, kOpposingColor};
@@ -228,47 +236,78 @@ void main_task() {
   ObjectSensor goal_one    (goal_sensor_one,    1000, 2700);
   ObjectSensor goal_two    (goal_sensor_two,    1000, 2700);
 
-  ObjectSensor ball_score  (ball_sensor_score,  2000, 2200);
-  ObjectSensor ball_top    (ball_sensor_top,    2200, 2400);
-  ObjectSensor ball_middle (ball_sensor_middle, 1000, 2200);
-  ObjectSensor ball_bottom (ball_sensor_bottom, 1000, 2200);
-  ObjectSensor ball_intake (ball_sensor_intake, 1000, 2200);
+  ObjectSensor ball_os_score  (ball_sensor_score,  2000, 2200);
+  ObjectSensor ball_os_top    (ball_sensor_top,    2200, 2400);
+  ObjectSensor ball_os_middle (ball_sensor_middle, 1000, 2200);
+  ObjectSensor ball_os_bottom (ball_sensor_bottom, 1000, 2200);
+  ObjectSensor ball_os_intake (ball_sensor_intake, 1000, 2200);
+
+  AllianceColor last_color = kOurColor;
+
+  // bool ball_at_intake = false;
 
   pros::delay(200);
   while (true) {
-    bool ball_top_found = true;
-    // bool ball_top_found = ball_top.get_new_found();
-    bool ball_top_lost = ball_top.get_new_lost(fabs(pos_when_ball_at_top - top_roller.get_position()) > 150);
-    
-    bool ball_bottom_found = ball_bottom.get_new_found();
-    // bool ball_bottom_lost = ball_bottom.get_new_lost();
+    // bool ball_top_found = true;
 
-    bool ball_intake_found = ball_intake.get_new_found();
-    // bool ball_intake_lost = ball_intake.get_new_lost();
+    bool ball_score_found = ball_os_score.get_new_found();
+    bool ball_score_lost = ball_os_intake.get_new_lost();
+    bool ball_top_found = ball_os_top.get_new_found();
+    bool ball_top_lost = ball_os_top.get_new_lost(fabs(pos_when_ball_at_top - top_roller.get_position()) > 50);
+    
+    bool ball_middle_found = ball_os_middle.get_new_found();
+    bool ball_middle_lost = ball_os_middle.get_new_lost(pos_when_ball_at_top - top_roller.get_position() > 50
+                                                     || pos_when_ball_at_bottom - bottom_roller.get_position() < -50);
+    
+    bool ball_bottom_found = ball_os_bottom.get_new_found();
+    bool ball_bottom_lost = ball_os_bottom.get_new_lost(fabs(pos_when_ball_at_bottom - bottom_roller.get_position()) > 50);
+
+    bool ball_intake_found = ball_os_intake.get_new_found();
+    bool ball_intake_lost = ball_os_intake.get_new_lost();
+    
+
+
+
+
 
     if (ball_intake_found) {
-      bottom_roller_smart.set_manual_speed(0, 100);
-    } else if (ball_intake_found) {
-      bottom_roller_smart.set_manual_speed(0, 0);
-      balls_in_robot.push_front(get_ball_color(match_color));
-      
+      // ball_at_intake = true;
+      last_color = get_ball_color(match_color);
+      bottom_roller_smart.set_manual_speed(4, 100);
+      if (balls_in_robot.size() < 1) {
+        top_roller_smart.set_manual_speed(2, 100);
+      }
+    } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10) {
+      balls_in_robot.pop_front();
+    }
+    
+    if (ball_bottom_found && bottom_roller.get_actual_velocity() > 10) {
+        if (balls_in_robot.size() > 2) balls_in_robot.pop_back();
+        balls_in_robot.push_front(last_color);
+        if (balls_in_robot.size() > 2) bottom_roller_smart.set_manual_speed(4, 0);
+    }
+    
+    if (ball_middle_found && bottom_roller.get_actual_velocity() > 10) {
+        if (balls_in_robot.size() > 1) bottom_roller_smart.set_manual_speed(4, 0);
     }
 
     if (ball_top_found) {
-      top_roller_smart.set_manual_speed(0, 0);
-      bottom_roller_smart.set_manual_speed(0, 0);
-      // top_roller_smart.add_target(-10, -20);
+      top_roller_smart.set_manual_speed(2, 0);
+      bottom_roller_smart.set_manual_speed(2, 0);
+      pos_when_ball_at_top = top_roller.get_position();
     } else if (ball_top_lost) {
-      top_roller_smart.set_manual_speed(0, 100);
-      bottom_roller_smart.set_manual_speed(0, 50);
-      balls_in_robot.pop_back();
+      if (balls_in_robot.size() > 0) balls_in_robot.pop_back();
+      if (balls_in_robot.size() > 0) {
+        top_roller_smart.set_manual_speed(2, 100);
+        bottom_roller_smart.set_manual_speed(2, 50);
+      }
     }
 
     if (score_queue > 0) {
       score_queue--;
-      bottom_roller_smart.set_manual_speed(0, 0);
-      bottom_roller_smart.add_target(500, 100);
-      top_roller_smart.add_target(140, 100);
+      // bottom_roller_smart.set_manual_speed(2, 0);
+      // bottom_roller_smart.add_target(500, 100);
+      // top_roller_smart.add_target(140, 100);
     }
 
     if (intake_queue > 0) {
@@ -292,7 +331,7 @@ void main_task() {
       ball_string += std::to_string(balls_in_robot[i]) + " ";
     }
     controllermenu::master_print_array[0] = ball_string;
-    pros::delay(5);
+    pros::delay(10);
   }
 }
 

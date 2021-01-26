@@ -8,11 +8,6 @@
 #include "auton-from-sd.h"
 #include "ball-system.h"
 
-// ChassisController chassis;
-
-std::shared_ptr<OdomChassisController> chassis;
-std::shared_ptr<ThreeEncoderXDriveModel> x_model;
-
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
@@ -33,34 +28,14 @@ void set_drive_callbacks() {
 }
 
 void initialize() {
-  tracker_left.reset_position();
-  tracker_right.reset_position();
-  tracker_back.reset_position();
-  chassis = ChassisControllerBuilder()
-    .withMotors(
-        15,  // Top left
-        -16, // Top right (reversed)
-        -18, // Bottom right (reversed)
-        17   // Bottom left
-    )
-    .withDimensions(AbstractMotor::gearset::green, {{3.25_in, 11.381_in}, imev5GreenTPR})
-    .withSensors(
-        RotationSensor{11, true}, // left encoder
-        RotationSensor{13},  // right encoder
-        RotationSensor{12}  // middle encoder
-    )
-    .withOdometry({{2.75_in, 12.0873_in, 6.04365_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
-    .buildOdometry();
-  chassis->getModel()->setBrakeMode(okapi::AbstractMotor::brakeMode::brake);
-  x_model = std::dynamic_pointer_cast<ThreeEncoderXDriveModel>(chassis->getModel());
-  // x_model->setBrakeMode(AbstractMotor::brakeMode::hold);
+  build_chassis();
   pros::Task(autondrive::motor_task);
   // robotfunctions::set_callbacks();
   // ballsystem::set_callbacks();
   // ballsystem::init();
   // autondrive::set_callbacks();
-  autonfromsd::load_autons_from_SD();
-  controllermenu::init();
+  // autonfromsd::load_autons_from_SD();
+  // controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
   controllerbuttons::button_handler.master.r2.pressed.set(set_drive_callbacks);
   odomerrorcorrection::start();

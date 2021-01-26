@@ -62,8 +62,6 @@ using namespace okapi;
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern std::shared_ptr<OdomChassisController> chassis;
-extern std::shared_ptr<ThreeEncoderXDriveModel> x_model;
 void autonomous(void);
 void initialize(void);
 void disabled(void);

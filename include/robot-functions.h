@@ -20,7 +20,7 @@ class SmartMotorController {
   void run();
   void add_target(double target, int speed);
   void add_target(double target, int speed, double timeout);
-  int all_manual_speeds[2];
+  int all_manual_speeds[5];
   void set_manual_speed (int index, int speed);
 
   class Target {
@@ -67,7 +67,7 @@ void set_callbacks();
 namespace rollers {
   extern int score_queue;
   extern int intake_queue;
-  
+
   extern SmartMotorController top_roller_smart;
   extern SmartMotorController bottom_roller_smart;
 
