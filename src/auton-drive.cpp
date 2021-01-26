@@ -160,7 +160,7 @@ void motor_task()
     double strafe  = button_strafe + drivetoposition::strafe  + master.get_analog(ANALOG_LEFT_X) * 0.787401574803;
     // double strafe  = button_strafe + drivetoposition::strafe  + master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
     double temp_turn  = master.get_analog(ANALOG_RIGHT_X) * 0.787401574803;
-    double turn    = button_turn + drivetoposition::turn    + pow(abs(temp_turn / 100), 1.8) * 100 * sgn(temp_turn);
+    double turn    = button_turn + drivetoposition::turn + temp_turn;
     // double turn    = button_turn + drivetoposition::turn    + pow(abs(temp_turn / 100), 1.8) * 100 * sgn(temp_turn);
     double sync = std::min(1.0, 100 / (fabs(forward) + fabs(strafe) + fabs(turn)));
 
