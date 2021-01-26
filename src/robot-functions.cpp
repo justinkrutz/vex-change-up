@@ -153,8 +153,8 @@ controllerbuttons::Macro right_intake_back(
 namespace rollers {
 int score_queue = 0;
 int intake_queue = 0;
-bool intake_continuous = false;
-bool ball_between_intake_and_rollers = false;
+bool intake_ball = false;
+// bool ball_between_intake_and_rollers = false;
 int time_when_last_ball_lost = 0;
 double pos_when_ball_at_top = 0;
 double pos_when_ball_at_bottom = 0;
@@ -224,6 +224,20 @@ AllianceColor get_ball_color(ActualColor match_color) {
 
 ActualColor match_color = kRed;
 std::deque<AllianceColor> balls_in_robot = {kOurColor};
+AllianceColor last_scored_ball = kOurColor;
+
+int distance_to_ball() {
+  int distance_left = distance_sensor_left.get();
+  int distance_right = distance_sensor_right.get();
+  int min_distance = 400;
+  if (distance_left != 0) {
+    min_distance = distance_left;
+  }
+  if (distance_right != 0 && distance_right < distance_left) {
+    min_distance = distance_right;
+  }
+  return min_distance;
+}
 
 void main_task() {
   intake_left.set_zero_position(360);
@@ -242,9 +256,11 @@ void main_task() {
   ObjectSensor ball_os_bottom (ball_sensor_bottom, 1000, 2200);
   ObjectSensor ball_os_intake (ball_sensor_intake, 1000, 2200);
 
-  AllianceColor last_color = kOurColor;
+  // AllianceColor last_color = kOurColor;
 
   // bool ball_at_intake = false;
+
+  bool ball_in_intake = false;
 
   pros::delay(200);
   while (true) {
@@ -266,25 +282,26 @@ void main_task() {
     bool ball_intake_lost = ball_os_intake.get_new_lost();
     
 
-
-
-
-
     if (ball_intake_found) {
-      // ball_at_intake = true;
-      last_color = get_ball_color(match_color);
       bottom_roller_smart.set_manual_speed(4, 100);
-      if (balls_in_robot.size() < 1) {
-        top_roller_smart.set_manual_speed(2, 100);
-      }
     } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10) {
-      balls_in_robot.pop_front();
+      balls_in_robot.pop_front(); // remove the top ball from the robot because one was scored
     }
     
     if (ball_bottom_found && bottom_roller.get_actual_velocity() > 10) {
-        if (balls_in_robot.size() > 2) balls_in_robot.pop_back();
-        balls_in_robot.push_front(last_color);
-        if (balls_in_robot.size() > 2) bottom_roller_smart.set_manual_speed(4, 0);
+        if (balls_in_robot.size() >= 3) balls_in_robot.pop_back(); // balls_in_robot.size() was 3 but the top ball was removed because a fourth cannot be added
+        balls_in_robot.push_front(get_ball_color(match_color)); // add ball to the robot
+
+        switch (balls_in_robot.size()) {
+          case 1:
+            top_roller_smart.set_manual_speed(2, 100);
+            break;
+          case 3:
+            bottom_roller_smart.set_manual_speed(4, 0); // stop because the robot is full
+            break;
+        }
+    } else if (ball_bottom_lost) {
+      ball_in_intake = false;
     }
     
     if (ball_middle_found && bottom_roller.get_actual_velocity() > 10) {
@@ -292,11 +309,19 @@ void main_task() {
     }
 
     if (ball_top_found) {
-      top_roller_smart.set_manual_speed(2, 0);
-      bottom_roller_smart.set_manual_speed(2, 0);
-      pos_when_ball_at_top = top_roller.get_position();
+      if (top_roller.get_actual_velocity() < -10) {
+        if (balls_in_robot.size() >= 3) balls_in_robot.pop_front();
+        balls_in_robot.push_back(get_ball_color(match_color));
+      } else {
+        top_roller_smart.set_manual_speed(2, 0);
+        bottom_roller_smart.set_manual_speed(2, 0);
+        pos_when_ball_at_top = top_roller.get_position();
+      }
     } else if (ball_top_lost) {
-      if (balls_in_robot.size() > 0) balls_in_robot.pop_back();
+      if (balls_in_robot.size() > 0) {
+        last_scored_ball = balls_in_robot.back();
+        balls_in_robot.pop_back();
+      }
       if (balls_in_robot.size() > 0) {
         top_roller_smart.set_manual_speed(2, 100);
         bottom_roller_smart.set_manual_speed(2, 50);
@@ -308,6 +333,16 @@ void main_task() {
       // bottom_roller_smart.set_manual_speed(2, 0);
       // bottom_roller_smart.add_target(500, 100);
       // top_roller_smart.add_target(140, 100);
+    }
+
+    if (intake_ball && !ball_in_intake && intake_queue == 0 && InRange(distance_to_ball(), 50, 250)) {
+      intake_queue = 1;
+      ball_in_intake = true;
+    }
+
+    if (ball_in_intake && intake_queue > 0 && InRange(distance_to_ball(), 100, 100000)) {
+      intake_splay();
+      ball_in_intake = false;
     }
 
     if (intake_queue > 0) {
@@ -341,11 +376,15 @@ void score_ball() {
 
 void add_ball_to_intake_queue() {
   intake_queue++;
-  intake_continuous = true;
+  intake_ball = true;
 }
 
-void intake_continuous_false() {
-  intake_continuous = false;
+void intake_ball_true() {
+  intake_ball = true;
+}
+
+void intake_ball_false() {
+  intake_ball = false;
 }
 
 
@@ -393,9 +432,9 @@ void set_callbacks() {
   using namespace rollers;
   button_handler.master.l1.pressed.set(intake_splay);
   button_handler.master.l2.pressed.set_macro(intakes_back);
-  button_handler.master.r1.pressed.set(add_ball_to_intake_queue);
-  button_handler.master.r1.released.set(intake_continuous_false);
-  button_handler.master.r2.pressed.set(score_ball);
+  button_handler.master.r1.pressed.set(intake_ball_true);
+  button_handler.master.r1.released.set(intake_ball_false);
+  button_handler.master.r2.pressed.set(add_ball_to_intake_queue);
   button_handler.master.down.pressed.set(rollers_reverse);
   button_handler.master.down.released.set(rollers_stop);
   button_handler.master.up.pressed.set(rollers_forward);

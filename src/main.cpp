@@ -104,16 +104,18 @@ void opcontrol() {
     controllerbuttons::run_buttons();
     // ballsystem::debug();
     if (!menu_enabled) {
-      QLength x = chassis->getState().x;
-      QLength y = chassis->getState().y;
-      QAngle theta = chassis->getState().theta;
+      // QLength x = chassis->getState().x;
+      // QLength y = chassis->getState().y;
+      // QAngle theta = chassis->getState().theta;
       // controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(x.convert(inch));
       // controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(y.convert(inch));
       // controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(theta.convert(degree));
       
       // controllermenu::master_print_array[0] = std::to_string(optical_sensor.get_raw().red)   + " " + std::to_string(optical_sensor.get_rgb().red);
-      // controllermenu::master_print_array[1] = std::to_string(optical_sensor.get_raw().green) + " " + std::to_string(optical_sensor.get_rgb().green);
-      // controllermenu::master_print_array[2] = std::to_string(optical_sensor.get_raw().blue)  + " " + std::to_string(optical_sensor.get_rgb().blue);
+      // controllermenu::master_print_array[1] = std::to_string(optical_sensor.get_hue());
+      // controllermenu::master_print_array[2] = std::to_string(optical_sensor.get_saturation())  + " " + std::to_string(optical_sensor.get_proximity());
+      controllermenu::master_print_array[1] = std::to_string(distance_sensor_left.get())  + " " + std::to_string(distance_sensor_left.get_confidence());
+      controllermenu::master_print_array[2] = std::to_string(distance_sensor_right.get())  + " " + std::to_string(distance_sensor_right.get_confidence());
       
       // controllermenu::partner_print_array[0] = std::to_string(optical_sensor.get_raw().clear) + " " + std::to_string(optical_sensor.get_proximity());
       // controllermenu::partner_print_array[1] = std::to_string(optical_sensor.get_rgb().brightness);

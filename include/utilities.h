@@ -46,5 +46,9 @@ struct RampMathSettings {
 
 int rampMath(double input, double total_range, RampMathSettings s);
 
+template <typename T>
+bool InRange(T input, T min, T max) {
+  return input >= MIN(min, max) && input <= MAX(min, max);
+}
 
 #endif // UTILITIES
