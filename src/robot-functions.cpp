@@ -257,7 +257,7 @@ void main_task() {
     
     bool ball_middle_found = ball_os_middle.get_new_found();
     bool ball_middle_lost = ball_os_middle.get_new_lost(pos_when_ball_at_top - top_roller.get_position() > 50
-                                                     || pos_when_ball_at_bottom - bottom_roller.get_position() < -50);
+        || pos_when_ball_at_bottom - bottom_roller.get_position() < -50);
     
     bool ball_bottom_found = ball_os_bottom.get_new_found();
     bool ball_bottom_lost = ball_os_bottom.get_new_lost(fabs(pos_when_ball_at_bottom - bottom_roller.get_position()) > 50);

@@ -24,14 +24,14 @@ pros::Distance distance_sensor_right(15);
 pros::Distance distance_sensor_left(16);
 pros::Optical optical_sensor(17);
 
-pros::ADILineSensor goal_sensor_one (   'A');
-pros::ADILineSensor goal_sensor_two    ('B');
-
-pros::ADILineSensor ball_sensor_score  ('D');
-pros::ADILineSensor ball_sensor_top    ('E');
-pros::ADILineSensor ball_sensor_middle ('F');
-pros::ADILineSensor ball_sensor_bottom ('G');
-pros::ADILineSensor ball_sensor_intake ('H');
+pros::ADILineSensor ball_sensor_intake ('A');
+pros::ADILineSensor ball_sensor_bottom ('B');
+pros::ADILineSensor ball_sensor_middle ('C');
+pros::ADILineSensor ball_sensor_top    ('D');
+pros::ADILineSensor ball_sensor_score  ('E');
+//                                     ('F');
+pros::ADILineSensor goal_sensor_one    ('G');
+pros::ADILineSensor goal_sensor_two    ('H');
 
 void build_chassis() {
   tracker_left.reset_position();

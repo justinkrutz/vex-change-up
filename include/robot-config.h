@@ -26,14 +26,14 @@ extern pros::Distance distance_sensor_right;
 extern pros::Distance distance_sensor_left;
 extern pros::Optical optical_sensor;
 
+extern pros::ADILineSensor ball_sensor_intake;
+extern pros::ADILineSensor ball_sensor_bottom;
+extern pros::ADILineSensor ball_sensor_middle;
+extern pros::ADILineSensor ball_sensor_top;
+extern pros::ADILineSensor ball_sensor_score;
+
 extern pros::ADILineSensor goal_sensor_one;
 extern pros::ADILineSensor goal_sensor_two;
-
-extern pros::ADILineSensor ball_sensor_score;
-extern pros::ADILineSensor ball_sensor_top;
-extern pros::ADILineSensor ball_sensor_middle;
-extern pros::ADILineSensor ball_sensor_bottom;
-extern pros::ADILineSensor ball_sensor_intake;
 
 void build_chassis();
 

@@ -22,9 +22,9 @@ void set_drive_callbacks() {
   controllerbuttons::button_handler.clear_group("menu");
   robotfunctions::set_callbacks();
   autondrive::set_callbacks();
-  // controllermenu::master_print_array[0] = "";
-  // controllermenu::master_print_array[1] = "";
-  // controllermenu::master_print_array[2] = "";
+  controllermenu::master_print_array[0] = "";
+  controllermenu::master_print_array[1] = "";
+  controllermenu::master_print_array[2] = "";
 }
 
 void initialize() {
@@ -35,7 +35,7 @@ void initialize() {
   // ballsystem::init();
   // autondrive::set_callbacks();
   // autonfromsd::load_autons_from_SD();
-  // controllermenu::init();
+  controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
   controllerbuttons::button_handler.master.r2.pressed.set(set_drive_callbacks);
   odomerrorcorrection::start();
