@@ -66,6 +66,7 @@ void set_callbacks();
 
 namespace rollers {
   extern int score_queue;
+  extern int eject_queue;
   extern int intake_queue;
 
   extern SmartMotorController top_roller_smart;

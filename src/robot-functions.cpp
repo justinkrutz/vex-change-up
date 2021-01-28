@@ -156,6 +156,7 @@ controllerbuttons::Macro right_intake_back(
 
 namespace rollers {
 int score_queue = 0;
+int eject_queue = 0;
 int intake_queue = 0;
 bool intake_ball = false;
 // bool ball_between_intake_and_rollers = false;
@@ -304,10 +305,10 @@ void main_task() {
     int balls_to_push = balls_definitely_in_robot - balls_in_robot.size();
     int balls_to_pop = balls_in_robot.size() - balls_possibly_in_robot;
     for (int i = 0; i < balls_to_push; i++) {
-      balls_in_robot.push_front(kOurColor);
+      balls_in_robot.push_back(kOurColor);
     }
     for (int i = 0; i < balls_to_pop; i++) {
-      balls_in_robot.pop_back();
+      balls_in_robot.pop_front();
     }
     
     
@@ -315,22 +316,22 @@ void main_task() {
 
     if (ball_intake_found) {
       // bottom_roller_smart.set_manual_speed(4, 100);
-      bottom_roller_smart.add_target(1200, 100);
+      bottom_roller_smart.add_target(1200, 30);
     } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10) {
-      balls_in_robot.pop_front(); // remove the top ball from the robot because one was scored
+      balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
     }
-    
+
     if (ball_bottom_found && bottom_roller.get_actual_velocity() > 10) {
-        if (balls_in_robot.size() >= 3) balls_in_robot.pop_back(); // balls_in_robot.size() was 3 but the top ball was removed because a fourth cannot be added
-        balls_in_robot.push_front(get_ball_color(match_color)); // add ball to the robot
+        if (balls_in_robot.size() >= 3) balls_in_robot.pop_front(); // balls_in_robot.size() was 3 but the top ball was removed because a fourth cannot be added
+        balls_in_robot.push_back(get_ball_color(match_color)); // add ball to the robot
 
         switch (balls_in_robot.size()) {
           case 1:
-            top_roller_smart.set_manual_speed(2, 100);
+            top_roller_smart.set_manual_speed(3, 100);
             break;
-          case 3:
-            bottom_roller_smart.set_manual_speed(4, 0); // stop because the robot is full
-            break;
+          // case 3:
+          //   bottom_roller_smart.set_manual_speed(4, 0); // stop because the robot is full
+          //   break;
         }
     } else if (ball_bottom_lost) {
       ball_in_intake = false;
@@ -342,30 +343,32 @@ void main_task() {
 
     if (ball_top_found) {
       if (top_roller.get_actual_velocity() < -10) {
-        if (balls_in_robot.size() >= 3) balls_in_robot.pop_front();
-        balls_in_robot.push_back(get_ball_color(match_color));
+        if (balls_in_robot.size() >= 3) balls_in_robot.pop_back();
+        balls_in_robot.push_front(get_ball_color(match_color));
       } else {
-        top_roller_smart.set_manual_speed(2, 0);
-        bottom_roller_smart.set_manual_speed(2, 0);
+        top_roller_smart.set_manual_speed(3, 0);
+        bottom_roller_smart.set_manual_speed(3, 0);
         pos_when_ball_at_top = top_roller.get_position();
       }
     } else if (ball_top_lost) {
       if (balls_in_robot.size() > 0) {
         last_scored_ball = balls_in_robot.back();
-        balls_in_robot.pop_back();
+        balls_in_robot.pop_front();
+        if (score_queue > 0) score_queue--;
       }
       if (balls_in_robot.size() > 0) {
-        top_roller_smart.set_manual_speed(2, 100);
-        bottom_roller_smart.set_manual_speed(2, 50);
+        top_roller_smart.set_manual_speed(3, 100);
+        bottom_roller_smart.set_manual_speed(3, 30);
       }
     }
 
-    if (score_queue > 0) {
-      score_queue--;
-      // bottom_roller_smart.set_manual_speed(2, 0);
-      // bottom_roller_smart.add_target(500, 100);
-      // top_roller_smart.add_target(140, 100);
-    }
+    // if (score_queue > 0) {
+    //   // score_queue--;
+    //   bottom_roller_smart.set_manual_speed(2, 100);
+    //   top_roller_smart.set_manual_speed(2, 100);
+    // } else {
+    //   bottom_roller_smart.set_manual_speed(2, 0);
+    // }
 
     if (intake_ball && !ball_in_intake && intake_queue == 0 && InRange(distance_to_ball(), 50, 250)) {
       intake_queue = 1;
