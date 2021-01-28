@@ -13,6 +13,7 @@
 namespace autondrive {
 
 controllerbuttons::MacroGroup auton_group;
+controllerbuttons::MacroGroup drive_group;
 
 OdomState tracking_to_robot_coords (OdomState tracking_coords) {
   // QLength x_offset = cos(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
@@ -178,30 +179,50 @@ void motor_task()
   }
 }
 
-void goal_turn_right() {
-  button_strafe = 100;
-  button_turn = -68.4;
-  button_forward = 10;
-}
+using namespace controllerbuttons;
 
-void goal_turn_left() {
-  button_strafe = -100;
-  button_turn = 80;
-  button_forward = 10;
-}
+Macro goal_turn_right(
+    [&](){
+      button_strafe = 100;
+      button_turn = -70;
+      while (true) {
+        button_forward = 0.04 * (MIN(goal_sensor_one.get_value(), goal_sensor_two.get_value() - 2300));
+        wait(10);
+      }
+    },
+    [](){
+        button_strafe = 0;
+        button_turn = 0;
+        button_forward = 0;
+    },
+    {&drive_group});
 
-void goal_turn_release() {
-  button_strafe = 0;
-  button_turn = 0;
-  button_forward = 0;
+Macro goal_turn_left(
+    [&](){
+      button_strafe = -100;
+      button_turn = 80;
+      while (true) {
+        button_forward = 0.04 * (MIN(goal_sensor_one.get_value(), goal_sensor_two.get_value() - 2300));
+        wait(10);
+      }
+    },
+    [](){
+        button_strafe = 0;
+        button_turn = 0;
+        button_forward = 0;
+    },
+    {&drive_group});
+
+void drive_group_terminate() {
+  drive_group.terminate();
 }
 
 void set_callbacks() {
   using namespace controllerbuttons;
-  button_handler.master.left.pressed.set(goal_turn_left);
-  button_handler.master.right.pressed.set(goal_turn_right);
-  button_handler.master.left.released.set(goal_turn_release);
-  button_handler.master.right.released.set(goal_turn_release);
+  button_handler.master.left.pressed.set_macro(goal_turn_left);
+  button_handler.master.right.pressed.set_macro(goal_turn_right);
+  button_handler.master.left.released.set(drive_group_terminate);
+  button_handler.master.right.released.set(drive_group_terminate);
 }
 
 } // namespace autondrive
@@ -616,12 +637,16 @@ Macro skills(
       button_forward = 3;
       // wait(4000);
       WAIT_UNTIL(intake_queue == 0)
-      goal_turn_release();
+      button_strafe = 0;
+      button_turn = 0;
+      button_forward = 0;
 
       intakes_back.start();
     },
     [](){
-      goal_turn_release();
+      button_strafe = 0;
+      button_turn = 0;
+      button_forward = 0;
       target_position_enabled = false;
     },
     {&auton_group});
