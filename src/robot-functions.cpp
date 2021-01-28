@@ -97,10 +97,12 @@ controllerbuttons::Macro right_intake_back(
   }
 
   void SmartMotorController::add_target(double target, int speed) {
-    target_queue.push(Target(this, target, speed));
+    int timeout = auto_timeout(target);
+    controllermenu::master_print_array[1] = std::to_string(timeout);
+    target_queue.push(Target(this, target, speed, timeout));
   }
 
-  void SmartMotorController::add_target(double target, int speed, double timeout) {
+  void SmartMotorController::add_target(double target, int speed, int timeout) {
     target_queue.push(Target(this, target, speed, timeout));
   }
 
@@ -108,16 +110,34 @@ controllerbuttons::Macro right_intake_back(
     all_manual_speeds[index] = speed;
   }
 
+  int SmartMotorController::auto_timeout(double relative_target) {
+    double geared_deg_per_sec;
+    switch (motor.get_gearing()) {
+      case pros::E_MOTOR_GEARSET_36:
+        geared_deg_per_sec = DEG_PER_SEC/36;
+        break;
+      case pros::E_MOTOR_GEARSET_06:
+        geared_deg_per_sec = DEG_PER_SEC/06;
+        break;
+      case pros::E_MOTOR_GEARSET_18:
+      default:
+        geared_deg_per_sec = DEG_PER_SEC/18;
+        break;
+    }
+    double ms_per_deg = 1 / (geared_deg_per_sec * 0.001);
+    return fabs(relative_target) * ms_per_deg * timeout_ratio;
+  }
+
     SmartMotorController::Target::Target(SmartMotorController *motor_controller, double relative_target, int speed, int timeout)
         : motor_controller(motor_controller),
         relative_target(relative_target),
         speed(speed),
         timeout(timeout) {}
-    SmartMotorController::Target::Target(SmartMotorController *motor_controller, double relative_target, int speed)
-        : motor_controller(motor_controller),
-        relative_target(relative_target),
-        speed(speed),
-        timeout(auto_timeout()) {}
+    // SmartMotorController::Target::Target(SmartMotorController *motor_controller, double relative_target, int speed)
+    //     : motor_controller(motor_controller),
+    //     relative_target(relative_target),
+    //     speed(speed),
+    //     timeout(auto_timeout()) {}
 
     void SmartMotorController::Target::init_if_new() {
       if (is_new) {
@@ -133,22 +153,6 @@ controllerbuttons::Macro right_intake_back(
           || (relative_target <= 0 && motor_controller->motor.get_position() <= starting_pos + relative_target);
     }
 
-    int SmartMotorController::Target::auto_timeout() {
-      int gear_ratio;
-      switch (motor_controller->motor.get_gearing()) {
-        case pros::E_MOTOR_GEARSET_36:
-          gear_ratio = DEG_PER_SEC/36;
-          break;
-        case pros::E_MOTOR_GEARSET_06:
-          gear_ratio = DEG_PER_SEC/06;
-          break;
-        case pros::E_MOTOR_GEARSET_18:
-        default:
-          gear_ratio = DEG_PER_SEC/18;
-          break;
-      }
-      return fabs(relative_target) * gear_ratio;
-    }
 
 namespace rollers {
 int score_queue = 0;
