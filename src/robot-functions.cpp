@@ -249,6 +249,8 @@ int distance_to_ball() {
   return min_distance;
 }
 
+bool score_balls = false;
+
 void main_task() {
   intake_left.set_zero_position(360);
   intake_right.set_zero_position(360);
@@ -257,9 +259,10 @@ void main_task() {
   bottom_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-  ObjectSensor goal_one    (goal_sensor_one,    1000, 2700);
-  ObjectSensor goal_two    (goal_sensor_two,    1000, 2700);
+  ObjectSensor goal_one    (goal_sensor_one,    2800, 2850);
+  ObjectSensor goal_two    (goal_sensor_two,    2800, 2850);
 
+  // ObjectSensor ball_os_score  (ball_sensor_score,  2000, 2200);
   ObjectSensor ball_os_score  (ball_sensor_score,  2000, 2200);
   ObjectSensor ball_os_top    (ball_sensor_top,    2200, 2400);
   ObjectSensor ball_os_middle (ball_sensor_middle, 1000, 2200);
@@ -272,15 +275,23 @@ void main_task() {
 
   bool ball_in_intake = false;
   int ball_in_intake_time = 0;
+  int robot_empty_time = 0;
 
   pros::delay(200);
   while (true) {
     // bool ball_top_found = true;
 
-    bool ball_score_found = ball_os_score.get_new_found();
-    bool ball_score_lost = ball_os_intake.get_new_lost();
+    bool goal_one_found = goal_one.get_new_found();
+    bool goal_one_lost = goal_one.get_new_lost();
+    bool goal_two_found = goal_two.get_new_found();
+    bool goal_two_lost = goal_two.get_new_lost();
+
+
     bool ball_top_found = ball_os_top.get_new_found();
     bool ball_top_lost = ball_os_top.get_new_lost(fabs(pos_when_ball_at_top - top_roller.get_position()) > 50);
+
+    bool ball_score_found = ball_os_score.get_new_found();
+    bool ball_score_lost = ball_os_score.get_new_lost(top_roller.get_position() - pos_when_ball_at_top  > 90);
     
     bool ball_middle_found = ball_os_middle.get_new_found();
     bool ball_middle_lost = ball_os_middle.get_new_lost(pos_when_ball_at_top - top_roller.get_position() > 50
@@ -316,7 +327,7 @@ void main_task() {
 
     if (ball_intake_found) {
       // bottom_roller_smart.set_manual_speed(4, 100);
-      bottom_roller_smart.add_target(1200, 30);
+      bottom_roller_smart.add_target(1200, 1000);
     } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10) {
       balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
     }
@@ -354,23 +365,31 @@ void main_task() {
       if (balls_in_robot.size() > 0) {
         last_scored_ball = balls_in_robot.back();
         balls_in_robot.pop_front();
-        if (score_queue > 0) score_queue--;
       }
       if (balls_in_robot.size() > 0) {
         top_roller_smart.set_manual_speed(3, 100);
-        bottom_roller_smart.set_manual_speed(3, 30);
+        bottom_roller_smart.set_manual_speed(3, 50);
+      } else {
+        robot_empty_time = pros::millis();
       }
     }
 
-    // if (score_queue > 0) {
-    //   // score_queue--;
-    //   bottom_roller_smart.set_manual_speed(2, 100);
-    //   top_roller_smart.set_manual_speed(2, 100);
-    // } else {
-    //   bottom_roller_smart.set_manual_speed(2, 0);
-    // }
+    if (ball_score_lost || (balls_in_robot.size() == 0 && pros::millis() - robot_empty_time > 500)) {
+      if (score_queue > 0) score_queue--;
+    }
 
-    if (intake_ball && !ball_in_intake && intake_queue == 0 && InRange(distance_to_ball(), 50, 250)) {
+    if (score_queue > 0 && (score_balls || goal_one.is_detected || goal_two.is_detected)) {
+      score_balls = false;
+      top_roller_smart.set_manual_speed(2, 100);
+      bottom_roller_smart.set_manual_speed(2, 100);
+    } else if (score_queue == 0) {
+      top_roller_smart.set_manual_speed(2, 0);
+      bottom_roller_smart.set_manual_speed(2, 0);
+    }
+
+
+
+    if (intake_ball && !ball_in_intake && intake_queue == 0 && InRange(distance_to_ball(), 50, 300)) {
       intake_queue = 1;
       ball_in_intake = true;
       ball_in_intake_time = pros::millis();
@@ -407,8 +426,12 @@ void main_task() {
   }
 }
 
-void score_ball() {
-  score_queue++;
+void score_balls_true() {
+  score_balls = true;
+}
+
+void score_balls_false() {
+  score_balls = false;
 }
 
 void add_ball_to_intake_queue() {
@@ -482,9 +505,9 @@ void set_callbacks() {
   using namespace rollers;
   button_handler.master.l1.pressed.set(intake_splay);
   button_handler.master.l2.pressed.set_macro(intakes_back);
-  button_handler.master.r1.pressed.set(intake_ball_true);
-  button_handler.master.r1.released.set(intake_ball_false);
-  button_handler.master.r2.pressed.set(add_ball_to_intake_queue);
+  button_handler.master.r2.pressed.set(intake_ball_true);
+  button_handler.master.r2.released.set(intake_ball_false);
+  button_handler.master.r1.pressed.set(add_ball_to_intake_queue);
   button_handler.master.down.pressed.set(rollers_reverse);
   button_handler.master.down.released.set(rollers_stop);
   button_handler.master.up.pressed.set(rollers_forward);
@@ -496,15 +519,21 @@ void set_callbacks() {
   button_handler.master.a.pressed.set(intake_deploy_off);
   button_handler.master.y.pressed.set(intake_off);
 
-  button_handler.partner.r2.pressed.set(score_ball);
-  button_handler.partner.down.pressed.set(rollers_reverse);
-  button_handler.partner.down.released.set(rollers_stop);
-  button_handler.partner.up.pressed.set(rollers_forward);
-  button_handler.partner.up.released.set(rollers_stop);
-  button_handler.partner.x.pressed.set(bottom_roller_forward);
-  button_handler.partner.x.released.set(rollers_stop);
-  button_handler.partner.b.pressed.set(bottom_roller_reverse);
-  button_handler.partner.b.released.set(rollers_stop);
+  button_handler.partner.l2.pressed.set(rollers_reverse);
+  button_handler.partner.l2.released.set(rollers_stop);
+  button_handler.partner.r2.pressed.set(rollers_forward);
+  button_handler.partner.r2.released.set(rollers_stop);
+
+  button_handler.partner.r2.pressed.set(score_balls_true);
+  button_handler.partner.r2.released.set(score_balls_false);
+  button_handler.partner.up.pressed.set(   [&](){ score_queue = 1; });
+  button_handler.partner.right.pressed.set([&](){ score_queue = 2; });
+  button_handler.partner.down.pressed.set( [&](){ score_queue = 3; });
+  button_handler.partner.left.pressed.set( [&](){ score_queue = 0; });
+  button_handler.partner.x.pressed.set(    [&](){ intake_queue = 1; });
+  button_handler.partner.a.pressed.set(    [&](){ intake_queue = 2; });
+  button_handler.partner.b.pressed.set(    [&](){ intake_queue = 3; });
+  button_handler.partner.y.pressed.set(intake_splay);
 }
 
 } // namespace robotfunctions
