@@ -15,8 +15,8 @@ while (!(condition) && pros::millis() - wait_until_timeout_start < timeout) { \
 }
 
 namespace autondrive {
-
 extern controllerbuttons::MacroGroup auton_group;
+extern controllerbuttons::MacroGroup drive_group;
 
 OdomState robot_to_tracking_coords (OdomState robot_coords);
 
@@ -40,22 +40,24 @@ extern bool target_position_enabled;
 extern bool final_target_reached;
 }
 
+extern controllerbuttons::Macro goal_center;
+
 void motor_task();
 void set_callbacks();
 } // namespace autondrive
 
-namespace autonroutines {
-using namespace controllerbuttons;
 
-extern Macro none;
-extern Macro home_row_three;
-extern Macro home_row_two;
-extern Macro left_shawnton;
-extern Macro right_shawnton;
-extern Macro test;
-extern Macro skills;
-extern Macro shawnton_three;
-extern Macro shawnton_cycle;
+namespace autonroutines {
+
+extern controllerbuttons::Macro none;
+extern controllerbuttons::Macro home_row_three;
+extern controllerbuttons::Macro home_row_two;
+extern controllerbuttons::Macro left_shawnton;
+extern controllerbuttons::Macro right_shawnton;
+extern controllerbuttons::Macro test;
+extern controllerbuttons::Macro skills;
+extern controllerbuttons::Macro shawnton_three;
+extern controllerbuttons::Macro shawnton_cycle;
 
 } // namespace autonroutines
 

@@ -45,3 +45,44 @@ int rampMath(double input, double total_range, RampMathSettings s) {
   }
   return mid_output * sign;
 }
+
+
+ObjectSensor::ObjectSensor(std::vector<pros::ADILineSensor *> sensors, int found_threshold, int lost_threshold, bool starts_detected = false)
+              : sensors(sensors),
+              found_threshold(found_threshold),
+              lost_threshold(lost_threshold),
+              is_detected(starts_detected) {}
+
+int ObjectSensor::get_min_value() {
+  int value = 3000;
+  for (auto &&sensor : sensors) {
+    value = MIN(value, sensor->get_value());
+  }
+  return value;
+}
+
+int ObjectSensor::get_max_value() {
+  int value = 0;
+  for (auto &&sensor : sensors) {
+    value = MAX(value, sensor->get_value());
+  }
+  return value;
+}
+
+bool ObjectSensor::get_new_found(bool additional_argument) {
+  if (!is_detected && get_min_value() < found_threshold && additional_argument) {
+    is_detected;
+    time_when_found = pros::millis();
+    return true;
+  }
+  return false;
+}
+
+bool ObjectSensor::get_new_lost(bool additional_argument) {
+  if (is_detected && get_max_value() > lost_threshold && additional_argument) {
+    is_detected = false;
+    time_when_lost = pros::millis();
+    return true;
+  }
+  return false;
+}

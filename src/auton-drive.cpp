@@ -6,7 +6,7 @@
 #include "controller-menu.h"
 #include "robot-functions.h"
 #include "auton-drive.h"
-#include "auton-from-sd.h"
+#include "odom-utilities.h"
 #include <stdio.h>
 #include <complex.h>
 
@@ -180,6 +180,24 @@ void motor_task()
 }
 
 using namespace controllerbuttons;
+
+Macro goal_center(
+    [&](){
+      int time = pros::millis();
+      while (pros::millis() - time < 1000) {
+        // double speed = ;
+        button_strafe = 100;
+        button_turn = -70;
+        button_forward = 0.04 * (MIN(goal_sensor_one.get_value(), goal_sensor_two.get_value() - 2300));
+        wait(10);
+      }
+    },
+    [](){
+        button_strafe = 0;
+        button_turn = 0;
+        button_forward = 0;
+    },
+    {&drive_group});
 
 Macro goal_turn_right(
     [&](){

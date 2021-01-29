@@ -51,4 +51,22 @@ bool InRange(T input, T min, T max) {
   return input >= MIN(min, max) && input <= MAX(min, max);
 }
 
+class ObjectSensor {
+ public:
+  
+  ObjectSensor(std::vector<pros::ADILineSensor *> sensors, int found_threshold, int lost_threshold, bool starts_detected = false);
+
+  int get_min_value();
+  int get_max_value();
+  bool get_new_found(bool additional_argument = true);
+  bool get_new_lost(bool additional_argument = true);
+
+  const std::vector<pros::ADILineSensor *> &sensors;
+  int found_threshold;
+  int lost_threshold;
+  bool is_detected;
+  int time_when_found = 0;
+  int time_when_lost = 0;
+};
+
 #endif // UTILITIES

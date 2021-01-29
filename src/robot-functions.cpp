@@ -5,7 +5,7 @@
 #include "controller-buttons.h"
 #include "controller-menu.h"
 #include "robot-functions.h"
-#include "auton-from-sd.h"
+#include "odom-utilities.h"
 #include <stdio.h>
 #include <complex.h>
 
@@ -159,47 +159,13 @@ int score_queue = 0;
 int eject_queue = 0;
 int intake_queue = 0;
 bool intake_ball = false;
+bool eject_balls = false;
 // bool ball_between_intake_and_rollers = false;
 int time_when_last_ball_lost = 0;
 double pos_when_ball_at_top = 0;
 double pos_when_ball_at_bottom = 0;
 SmartMotorController top_roller_smart(top_roller, 1.5, 100, 2);
 SmartMotorController bottom_roller_smart(bottom_roller, 1.5, 100, 2);
-
-class ObjectSensor {
- public:
-  
-  ObjectSensor(pros::ADILineSensor &sensor, int found_threshold, int lost_threshold, bool starts_detected = false)
-               : sensor(sensor),
-               found_threshold(found_threshold),
-               lost_threshold(lost_threshold),
-               is_detected(starts_detected) {}
-  
-  bool get_new_found(bool additional_argument = true) {
-    if (!is_detected && sensor.get_value() < found_threshold && additional_argument) {
-      is_detected = true;
-      time_when_found = pros::millis();
-      return true;
-    }
-    return false;
-  }
-  
-  bool get_new_lost(bool additional_argument = true) {
-    if (is_detected && sensor.get_value() > lost_threshold && additional_argument) {
-      is_detected = false;
-      time_when_lost = pros::millis();
-      return true;
-    }
-    return false;
-  }
-
-  const pros::ADILineSensor &sensor;
-  int found_threshold;
-  int lost_threshold;
-  bool is_detected;
-  int time_when_found = 0;
-  int time_when_lost = 0;
-};
 
 const int kBallColorBlue[2] = {212, 252};
 const int kBallColorRed[2] = {350, 30};
@@ -259,15 +225,14 @@ void main_task() {
   bottom_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-  ObjectSensor goal_one    (goal_sensor_one,    2800, 2850);
-  ObjectSensor goal_two    (goal_sensor_two,    2800, 2850);
+  ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
 
-  // ObjectSensor ball_os_score  (ball_sensor_score,  2000, 2200);
-  ObjectSensor ball_os_score  (ball_sensor_score,  2000, 2200);
-  ObjectSensor ball_os_top    (ball_sensor_top,    2200, 2400);
-  ObjectSensor ball_os_middle (ball_sensor_middle, 1000, 2200);
-  ObjectSensor ball_os_bottom (ball_sensor_bottom, 1000, 2200, true);
-  ObjectSensor ball_os_intake (ball_sensor_intake, 1000, 2200);
+  // ObjectSensor ball_os_score  ({ball_sensor_score},  2000, 2200);
+  ObjectSensor ball_os_score  ({&ball_sensor_top},    2000, 2200);
+  ObjectSensor ball_os_top    ({&ball_sensor_top},    2200, 2400);
+  ObjectSensor ball_os_middle ({&ball_sensor_middle}, 1000, 2200);
+  ObjectSensor ball_os_bottom ({&ball_sensor_bottom}, 1000, 2200, true);
+  ObjectSensor ball_os_intake ({&ball_sensor_intake}, 1000, 2200);
 
   // AllianceColor last_color = kOurColor;
 
@@ -281,10 +246,8 @@ void main_task() {
   while (true) {
     // bool ball_top_found = true;
 
-    bool goal_one_found = goal_one.get_new_found();
-    bool goal_one_lost = goal_one.get_new_lost();
-    bool goal_two_found = goal_two.get_new_found();
-    bool goal_two_lost = goal_two.get_new_lost();
+    bool goal_os_found = goal_os.get_new_found();
+    bool goal_os_lost = goal_os.get_new_lost();
 
 
     bool ball_top_found = ball_os_top.get_new_found();
@@ -378,7 +341,7 @@ void main_task() {
       if (score_queue > 0) score_queue--;
     }
 
-    if (score_queue > 0 && (score_balls || goal_one.is_detected || goal_two.is_detected)) {
+    if (score_queue > 0 && (score_balls || goal_os.is_detected)) {
       score_balls = false;
       top_roller_smart.set_manual_speed(2, 100);
       bottom_roller_smart.set_manual_speed(2, 100);
@@ -433,6 +396,10 @@ void score_balls_true() {
 void score_balls_false() {
   score_balls = false;
 }
+
+// void eject_balls() {
+//   eject_balls = true;
+// }
 
 void add_ball_to_intake_queue() {
   intake_queue++;
@@ -505,35 +472,37 @@ void set_callbacks() {
   using namespace rollers;
   button_handler.master.l1.pressed.set(intake_splay);
   button_handler.master.l2.pressed.set_macro(intakes_back);
-  button_handler.master.r2.pressed.set(intake_ball_true);
-  button_handler.master.r2.released.set(intake_ball_false);
-  button_handler.master.r1.pressed.set(add_ball_to_intake_queue);
-  button_handler.master.down.pressed.set(rollers_reverse);
-  button_handler.master.down.released.set(rollers_stop);
-  button_handler.master.up.pressed.set(rollers_forward);
-  button_handler.master.up.released.set(rollers_stop);
-  button_handler.master.x.pressed.set(bottom_roller_forward);
-  button_handler.master.x.released.set(rollers_stop);
-  button_handler.master.b.pressed.set(bottom_roller_reverse);
-  button_handler.master.b.released.set(rollers_stop);
-  button_handler.master.a.pressed.set(intake_deploy_off);
-  button_handler.master.y.pressed.set(intake_off);
+  // button_handler.master.r2.pressed.set(intake_ball_true);
+  // button_handler.master.r2.released.set(intake_ball_false);
+  button_handler.master. r2.   pressed .set([&](){ eject_balls = true; });
+  button_handler.master. r2.   released.set([&](){ eject_balls = false; });
+  button_handler.master. r1.   pressed .set(add_ball_to_intake_queue);
+  button_handler.master. down. pressed .set(rollers_reverse);
+  button_handler.master. down. released.set(rollers_stop);
+  button_handler.master. up.   pressed .set(rollers_forward);
+  button_handler.master. up.   released.set(rollers_stop);
+  button_handler.master. x.    pressed .set(bottom_roller_forward);
+  button_handler.master. x.    released.set(rollers_stop);
+  button_handler.master. b.    pressed .set(bottom_roller_reverse);
+  button_handler.master. b.    released.set(rollers_stop);
+  button_handler.master. a.    pressed .set(intake_deploy_off);
+  button_handler.master. y.    pressed .set(intake_off);
 
-  button_handler.partner.l2.pressed.set(rollers_reverse);
-  button_handler.partner.l2.released.set(rollers_stop);
-  button_handler.partner.r2.pressed.set(rollers_forward);
-  button_handler.partner.r2.released.set(rollers_stop);
+  button_handler.partner.l2.   pressed .set(rollers_reverse);
+  button_handler.partner.l2.   released.set(rollers_stop);
+  button_handler.partner.r2.   pressed .set(rollers_forward);
+  button_handler.partner.r2.   released.set(rollers_stop);
 
-  button_handler.partner.r2.pressed.set(score_balls_true);
-  button_handler.partner.r2.released.set(score_balls_false);
-  button_handler.partner.up.pressed.set(   [&](){ score_queue = 1; });
-  button_handler.partner.right.pressed.set([&](){ score_queue = 2; });
-  button_handler.partner.down.pressed.set( [&](){ score_queue = 3; });
-  button_handler.partner.left.pressed.set( [&](){ score_queue = 0; });
-  button_handler.partner.x.pressed.set(    [&](){ intake_queue = 1; });
-  button_handler.partner.a.pressed.set(    [&](){ intake_queue = 2; });
-  button_handler.partner.b.pressed.set(    [&](){ intake_queue = 3; });
-  button_handler.partner.y.pressed.set(intake_splay);
+  button_handler.partner.r2.   pressed .set(score_balls_true);
+  button_handler.partner.r2.   released.set(score_balls_false);
+  button_handler.partner.up.   pressed .set([&](){ score_queue = 1; });
+  button_handler.partner.right.pressed .set([&](){ score_queue = 2; });
+  button_handler.partner.down. pressed .set([&](){ score_queue = 3; });
+  button_handler.partner.left. pressed .set([&](){ score_queue = 0; });
+  button_handler.partner.x.    pressed .set([&](){ intake_queue = 1; });
+  button_handler.partner.a.    pressed .set([&](){ intake_queue = 2; });
+  button_handler.partner.b.    pressed .set([&](){ intake_queue = 3; });
+  button_handler.partner.y.    pressed .set(intake_splay);
 }
 
 } // namespace robotfunctions
