@@ -47,7 +47,7 @@ int rampMath(double input, double total_range, RampMathSettings s) {
 }
 
 
-ObjectSensor::ObjectSensor(std::vector<pros::ADILineSensor *> sensors, int found_threshold, int lost_threshold, bool starts_detected = false)
+ObjectSensor::ObjectSensor(std::vector<pros::ADILineSensor *> sensors, int found_threshold, int lost_threshold, bool starts_detected)
               : sensors(sensors),
               found_threshold(found_threshold),
               lost_threshold(lost_threshold),

@@ -216,53 +216,53 @@ class MenuAction : public MenuItem {
   std::function<void()> function_;
 };
 
-class MenuCreateAuton : public MenuItem {
-  public:
-  MenuCreateAuton(std::string name) : MenuItem(kAction, name), auton("1") {}
+// class MenuCreateAuton : public MenuItem {
+//   public:
+//   MenuCreateAuton(std::string name) : MenuItem(kAction, name), auton("1") {}
 
-  void print() {
-    chassis->setState({0_in, 0_in, 0_deg});
-    pros::Task([this](){
-      while (current_item == this) {
-        double x = chassis->getState().x.convert(inch);
-        double y = chassis->getState().y.convert(inch);
-        double theta = chassis->getState().theta.convert(degree);
-        std::string x_str     = std::to_string((int)x);
-        std::string y_str     = std::to_string((int)y);
-        std::string theta_str = std::to_string((int)theta);
-        master_print_array[0] = "x: " + x_str + " y: " + y_str + " t: " + theta_str;
-        master_print_array[1] = "step " + std::to_string(auton.selected_step + 1) + " of " + std::to_string(auton.auton_steps.size());
-        // master_print_array[2] = "x: " + std::to_string((int)auton.auton_steps["x"])
-        //     + " y: " + std::to_string((int)auton.auton_steps["y"])
-        //     + " t: " + std::to_string((int)auton.auton_steps["theta"]);
-        pros::delay(150);
-      }
-    });
-  }
+//   void print() {
+//     chassis->setState({0_in, 0_in, 0_deg});
+//     pros::Task([this](){
+//       while (current_item == this) {
+//         double x = chassis->getState().x.convert(inch);
+//         double y = chassis->getState().y.convert(inch);
+//         double theta = chassis->getState().theta.convert(degree);
+//         std::string x_str     = std::to_string((int)x);
+//         std::string y_str     = std::to_string((int)y);
+//         std::string theta_str = std::to_string((int)theta);
+//         master_print_array[0] = "x: " + x_str + " y: " + y_str + " t: " + theta_str;
+//         master_print_array[1] = "step " + std::to_string(auton.selected_step + 1) + " of " + std::to_string(auton.auton_steps.size());
+//         // master_print_array[2] = "x: " + std::to_string((int)auton.auton_steps["x"])
+//         //     + " y: " + std::to_string((int)auton.auton_steps["y"])
+//         //     + " t: " + std::to_string((int)auton.auton_steps["theta"]);
+//         pros::delay(150);
+//       }
+//     });
+//   }
 
-  void set_callbacks() {
-    button_handler.clear_group("menu");
-    button_handler.master.b.pressed.set ([this](){ back(); }, {"menu"});
-    button_handler.master.a.pressed.set ([this](){
-      auton.save();
-      autonfromsd::save_autons_to_SD();
-    }, {"menu"});
-    button_handler.master.y.pressed.set ([this](){ auton.run(); }, {"menu"});
-    button_handler.master.x.pressed.set ([this](){ auton.set_step_waypoint(); }, {"menu"});
-    button_handler.master.up.pressed.set ([this](){ auton.insert_step(); }, {"menu"});
-    button_handler.master.down.pressed.set ([this](){ auton.remove_step(); }, {"menu"});
-    button_handler.master.left.pressed.set ([this](){ auton.previous_step(); }, {"menu"});
-    button_handler.master.right.pressed.set ([this](){ auton.next_step(); }, {"menu"});
-    button_handler.master.r1.pressed.set ([this](){ /*drive to nearest goal*/ }, {"menu"});
-    button_handler.master.r2.pressed.set ([this](){ /*drive to and intake nearest ball*/ }, {"menu"});
-    button_handler.master.l1.pressed.set ([this](){ /*score one ball if at goal*/ }, {"menu"});
-    button_handler.master.l2.pressed.set ([this](){ /*intake one ball if at goal*/ }, {"menu"});
-  }
+//   void set_callbacks() {
+//     button_handler.clear_group("menu");
+//     button_handler.master.b.pressed.set ([this](){ back(); }, {"menu"});
+//     button_handler.master.a.pressed.set ([this](){
+//       auton.save();
+//       odomutilities::save_autons_to_SD();
+//     }, {"menu"});
+//     button_handler.master.y.pressed.set ([this](){ auton.run(); }, {"menu"});
+//     button_handler.master.x.pressed.set ([this](){ auton.set_step_waypoint(); }, {"menu"});
+//     button_handler.master.up.pressed.set ([this](){ auton.insert_step(); }, {"menu"});
+//     button_handler.master.down.pressed.set ([this](){ auton.remove_step(); }, {"menu"});
+//     button_handler.master.left.pressed.set ([this](){ auton.previous_step(); }, {"menu"});
+//     button_handler.master.right.pressed.set ([this](){ auton.next_step(); }, {"menu"});
+//     button_handler.master.r1.pressed.set ([this](){ /*drive to nearest goal*/ }, {"menu"});
+//     button_handler.master.r2.pressed.set ([this](){ /*drive to and intake nearest ball*/ }, {"menu"});
+//     button_handler.master.l1.pressed.set ([this](){ /*score one ball if at goal*/ }, {"menu"});
+//     button_handler.master.l2.pressed.set ([this](){ /*intake one ball if at goal*/ }, {"menu"});
+//   }
 
-  private:
-  autonfromsd auton;
-  // std::string auton_id = get_new_auton_id(autonfromsd::all_autons);
-};
+//   private:
+//   odomutilities auton;
+//   // std::string auton_id = get_new_auton_id(odomutilities::all_autons);
+// };
 
 class MenuAutonomous : public MenuFolder {
   public:

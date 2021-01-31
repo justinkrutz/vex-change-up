@@ -15,24 +15,36 @@ using json = nlohmann::ordered_json;
 namespace odomutilities {
 
 
-  Goal::Goal(Point point, QAngle angle, GoalType goal_type) : point(point), angle(angle), offset(DEFAULT_GOAL_OFFSET), goal_type(goal_type) {
-    goals.push_back(this);
-  }
+Goal::Goal(Point point, std::vector<QAngle> angles, GoalType goal_type) : point(point), angles(angles), offset(DEFAULT_GOAL_OFFSET), goal_type(goal_type) {
+  goals.push_back(this);
+}
 
-  Goal::Goal(Point point, QAngle angle, QLength offset, GoalType goal_type) : point(point), angle(angle), offset(offset), goal_type(goal_type) {
-    goals.push_back(this);
-  }
+Goal::Goal(Point point, std::vector<QAngle> angles, QLength offset, GoalType goal_type) : point(point), angles(angles), offset(offset), goal_type(goal_type) {
+  goals.push_back(this);
+}
 
-  Goal *Goal::closest(Point current_point) {
-    Goal *closest_goal;
-    for (auto &goal : goals) {
-      if (OdomMath::computeDistanceToPoint(current_point, {goal->point.x, goal->point.y}) <
-          OdomMath::computeDistanceToPoint(current_point, {closest_goal->point.x, closest_goal->point.y})) {
-        closest_goal = goal;
-      }
+std::vector<Goal*> Goal::goals = {};
+
+Goal *Goal::closest(Point current_point) {
+  Goal *closest_goal;
+  for (auto &goal : goals) {
+    if (OdomMath::computeDistanceToPoint(current_point, {goal->point.x, goal->point.y}) <
+        OdomMath::computeDistanceToPoint(current_point, {closest_goal->point.x, closest_goal->point.y})) {
+      closest_goal = goal;
     }
-    return closest_goal;
   }
+  return closest_goal;
+}
+
+Goal goal_1 ({  5.8129_in,   5.8129_in}, {225_deg}, GoalType::kCorner);
+Goal goal_2 ({  5.9272_in,  70.3361_in}, {180_deg}, GoalType::kSide);
+Goal goal_3 ({  5.8129_in, 134.8593_in}, {135_deg}, GoalType::kCorner);
+Goal goal_4 ({ 70.3361_in,   5.9272_in}, {270_deg}, GoalType::kSide);
+Goal goal_5 ({ 70.3361_in,  70.3361_in}, {  0_deg, 90_deg, 180_deg, 270_deg}, GoalType::kCenter);
+Goal goal_6 ({ 70.3361_in, 134.7450_in}, { 90_deg}, GoalType::kSide);
+Goal goal_7 ({134.8593_in,   5.8129_in}, {315_deg}, GoalType::kCorner);
+Goal goal_8 ({134.7450_in,  70.3361_in}, {  0_deg}, GoalType::kSide);
+Goal goal_9 ({134.8593_in, 134.8593_in}, { 45_deg}, GoalType::kCorner);
 
 /*        MATCH SETUP
    │                       │
@@ -73,17 +85,6 @@ namespace odomutilities {
    ┌───────────────────────┐
    │                       │
 */
-
-Goal goal_1 ({  5.8129_in,   5.8129_in}, 0_deg, GoalType::kCorner);
-Goal goal_2 ({  5.9272_in,  70.3361_in}, 0_deg, GoalType::kSide);
-Goal goal_3 ({  5.8129_in, 134.8593_in}, 0_deg, GoalType::kCorner);
-Goal goal_4 ({ 70.3361_in,   5.9272_in}, 0_deg, GoalType::kSide);
-Goal goal_5 ({ 70.3361_in,  70.3361_in}, 0_deg, GoalType::kCenter);
-Goal goal_6 ({ 70.3361_in,  134.745_in}, 0_deg, GoalType::kSide);
-Goal goal_7 ({134.8593_in,   5.8129_in}, 0_deg, GoalType::kCorner);
-Goal goal_8 ({ 134.745_in,  70.3361_in}, 0_deg, GoalType::kSide);
-Goal goal_9 ({134.8593_in, 134.8593_in}, 0_deg, GoalType::kCorner);
-
 
 namespace errorcorrection {
 
@@ -161,6 +162,5 @@ void start() {
 }
 
 } // namespace errorcorrection
-
 
 } // namespace odomutilities

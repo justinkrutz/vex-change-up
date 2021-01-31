@@ -183,11 +183,34 @@ using namespace controllerbuttons;
 
 Macro goal_center(
     [&](){
+      using namespace odomutilities;
       int time = pros::millis();
-      while (pros::millis() - time < 1000) {
-        // double speed = ;
-        button_strafe = 100;
-        button_turn = -70;
+      OdomState odom = robot_state();
+      Goal *closest_goal = Goal::closest({odom.x, odom.y});
+      QAngle target = 0_deg;
+
+      for (auto &&angle : closest_goal->angles) {
+        QAngle target_right = (odom.theta.convert(degree) - fmod(odom.theta.convert(degree), 360)) * degree + angle;
+        QAngle target_left = target_right - 360_deg;
+        QAngle temp_target;
+
+        if (abs(target_right - odom.theta) < abs(target_left - odom.theta)) {
+          temp_target = target_right;
+        } else {
+          temp_target = target_left;
+        }
+
+        if (abs(temp_target - odom.theta) < abs(target - odom.theta)) {
+          target = temp_target;
+        }
+      }
+      
+
+      while (abs(robot_state().theta - target) > 2_deg && pros::millis() - time < 1000) {
+
+        double speed = 5 * (target - robot_state().theta).convert(degree);
+        button_strafe = speed;
+        button_turn = speed * -0.7;
         button_forward = 0.04 * (MIN(goal_sensor_one.get_value(), goal_sensor_two.get_value() - 2300));
         wait(10);
       }
