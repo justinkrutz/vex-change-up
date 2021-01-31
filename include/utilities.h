@@ -61,7 +61,7 @@ class ObjectSensor {
   bool get_new_found(bool additional_argument = true);
   bool get_new_lost(bool additional_argument = true);
 
-  const std::vector<pros::ADILineSensor *> &sensors;
+  const std::vector<pros::ADILineSensor *> sensors;
   int found_threshold;
   int lost_threshold;
   bool is_detected;

@@ -8,12 +8,6 @@
 #include "odom-utilities.h"
 #include "ball-system.h"
 
-/**
- * Runs initialization code. This occurs as soon as the program is started.
- *
- * All other competition modes are blocked by initialize; it is recommended
- * to keep execution time for this mode under a few seconds.
- */
 
 bool menu_enabled = true;
 
@@ -27,6 +21,13 @@ void set_drive_callbacks() {
   controllermenu::master_print_array[2] = "";
 }
 
+/**
+ * Runs initialization code. This occurs as soon as the program is started.
+ *
+ * All other competition modes are blocked by initialize; it is recommended
+ * to keep execution time for this mode under a few seconds.
+ */
+
 void initialize() {
   build_chassis();
   pros::Task(autondrive::motor_task);
@@ -38,7 +39,7 @@ void initialize() {
   controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
   controllerbuttons::button_handler.master.r2.pressed.set(set_drive_callbacks);
-  odomutilities::errorcorrection::start();
+  // odomutilities::errorcorrection::start();
 }
 
 /**

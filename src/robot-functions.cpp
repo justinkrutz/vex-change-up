@@ -97,7 +97,7 @@ controllerbuttons::Macro right_intake_back(
   }
 
   void SmartMotorController::add_target(double target, int speed) {
-    int timeout = auto_timeout(target);
+    int timeout = auto_timeout(target, speed);
     controllermenu::master_print_array[1] = std::to_string(timeout);
     target_queue.push(Target(this, target, speed, timeout));
   }
@@ -110,7 +110,7 @@ controllerbuttons::Macro right_intake_back(
     all_manual_speeds[index] = speed;
   }
 
-  int SmartMotorController::auto_timeout(double relative_target) {
+  int SmartMotorController::auto_timeout(double relative_target, int speed) {
     double geared_deg_per_sec;
     switch (motor.get_gearing()) {
       case pros::E_MOTOR_GEARSET_36:
@@ -124,7 +124,7 @@ controllerbuttons::Macro right_intake_back(
         geared_deg_per_sec = DEG_PER_SEC/18;
         break;
     }
-    double ms_per_deg = 1 / (geared_deg_per_sec * 0.001);
+    double ms_per_deg = 1 / (geared_deg_per_sec * 0.001) * (1 / (speed * 0.01));
     return fabs(relative_target) * ms_per_deg * timeout_ratio;
   }
 
@@ -290,7 +290,7 @@ void main_task() {
 
     if (ball_intake_found) {
       // bottom_roller_smart.set_manual_speed(4, 100);
-      bottom_roller_smart.add_target(1200, 1000);
+      bottom_roller_smart.add_target(1200, 100);
     } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10) {
       balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
     }

@@ -22,7 +22,7 @@ class SmartMotorController {
   void add_target(double target, int speed, int timeout);
   int all_manual_speeds[5];
   void set_manual_speed (int index, int speed);
-  int auto_timeout(double relative_target);
+  int auto_timeout(double relative_target, int speed);
 
   class Target {
     public:
