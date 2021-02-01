@@ -71,7 +71,7 @@ int ObjectSensor::get_max_value() {
 
 bool ObjectSensor::get_new_found(bool additional_argument) {
   if (!is_detected && get_min_value() < found_threshold && additional_argument) {
-    is_detected;
+    is_detected = true;
     time_when_found = pros::millis();
     return true;
   }
@@ -79,7 +79,7 @@ bool ObjectSensor::get_new_found(bool additional_argument) {
 }
 
 bool ObjectSensor::get_new_lost(bool additional_argument) {
-  if (is_detected && get_max_value() > lost_threshold && additional_argument) {
+  if (is_detected && get_min_value() > lost_threshold && additional_argument) {
     is_detected = false;
     time_when_lost = pros::millis();
     return true;
