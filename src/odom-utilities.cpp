@@ -26,8 +26,8 @@ Goal::Goal(Point point, std::vector<QAngle> angles, QLength offset, GoalType goa
 std::vector<Goal*> Goal::goals = {};
 
 Goal *Goal::closest(Point current_point) {
-  Goal *closest_goal;
-  for (auto &goal : goals) {
+  Goal *closest_goal = goals[0];
+  for (auto &&goal : goals) {
     if (OdomMath::computeDistanceToPoint(current_point, {goal->point.x, goal->point.y}) <
         OdomMath::computeDistanceToPoint(current_point, {closest_goal->point.x, closest_goal->point.y})) {
       closest_goal = goal;
@@ -90,7 +90,7 @@ namespace errorcorrection {
 
 using namespace odomutilities;
 
-Goal *last_goal;
+Goal *last_goal = &goal_1;
 
 bool first_goal_reached = false;
 
@@ -134,14 +134,14 @@ void loop() {
           QAngle desired_angle = OdomMath::computeAngleToPoint(closest_goal_point, {last_point.x, last_point.y, 0_deg});
           Point measured_point = {measured_x, measured_y};
           QAngle measured_angle = OdomMath::computeAngleToPoint(measured_point, {last_point.x, last_point.y, 0_deg});
-          // controllermenu::partner_print_array[0] = "d " + std::to_string(desired_angle.convert(degree)) + " x " + std::to_string(measured_x.convert(inch));
-          // controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(measured_y.convert(inch));
+          controllermenu::partner_print_array[0] = "d " + std::to_string(desired_angle.convert(degree)) + " x " + std::to_string(measured_x.convert(inch));
+          controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(measured_y.convert(inch));
 
           QAngle error = measured_angle - desired_angle;
           QAngle new_theta = odom.theta - error;
           QLength new_x = closest_goal_point.x - kGoalOffset * cos(new_theta);
           QLength new_y = closest_goal_point.y - kGoalOffset * sin(new_theta);
-          // controllermenu::partner_print_array[2] = "e " + std::to_string(error.convert(degree));
+          controllermenu::partner_print_array[2] = "e " + std::to_string(error.convert(degree));
           if ((new_x - odom.x).abs() < 30_in
                && (new_y - odom.y).abs() < 30_in
                && (new_theta - odom.theta).abs() < 20_deg) {

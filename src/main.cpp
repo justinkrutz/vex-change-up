@@ -39,7 +39,7 @@ void initialize() {
   controllermenu::init();
   pros::Task roller_task (robotfunctions::rollers::main_task);
   controllerbuttons::button_handler.master.r2.pressed.set(set_drive_callbacks);
-  // odomutilities::errorcorrection::start();
+  odomutilities::errorcorrection::start();
 }
 
 /**
@@ -105,12 +105,12 @@ void opcontrol() {
     controllerbuttons::run_buttons();
     // ballsystem::debug();
     if (!menu_enabled) {
-      // QLength x = chassis->getState().x;
-      // QLength y = chassis->getState().y;
-      // QAngle theta = chassis->getState().theta;
-      // controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(x.convert(inch));
-      // controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(y.convert(inch));
-      // controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(theta.convert(degree));
+      QLength x = chassis->getState().x;
+      QLength y = chassis->getState().y;
+      QAngle theta = chassis->getState().theta;
+      controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(x.convert(inch));
+      controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(y.convert(inch));
+      controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(theta.convert(degree));
       
       // controllermenu::master_print_array[0] = std::to_string(optical_sensor.get_raw().red)   + " " + std::to_string(optical_sensor.get_rgb().red);
       // controllermenu::master_print_array[1] = std::to_string(optical_sensor.get_hue());
