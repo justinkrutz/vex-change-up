@@ -47,9 +47,9 @@ void build_chassis() {
     )
     .withDimensions(AbstractMotor::gearset::green, {{3.25_in, 11.381_in}, imev5GreenTPR})
     .withSensors(
-        RotationSensor{11, true}, // left encoder
-        RotationSensor{13},  // right encoder
-        RotationSensor{12}  // middle encoder
+        RotationSensor{5, true}, // left encoder
+        RotationSensor{7},  // right encoder
+        RotationSensor{6}  // middle encoder
     )
     .withOdometry({{2.75_in, 12.0873_in, 6.04365_in, 2.75_in}, quadEncoderTPR}, StateMode::FRAME_TRANSFORMATION)
     .buildOdometry();
