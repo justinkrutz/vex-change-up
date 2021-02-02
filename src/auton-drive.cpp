@@ -79,9 +79,10 @@ void add_target(odomutilities::Goal goal, QAngle theta) {
 }
 
 void wait_until_final_target_reached() {
+  controllermenu::master_print_array[1] = "FTR " + std::to_string(final_target_reached);
   while (!final_target_reached) {
     controllerbuttons::wait(10);
-  };
+  }
 }
 
 void clear_targets() {
@@ -94,19 +95,17 @@ void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
   ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
   add_target(goal.point.y, goal.point.x, angle, 12.4_in);
   while (!goal_os.get_new_found()) {
+    goal_os.get_new_lost();
     if (final_target_reached) {
-      button_forward = 0.2 * goal_os.get_min_value() - 2300;
+      target_position_enabled = false;
+      button_forward = 20;
     }
     wait(10);
   }
   targets = {};
+  target_position_enabled = true;
   button_forward = 0;
 }
-
-void drive_to_goal(odomutilities::Goal goal) {
-  drive_to_goal(goal, goal.angles[0]);
-}
-
 
 void update() {
   if (target_position_enabled && targets.size() > 0) {
@@ -145,6 +144,7 @@ void update() {
         return;
       } else {
         final_target_reached = true;
+        controllermenu::master_print_array[2] = "FTR = true";
       }
     } 
     
@@ -230,7 +230,7 @@ Macro goal_center(
       QAngle target = 0_deg;
 
       for (auto &&angle : closest_goal->angles) {
-        QAngle target_right = (odom.theta.convert(degree) - fmod(odom.theta.convert(degree), 360)) * degree + angle;
+        QAngle target_right = (odom.theta - mod(odom.theta, 360_deg)) + angle;
         QAngle target_left = target_right - 360_deg;
         QAngle temp_target;
 
@@ -319,6 +319,8 @@ using namespace odomutilities;
 using namespace controllerbuttons;
 using namespace robotfunctions;
 using namespace rollers;
+
+int time = 0;
 
 Macro none([&](){},[](){});
 
@@ -739,20 +741,26 @@ Macro skills_one(
 
 Macro skills_two(
     [&](){
+      time = pros::millis();
+
+
       chassis->setState({13.491_in, 34.9911_in, 0_deg});
 
-      // move_settings.start_output = 100;
-      // move_settings.end_output = 20;
+      move_settings.start_output = 100;
+      move_settings.end_output = 20;
 
-      // intake_queue = 1;
+      intake_queue = 1;
       add_target(18_in, 34.9911_in, 0_deg);
       add_target(goal_1, -135_deg, 17_in);
       wait_until_final_target_reached();
-      drive_to_goal(goal_1);
+      drive_to_goal(goal_1, -135_deg);
+      score_queue = 1;
+      WAIT_UNTIL(score_queue == 0);
+      add_target(goal_1, -135_deg, 25_in);
+      wait_until_final_target_reached();
 
       // add_target(5.8129_in, 5.8129_in, -135_deg, 6_in);
       // wait(500);
-      // score_queue = 1;
       // wait(300);
       // targets.pop();
 
@@ -920,6 +928,7 @@ Macro skills_two(
       button_turn = 0;
       button_forward = 0;
       target_position_enabled = false;
+      controllermenu::master_print_array[0] = "Time: " + std::to_string(pros::millis() - time);
     },
     {&auton_group});
 

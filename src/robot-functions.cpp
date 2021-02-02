@@ -349,8 +349,6 @@ void main_task() {
       bottom_roller_smart.set_manual_speed(2, 0);
     }
 
-
-
     if (intake_ball && !ball_in_intake && intake_queue == 0 && InRange(distance_to_ball(), 50, 300)) {
       intake_queue = 1;
       ball_in_intake = true;
@@ -492,8 +490,8 @@ void set_callbacks() {
 
   button_handler.partner.l2.   pressed .set(rollers_reverse);
   button_handler.partner.l2.   released.set(rollers_stop);
-  button_handler.partner.r2.   pressed .set(rollers_forward);
-  button_handler.partner.r2.   released.set(rollers_stop);
+  button_handler.partner.l1.   pressed .set(rollers_forward);
+  button_handler.partner.l1.   released.set(rollers_stop);
 
   button_handler.partner.r2.   pressed .set(score_balls_true);
   button_handler.partner.r2.   released.set(score_balls_false);
