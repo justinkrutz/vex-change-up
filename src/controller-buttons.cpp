@@ -51,6 +51,10 @@ std::vector<MacroGroup *> Macro::macro_groups() {
 
 void Macro::start() {
   for (auto &group : macro_groups_) {
+    if (group->is_running()) return;
+  }
+  
+  for (auto &group : macro_groups_) {
     group->macro = this;
   }
   task_ = pros::Task([this](){ start_wrapper_(); }, "Macro");

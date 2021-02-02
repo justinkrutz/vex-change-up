@@ -297,6 +297,9 @@ Macro goal_turn_left(
 
 void drive_group_terminate() {
   drive_group.terminate();
+  button_strafe = 0;
+  button_turn = 0;
+  button_forward = 0;
 }
 
 void set_callbacks() {
