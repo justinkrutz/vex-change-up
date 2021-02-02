@@ -35,7 +35,10 @@ class Target {
 };
 
 namespace drivetoposition {
-void add_position_target(QLength x, QLength y, QAngle theta, QLength offset = 0_in);
+
+void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle);
+void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance);
+void add_target(QLength x, QLength y, QAngle theta);
 extern bool target_position_enabled;
 extern bool final_target_reached;
 }
