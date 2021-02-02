@@ -281,6 +281,7 @@ class MenuAutonomous : public MenuFolder {
   }
   
   void run() {
+    odomutilities::errorcorrection::auto_goal_center = false;
     routine_.start();
   }
 

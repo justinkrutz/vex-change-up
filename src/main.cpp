@@ -30,6 +30,7 @@ void set_drive_callbacks() {
 
 void initialize() {
   build_chassis();
+  optical_sensor.set_led_pwm(100);
   chassis->setState({13.491_in, 34.9911_in, 0_deg});
   pros::Task(autondrive::motor_task);
   // robotfunctions::set_callbacks();
@@ -48,7 +49,10 @@ void initialize() {
  * the VEX Competition Switch, following either autonomous or opcontrol. When
  * the robot is enabled, this task will exit.
  */
-void disabled() {}
+void disabled() {
+  autondrive::auton_group.terminate();
+  odomutilities::errorcorrection::auto_goal_center = true;
+}
 
 /**
  * Runs after initialize(), and before autonomous when connected to the Field
@@ -95,11 +99,10 @@ void autonomous() {
 void opcontrol() {
   if (pros::competition::is_connected()) {
     set_drive_callbacks();
+  } else {
+    odomutilities::errorcorrection::auto_goal_center = true;
   }
-  printf("opcontrol\n");
-  Controller controller;
 
-  optical_sensor.set_led_pwm(100);
   while (true) {
     controllerbuttons::run_buttons();
     // ballsystem::debug();
