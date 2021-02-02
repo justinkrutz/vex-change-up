@@ -281,7 +281,7 @@ void main_task() {
       balls_in_robot.push_back(kOurColor);
     }
     for (int i = 0; i < balls_to_pop; i++) {
-      balls_in_robot.pop_front();
+      if (balls_in_robot.size() > 0) balls_in_robot.pop_front();
     }
     
     
@@ -291,7 +291,7 @@ void main_task() {
       // bottom_roller_smart.set_manual_speed(4, 100);
       bottom_roller_smart.add_target(1200, 100);
     } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10) {
-      balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
+      if (balls_in_robot.size() > 0) balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
     }
 
     if (ball_bottom_found && bottom_roller.get_actual_velocity() > 10) {
