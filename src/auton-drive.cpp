@@ -15,36 +15,25 @@ namespace autondrive {
 controllerbuttons::MacroGroup auton_group;
 controllerbuttons::MacroGroup drive_group;
 
-OdomState tracking_to_robot_coords (OdomState tracking_coords) {
-  // QLength x_offset = cos(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
-  // QLength y_offset = sin(tracking_coords.theta.convert(radian)) * TRACKING_ORIGIN_OFFSET;
-
-  // return {tracking_coords.x + x_offset, tracking_coords.y + y_offset, tracking_coords.theta};
-  return tracking_coords;
+OdomState get_odom_state() {
+  return chassis->getState();
 }
 
-OdomState robot_to_tracking_coords (OdomState robot_coords) {
-  // QLength x_offset = cos(robot_coords.theta.convert(radian)) * -TRACKING_ORIGIN_OFFSET;
-  // QLength y_offset = sin(robot_coords.theta.convert(radian)) * -TRACKING_ORIGIN_OFFSET;
+double button_strafe = 0;
+double button_turn = 0;
+double button_forward = 0;
 
-  // return {robot_coords.x + x_offset, robot_coords.y + y_offset, robot_coords.theta};
-  return robot_coords;
-}
-
-OdomState robot_state() {
-  return tracking_to_robot_coords(chassis->getState());
-}
+namespace drivetoposition {
 
 Target::Target(QLength x, QLength y, QAngle theta) : x(x), y(y), theta(theta) {}
 
 void Target::init_if_new() {
   if (is_new) {
     is_new = false;
-    starting_state = robot_state();
+    starting_state = get_odom_state();
   }
 }
 
-namespace drivetoposition {
 std::queue<Target> targets;
 bool target_position_enabled = false;
 bool final_target_reached = true;
@@ -77,15 +66,47 @@ void add_target(QLength x, QLength y, QAngle theta) {
   add_target(x, y, theta, 0_in);
 }
 
+void add_target(odomutilities::Goal goal, QAngle theta, QLength offset_distance, QAngle offset_angle) {
+  add_target(goal.point.x, goal.point.y, theta, offset_distance, offset_angle);
+}
+
+void add_target(odomutilities::Goal goal, QAngle theta, QLength offset_distance) {
+  add_target(goal, theta, offset_distance, theta);
+}
+
+void add_target(odomutilities::Goal goal, QAngle theta) {
+  add_target(goal, theta, 0_in);
+}
+
 void wait_until_final_target_reached() {
   while (!final_target_reached) {
     controllerbuttons::wait(10);
-  }
+  };
 }
 
 void clear_targets() {
   targets = {};
 }
+
+using namespace controllerbuttons;
+
+void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
+  ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
+  add_target(goal.point.y, goal.point.x, angle, 12.4_in);
+  while (!goal_os.get_new_found()) {
+    if (final_target_reached) {
+      button_forward = 0.2 * goal_os.get_min_value() - 2300;
+    }
+    wait(10);
+  }
+  targets = {};
+  button_forward = 0;
+}
+
+void drive_to_goal(odomutilities::Goal goal) {
+  drive_to_goal(goal, goal.angles[0]);
+}
+
 
 void update() {
   if (target_position_enabled && targets.size() > 0) {
@@ -100,8 +121,8 @@ void update() {
     OdomState target_state{target.x, target.y, target.theta};
     Point starting_point{target.starting_state.x, target.starting_state.y};
 
-    auto [distance_to_target, direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, robot_state());
-    QLength distance_traveled = OdomMath::computeDistanceToPoint(starting_point, robot_state());
+    auto [distance_to_target, direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, get_odom_state());
+    QLength distance_traveled = OdomMath::computeDistanceToPoint(starting_point, get_odom_state());
     QLength total_distance = OdomMath::computeDistanceToPoint(starting_point, target_state);
 
     QAngle total_angle = target.theta - target.starting_state.theta;
@@ -111,7 +132,7 @@ void update() {
       target_distance_reached = true;
     }
 
-    if (abs(robot_state().theta - target_state.theta) < 2.5_deg) {
+    if (abs(get_odom_state().theta - target_state.theta) < 2.5_deg) {
       target_heading_reached = true;
     }
 
@@ -134,9 +155,9 @@ void update() {
     }
 
     if (target_heading_reached) {
-      turn_speed = std::min(100.0, 100 * (target.theta - robot_state().theta).convert(radian));
+      turn_speed = std::min(100.0, 100 * (target.theta - get_odom_state().theta).convert(radian));
     } else {
-      turn_speed = std::min(100.0, 100 * (target.theta - robot_state().theta).convert(radian));
+      turn_speed = std::min(100.0, 100 * (target.theta - get_odom_state().theta).convert(radian));
     }
 
     forward = move_speed * cos(direction.convert(radian));
@@ -150,11 +171,9 @@ void update() {
     targets = {};
   }
 }
-}
 
-double button_strafe = 0;
-double button_turn = 0;
-double button_forward = 0;
+} // namespace drivetoposition
+
 
 void motor_task()
 {
@@ -199,24 +218,6 @@ void motor_task()
 
 
 using namespace controllerbuttons;
-using namespace drivetoposition;
-
-void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
-  ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
-  add_target(goal.point.y, goal.point.x, angle, 12.4_in);
-  while (!goal_os.get_new_found()) {
-    if (final_target_reached) {
-      button_forward = 0.2 * goal_os.get_min_value() - 2300;
-    }
-    wait(10);
-  }
-  targets = {};
-  button_forward = 0;
-}
-
-void drive_to_goal(odomutilities::Goal goal) {
-  drive_to_goal(goal, goal.angles[0]);
-}
 
 
 
@@ -224,7 +225,7 @@ Macro goal_center(
     [&](){
       using namespace odomutilities;
       int time = pros::millis();
-      OdomState odom = robot_state();
+      OdomState odom = get_odom_state();
       Goal *closest_goal = Goal::closest({odom.x, odom.y});
       QAngle target = 0_deg;
 
@@ -245,8 +246,8 @@ Macro goal_center(
       }
       
 
-      while (abs(robot_state().theta - target) > 1_deg && pros::millis() - time < 2000) {
-        double speed = 2 * (target - robot_state().theta).convert(degree);
+      while (abs(get_odom_state().theta - target) > 1_deg && pros::millis() - time < 2000) {
+        double speed = 2 * (target - get_odom_state().theta).convert(degree);
         // controllermenu::partner_print_array[0] = "T " + std::to_string(target.convert(degree));
         // controllermenu::partner_print_array[1] = "S " + std::to_string(speed);
         button_strafe = -speed;
@@ -311,6 +312,7 @@ void set_callbacks() {
 namespace autonroutines {
 using namespace autondrive;
 using namespace drivetoposition;
+using namespace odomutilities;
 using namespace controllerbuttons;
 using namespace robotfunctions;
 using namespace rollers;
@@ -319,7 +321,7 @@ Macro none([&](){},[](){});
 
 Macro test(
     [&](){
-      chassis->setState(robot_to_tracking_coords({0_in, 0_in, 0_deg}));
+      chassis->setState({0_in, 0_in, 0_deg});
       // add_target(15_in, 15_in, -90_deg);
       // wait(3000);
       // add_target(15_in, 15_in, 0_deg);
@@ -341,7 +343,7 @@ Macro test(
 
 Macro home_row_three(
     [&](){
-      chassis->setState(robot_to_tracking_coords({15.7416_in, 31.4911_in, -90_deg}));
+      chassis->setState({15.7416_in, 31.4911_in, -90_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -381,7 +383,7 @@ Macro home_row_three(
       wait(200);
       targets.pop();
       wait(10);
-      // chassis->setState(robot_to_tracking_coords({20.75_in, 71.63_in, -171.5_deg}));
+      // chassis->setState({20.75_in, 71.63_in, -171.5_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 50;
@@ -430,7 +432,7 @@ Macro home_row_three(
 
 Macro home_row_two(
     [&](){
-      chassis->setState(robot_to_tracking_coords({15.7416_in, 31.4911_in, -90_deg}));
+      chassis->setState({15.7416_in, 31.4911_in, -90_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -481,7 +483,7 @@ Macro home_row_two(
 
 Macro left_shawnton(
     [&](){
-      chassis->setState(robot_to_tracking_coords({15.7416_in, 31.4911_in, -90_deg}));
+      chassis->setState({15.7416_in, 31.4911_in, -90_deg});
 
       add_target(26.319_in, 26.319_in, -90_deg);
       add_target(26.319_in, 26.319_in, -135_deg);
@@ -509,7 +511,7 @@ Macro left_shawnton(
 
 Macro right_shawnton(
     [&](){
-      chassis->setState(robot_to_tracking_coords({31.4911_in, 15.7416_in, -180_deg}));
+      chassis->setState({31.4911_in, 15.7416_in, -180_deg});
 
       add_target(26.319_in, 26.319_in, -180_deg);
       WAIT_UNTIL(final_target_reached)
@@ -546,9 +548,9 @@ void stop_scoring() {
   top_roller_smart.auto_speed = 0;
 }
 
-Macro skills(
+Macro skills_one(
     [&](){
-      chassis->setState(robot_to_tracking_coords({13.491_in, 34.9911_in, 0_deg}));
+      chassis->setState({13.491_in, 34.9911_in, 0_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -732,9 +734,195 @@ Macro skills(
     },
     {&auton_group});
 
-    Macro shawnton_three(
+Macro skills_two(
     [&](){
-      chassis->setState(robot_to_tracking_coords({15.7416_in, 109.181_in, 90_deg}));
+      chassis->setState({13.491_in, 34.9911_in, 0_deg});
+
+      // move_settings.start_output = 100;
+      // move_settings.end_output = 20;
+
+      // intake_queue = 1;
+      add_target(18_in, 34.9911_in, 0_deg);
+      add_target(goal_1, -135_deg, 17_in);
+      wait_until_final_target_reached();
+      drive_to_goal(goal_1);
+
+      // add_target(5.8129_in, 5.8129_in, -135_deg, 6_in);
+      // wait(500);
+      // score_queue = 1;
+      // wait(300);
+      // targets.pop();
+
+      // stop_scoring();
+      // add_target(5.9272_in, 70.3361_in, -180_deg, 20_in);
+      // wait_until_final_target_reached();
+      // add_target(5.9272_in, 70.3361_in, -180_deg, 6_in);
+      // wait(600);
+      // score_queue = 1;
+      // wait(400);
+      // targets.pop();
+
+      // stop_scoring();
+      // // move_settings.end_output = 100;
+      // add_target(23_in, 70.3361_in, -180_deg);
+      // add_target(23_in, 90_in, -270_deg);
+      // wait_until_final_target_reached();
+      // intake_queue = 1;
+      // add_target(23_in, 117.18_in, -270_deg);
+      // // move_settings.end_output = 20;
+      // wait_until_final_target_reached();
+      // intakes_back.start();
+      // add_target(5.8129_in, 134.8593_in, -225_deg, 24.5_in);
+      // wait_until_final_target_reached();
+      // add_target(5.8129_in, 134.8593_in, -225_deg, 6_in);
+      // wait(1000);
+      // score_queue = 1;
+      // wait(400);
+      // targets.pop();
+
+      // stop_scoring();
+      // add_target(23_in, 117.18_in, -270_deg);
+      // wait_until_final_target_reached();
+      // intake_right.move_relative(180, 200);
+      // add_target(34.8361_in, 123.6722_in, -270_deg);
+      // wait_until_final_target_reached();
+      // intake_queue = 1;
+      // wait(1000);
+      // intakes_back.start();
+      // add_target(70.3361_in, 117.4624_in, -360_deg, 12_in);
+      // wait_until_final_target_reached();
+      // intake_queue = 1;
+      // add_target(70.3361_in, 117.4624_in, -360_deg);
+      // wait(1000);
+      // intakes_back.start();
+      // add_target(70.3361_in, 117.4624_in, -270_deg);
+      // wait_until_final_target_reached();
+      // add_target(70.3361_in, 134.745_in, -270_deg, 6_in);
+      // wait(500);
+      // score_queue = 2;
+      // wait(700);
+      // targets.pop();
+
+      // stop_scoring();
+      // add_target(70.3361_in, 117.4624_in, -270_deg);
+      // wait_until_final_target_reached();
+      // intake_right.move_relative(180, 200);
+      // add_target(105.8361_in, 123.6722_in, -270_deg);
+      // wait_until_final_target_reached();
+      // intake_queue = 1;
+      // wait(1000);
+      // intakes_back.start();
+      // add_target(134.8593_in, 134.8593_in, -315_deg, 17_in);
+      // wait_until_final_target_reached();
+      // add_target(134.8593_in, 134.8593_in, -315_deg, 6_in);
+      // wait(300);
+      // score_queue = 1;
+      // wait(300);
+      // targets.pop();
+
+      // stop_scoring();
+      // add_target(118_in, 125_in, -360_deg);
+      // add_target(118_in, 125_in, -450_deg);
+      // add_target(117.6361_in, 105.6361_in, -450_deg, 12_in);
+      // wait_until_final_target_reached();
+      // intake_queue = 1;
+      // add_target(117.6361_in, 70.3361_in, -450_deg);
+      // wait(1000);
+      // intakes_back.start();
+      // add_target(117.6361_in, 70.3361_in, -360_deg);
+      // wait_until_final_target_reached();
+      // add_target(134.745_in,  70.3361_in, -360_deg, 6_in);
+      // wait(1000);
+      // score_queue = 1;
+      // wait(200);
+      // targets.pop();
+
+      // stop_scoring();
+      // add_target(117.6361_in, 70.3361_in, -360_deg);
+      // add_target(117.6361_in, 35.0361_in, -450_deg, 12_in);
+      // wait_until_final_target_reached();
+      // intake_queue = 1;
+      // add_target(117.1816_in, 23.4906_in, -450_deg);
+      // wait_until_final_target_reached();
+      // intakes_back.start();
+      // add_target(134.8593_in, 5.8129_in, -405_deg, 24.5_in);
+      // wait_until_final_target_reached();
+      // add_target(134.8593_in, 5.8129_in, -405_deg, 6_in);
+      // wait(700);
+      // score_queue = 1;
+      // wait(400);
+      // targets.pop();
+
+      // stop_scoring();
+      // add_target(117.1816_in, 23.4906_in, -450_deg);
+      // wait_until_final_target_reached();
+      // intake_right.move_relative(180, 200);
+      // add_target(105.8361_in, 3.3361_in, -450_deg , 13_in);
+      // wait_until_final_target_reached();
+      // intake_queue = 1;
+      // wait(1000);
+      // intakes_back.start();
+      // add_target(70.3361_in, 23.3361_in, -540_deg, 11_in);
+      // wait_until_final_target_reached();
+      // intake_queue = 1;
+      // add_target(70.3361_in, 23.3361_in, -540_deg);
+      // wait(1000);
+      // intakes_back.start();
+      // add_target(70.3361_in, 23.3361_in, -450_deg);
+      // wait_until_final_target_reached();
+      // add_target(70.3361_in, 5.9272_in, -450_deg, 6_in);
+      // wait(600);
+      // score_queue = 2;
+      // wait(1700);
+      // targets.pop();
+
+      // stop_scoring();
+      // add_target(70.3361_in, 23.3361_in, -450_deg);
+      // add_target(70.3361_in, 23.3361_in, -270_deg);
+      // add_target(70.3361_in, 46.8361_in, -270_deg, 10_in);
+      // wait_until_final_target_reached();
+      // intake_queue = 1;
+      // wait(1000);
+      // add_target(70.3361_in, 70.3361_in, -270_deg, 16_in);
+      // wait_until_final_target_reached();
+      // add_target(70.3361_in, 70.3361_in, -270_deg, 6_in);
+      // wait(300);
+      // intake_queue = 50;
+      // wait(200);
+      // targets.pop();
+
+      // button_strafe = 10;
+      // button_turn = -6.84;
+      // button_forward = 3;
+      // wait(2000);
+      // button_strafe = -10;
+      // button_turn = 6.84;
+      // button_forward = 3;
+      // wait(3000);
+      // intake_queue = 1;
+      // score_queue = 1;
+      // button_strafe = 10;
+      // button_turn = -6.84;
+      // button_forward = 3;
+      // // wait(4000);
+      // WAIT_UNTIL(intake_queue == 0)
+      // button_strafe = 0;
+      // button_turn = 0;
+      // button_forward = 0;
+
+      // intakes_back.start();
+    },
+    [](){
+      button_strafe = 0;
+      button_turn = 0;
+      button_forward = 0;
+      target_position_enabled = false;
+    },
+    {&auton_group});
+
+Macro shawnton_three(
+    [&](){
+      chassis->setState({15.7416_in, 109.181_in, 90_deg});
 
       add_target(23.49_in, 117.18_in, 90_deg);
       add_target(5.8129_in, 134.8593_in, 135_deg, 25_in);
@@ -808,9 +996,10 @@ Macro skills(
     },
 
     {&auton_group});
-    Macro shawnton_cycle(
+
+Macro shawnton_cycle(
     [&](){
-      chassis->setState(robot_to_tracking_coords({15.7416_in, 109.181_in, 90_deg}));
+      chassis->setState({15.7416_in, 109.181_in, 90_deg});
 
       add_target(23.49_in, 117.18_in, 90_deg);
       add_target(5.8129_in, 134.8593_in, 135_deg, 25_in);

@@ -312,7 +312,8 @@ void create_folder_structure() {
     new MenuAutonomous("Left ShawnTon", autonroutines::left_shawnton),
     new MenuAutonomous("Right ShawnTon", autonroutines::right_shawnton),
     new MenuFolder("Other", {
-      new MenuAutonomous("Skills", autonroutines::skills),
+      new MenuAutonomous("Skills 1.0", autonroutines::skills_one),
+      new MenuAutonomous("Skills 2.0", autonroutines::skills_two),
       new MenuAutonomous("ShawnTon 3.0", autonroutines::shawnton_three),
       new MenuAutonomous("shawnton_cycle", autonroutines::shawnton_cycle),
       new MenuAutonomous("None", autonroutines::none),

@@ -18,7 +18,7 @@ namespace autondrive {
 extern controllerbuttons::MacroGroup auton_group;
 extern controllerbuttons::MacroGroup drive_group;
 
-OdomState robot_to_tracking_coords (OdomState robot_coords);
+namespace drivetoposition {
 
 class Target {
  public:
@@ -34,14 +34,12 @@ class Target {
   void init_if_new();
 };
 
-namespace drivetoposition {
-
 void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle);
 void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance);
 void add_target(QLength x, QLength y, QAngle theta);
 extern bool target_position_enabled;
 extern bool final_target_reached;
-}
+} // namespace drivetoposition
 
 extern controllerbuttons::Macro goal_center;
 
@@ -58,7 +56,8 @@ extern controllerbuttons::Macro home_row_two;
 extern controllerbuttons::Macro left_shawnton;
 extern controllerbuttons::Macro right_shawnton;
 extern controllerbuttons::Macro test;
-extern controllerbuttons::Macro skills;
+extern controllerbuttons::Macro skills_one;
+extern controllerbuttons::Macro skills_two;
 extern controllerbuttons::Macro shawnton_three;
 extern controllerbuttons::Macro shawnton_cycle;
 
