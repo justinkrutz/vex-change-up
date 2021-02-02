@@ -51,7 +51,7 @@ std::vector<MacroGroup *> Macro::macro_groups() {
 
 void Macro::start() {
   for (auto &group : macro_groups_) {
-    if (group->is_running()) return;
+    group->terminate();
   }
   
   for (auto &group : macro_groups_) {
@@ -148,7 +148,7 @@ void ButtonHandler::Controller::Button::Trigger::run_if_triggered() {
       if (!trigger_on_release_) {
         function_();
       }
-    } else if (was_released) {
+    } else if (was_released && can_run) {
       was_triggered_ = false;
       if (trigger_on_release_) {
         function_();
