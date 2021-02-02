@@ -51,11 +51,13 @@ double strafe  = 0;
 double turn    = 0;
 
 void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle) {
-  QLength x_offset = cos(theta) * offset_distance;
-  QLength y_offset = sin(theta) * offset_distance;
+  QLength x_offset = cos(offset_angle) * offset_distance;
+  QLength y_offset = sin(offset_angle) * offset_distance;
   targets.push({x - x_offset, y - y_offset, theta});
-  target_position_enabled = true;
   final_target_reached = false;
+  target_position_enabled = true;
+  controllermenu::master_print_array[2] = "FTR = false";
+
 }
 
 void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance) {
@@ -85,9 +87,9 @@ void wait_until_final_target_reached() {
   }
 }
 
-void clear_targets() {
-  targets = {};
-}
+// void clear_targets() {
+//   targets = {};
+// }
 
 using namespace controllerbuttons;
 
@@ -102,8 +104,8 @@ void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
     }
     wait(10);
   }
-  targets = {};
-  target_position_enabled = true;
+  target_position_enabled = false;
+  final_target_reached = false;
   button_forward = 0;
 }
 
@@ -135,7 +137,8 @@ void update() {
       target_heading_reached = true;
     }
 
-
+    controllermenu::master_print_array[0] = "FTR " + std::to_string(final_target_reached);
+    controllermenu::master_print_array[2] = "H " + std::to_string(target_heading_reached) + " D " + std::to_string(target_heading_reached);
     if (target_heading_reached && target_distance_reached) {
       if (targets.size() > 1) {
         target_heading_reached = false;
@@ -144,7 +147,6 @@ void update() {
         return;
       } else {
         final_target_reached = true;
-        controllermenu::master_print_array[2] = "FTR = true";
       }
     } 
     
@@ -749,15 +751,22 @@ Macro skills_two(
       move_settings.start_output = 100;
       move_settings.end_output = 20;
 
-      intake_queue = 1;
+      // intake_queue = 1;
       add_target(18_in, 34.9911_in, 0_deg);
       add_target(goal_1, -135_deg, 17_in);
+      // intake_queue = 1;
       wait_until_final_target_reached();
       drive_to_goal(goal_1, -135_deg);
-      score_queue = 1;
-      WAIT_UNTIL(score_queue == 0);
+      // score_queue = 1;
+      // WAIT_UNTIL(score_queue == 0);
+      // intake_queue = 1;
       add_target(goal_1, -135_deg, 25_in);
       wait_until_final_target_reached();
+      add_target(goal_1, 0_deg, 25_in, -135_deg);
+      wait_until_final_target_reached();
+      add_target(13.491_in, 34.9911_in, 0_deg);
+      wait_until_final_target_reached();
+      // wait(5000);
 
       // add_target(5.8129_in, 5.8129_in, -135_deg, 6_in);
       // wait(500);
@@ -928,7 +937,7 @@ Macro skills_two(
       button_turn = 0;
       button_forward = 0;
       target_position_enabled = false;
-      controllermenu::master_print_array[0] = "Time: " + std::to_string(pros::millis() - time);
+      // controllermenu::master_print_array[0] = "Time: " + std::to_string(pros::millis() - time);
     },
     {&auton_group});
 
