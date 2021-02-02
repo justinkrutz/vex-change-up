@@ -134,13 +134,7 @@ void loop() {
           controllermenu::partner_print_array[0] = "d " + std::to_string(desired_angle.convert(degree)) + " x " + std::to_string(measured_x.convert(inch));
           controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(measured_y.convert(inch));
 
-          QAngle error = measured_angle - desired_angle;
-
-          if (error > 300_deg) { // -desired_angle +measured_angle
-            error = measured_angle - (desired_angle + 360_deg);
-          } else if (error < -300_deg) { // +desired_angle -measured_angle
-            error = (measured_angle + 360_deg) - desired_angle;
-          }
+          QAngle error = mod(measured_angle - desired_angle + 180_deg, 360_deg) - 180_deg;
 
           QAngle new_theta = odom.theta - error;
           QLength new_x = closest_goal_point.x - kGoalOffset * cos(new_theta);

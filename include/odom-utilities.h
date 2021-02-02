@@ -33,7 +33,7 @@ namespace errorcorrection {
 
 extern Point last_point;
 
-bool auto_goal_center = true;
+extern bool auto_goal_center;
 
 void start();
 
