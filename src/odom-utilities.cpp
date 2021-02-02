@@ -90,7 +90,7 @@ namespace errorcorrection {
 
 using namespace odomutilities;
 
-Goal *last_goal = &goal_1;
+Goal *last_goal = &goal_9;
 
 bool first_goal_reached = false;
 
@@ -101,6 +101,8 @@ int time_triggered;
 const int kWaitTime = 100;
 const QLength kGoalOffset = 12.2274_in;
 const QLength kDetectionDistance = 15_in;
+
+bool auto_goal_center;
 
 void loop() {
   while (true) {
@@ -125,11 +127,6 @@ void loop() {
         auto [distance_to_goal, angle_to_goal] = OdomMath::computeDistanceAndAngleToPoint(closest_goal_point, {measured_x, measured_y, odom.theta});
 
         if (distance_to_goal > kDetectionDistance + kGoalOffset) { // do nothing
-        } else if (!first_goal_reached) {
-          // controllermenu::partner_print_array[0] = "x " + std::to_string(closest_goal.x.convert(inch));
-          // controllermenu::partner_print_array[1] = "y " + std::to_string(closest_goal.y.convert(inch));
-          first_goal_reached = true;
-          last_goal = closest_goal;
         } else if (closest_goal_point.x != last_point.x || closest_goal_point.y != last_point.y) {
           QAngle desired_angle = OdomMath::computeAngleToPoint(closest_goal_point, {last_point.x, last_point.y, 0_deg});
           Point measured_point = {measured_x, measured_y};
@@ -138,6 +135,13 @@ void loop() {
           controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(measured_y.convert(inch));
 
           QAngle error = measured_angle - desired_angle;
+
+          if (error > 300_deg) { // -desired_angle +measured_angle
+            error = measured_angle - (desired_angle + 360_deg);
+          } else if (error < -300_deg) { // +desired_angle -measured_angle
+            error = (measured_angle + 360_deg) - desired_angle;
+          }
+
           QAngle new_theta = odom.theta - error;
           QLength new_x = closest_goal_point.x - kGoalOffset * cos(new_theta);
           QLength new_y = closest_goal_point.y - kGoalOffset * sin(new_theta);
@@ -146,8 +150,13 @@ void loop() {
                && (new_y - odom.y).abs() < 30_in
                && (new_theta - odom.theta).abs() < 20_deg) {
             last_goal = closest_goal;
-            chassis->setState({new_x, new_y, new_theta});
-            autondrive::goal_center.start();
+            if (!first_goal_reached) {
+              first_goal_reached = true;
+              last_goal = closest_goal;
+            } else {
+              chassis->setState({new_x, new_y, new_theta});
+            }
+            if (auto_goal_center) autondrive::goal_center.start();
           }
         }
       }

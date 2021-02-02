@@ -206,11 +206,12 @@ Macro goal_center(
       }
       
 
-      while (abs(robot_state().theta - target) > 2_deg && pros::millis() - time < 1000) {
-
-        double speed = 5 * (target - robot_state().theta).convert(degree);
-        button_strafe = speed;
-        button_turn = speed * -0.7;
+      while (abs(robot_state().theta - target) > 1_deg && pros::millis() - time < 2000) {
+        double speed = 2 * (target - robot_state().theta).convert(degree);
+        // controllermenu::partner_print_array[0] = "T " + std::to_string(target.convert(degree));
+        // controllermenu::partner_print_array[1] = "S " + std::to_string(speed);
+        button_strafe = -speed;
+        button_turn = speed * 0.7;
         button_forward = 0.04 * (MIN(goal_sensor_one.get_value(), goal_sensor_two.get_value() - 2300));
         wait(10);
       }

@@ -30,6 +30,7 @@ void set_drive_callbacks() {
 
 void initialize() {
   build_chassis();
+  chassis->setState({13.491_in, 34.9911_in, 0_deg});
   pros::Task(autondrive::motor_task);
   // robotfunctions::set_callbacks();
   // ballsystem::set_callbacks();
@@ -97,8 +98,6 @@ void opcontrol() {
   }
   printf("opcontrol\n");
   Controller controller;
-
-  chassis->setState({15.7416_in, 31.4911_in, -90_deg});
 
   optical_sensor.set_led_pwm(100);
   while (true) {
