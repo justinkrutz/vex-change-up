@@ -373,6 +373,9 @@ void main_task() {
       }
     }
 
+    bottom_roller_smart.set_manual_speed(0, okapi::deadband(partner.get_analog(ANALOG_RIGHT_Y), -10, 10));
+    top_roller_smart.set_manual_speed(0, okapi::deadband(partner.get_analog(ANALOG_LEFT_Y), -10, 10));
+
     top_roller_smart.run();
     bottom_roller_smart.run();
 

@@ -81,7 +81,7 @@ void add_target(odomutilities::Goal goal, QAngle theta) {
 }
 
 void wait_until_final_target_reached() {
-  controllermenu::master_print_array[1] = "FTR " + std::to_string(final_target_reached);
+  // controllermenu::master_print_array[1] = "FTR " + std::to_string(final_target_reached);
   while (!final_target_reached) {
     controllerbuttons::wait(10);
   }
@@ -113,6 +113,15 @@ void update() {
   if (target_position_enabled && targets.size() > 0) {
     Target &target = targets.front();
     target.init_if_new();
+    controllermenu::master_print_array[0] =
+          "x " + std::to_string(target.x.convert(inch))
+          + " y " + std::to_string(target.y.convert(inch))
+          + " t " + std::to_string(target.theta.convert(degree));
+
+    controllermenu::master_print_array[1] =
+          "x " + std::to_string(target.starting_state.x.convert(inch))
+          + " y " + std::to_string(target.starting_state.y.convert(inch))
+          + " t " + std::to_string(target.starting_state.theta.convert(degree));
 
     double move_speed;
     double turn_speed;
@@ -137,8 +146,8 @@ void update() {
       target_heading_reached = true;
     }
 
-    controllermenu::master_print_array[0] = "FTR " + std::to_string(final_target_reached);
-    controllermenu::master_print_array[2] = "H " + std::to_string(target_heading_reached) + " D " + std::to_string(target_heading_reached);
+    // controllermenu::master_print_array[0] = "FTR " + std::to_string(final_target_reached);
+    // controllermenu::master_print_array[2] = "H " + std::to_string(target_heading_reached) + " D " + std::to_string(target_heading_reached);
     if (target_heading_reached && target_distance_reached) {
       if (targets.size() > 1) {
         target_heading_reached = false;
@@ -221,7 +230,16 @@ void motor_task()
 
 using namespace controllerbuttons;
 
+QAngle get_abs_goal_angle(OdomState odom, QAngle angle) {
+  QAngle target_right = (odom.theta - mod(odom.theta, 360_deg)) + angle;
+  QAngle target_left = target_right - 360_deg;
 
+  if (abs(target_right - odom.theta) < abs(target_left - odom.theta)) {
+    return target_right;
+  } else {
+    return target_left;
+  }
+}
 
 Macro goal_center(
     [&](){
@@ -229,18 +247,11 @@ Macro goal_center(
       int time = pros::millis();
       OdomState odom = get_odom_state();
       Goal *closest_goal = Goal::closest({odom.x, odom.y});
-      QAngle target = 0_deg;
+      QAngle target = get_abs_goal_angle(odom, closest_goal->angles.front());
 
+      // finds nearest rotation
       for (auto &&angle : closest_goal->angles) {
-        QAngle target_right = (odom.theta - mod(odom.theta, 360_deg)) + angle;
-        QAngle target_left = target_right - 360_deg;
-        QAngle temp_target;
-
-        if (abs(target_right - odom.theta) < abs(target_left - odom.theta)) {
-          temp_target = target_right;
-        } else {
-          temp_target = target_left;
-        }
+        QAngle temp_target = get_abs_goal_angle(odom, angle);
 
         if (abs(temp_target - odom.theta) < abs(target - odom.theta)) {
           target = temp_target;
@@ -755,18 +766,19 @@ Macro skills_two(
       add_target(18_in, 34.9911_in, 0_deg);
       add_target(goal_1, -135_deg, 17_in);
       // intake_queue = 1;
-      wait_until_final_target_reached();
+      // wait_until_final_target_reached();
       drive_to_goal(goal_1, -135_deg);
       // score_queue = 1;
       // WAIT_UNTIL(score_queue == 0);
       // intake_queue = 1;
-      add_target(goal_1, -135_deg, 25_in);
+      add_target(goal_1, -135_deg, 20_in, -135_deg);
+      // add_target(goal_1, -135_deg, 25_in);
+      // wait_until_final_target_reached();
+      // add_target(goal_1, 0_deg, 25_in, -135_deg);
+      // wait_until_final_target_reached();
+      // add_target(13.491_in, 34.9911_in, 0_deg);
       wait_until_final_target_reached();
-      add_target(goal_1, 0_deg, 25_in, -135_deg);
-      wait_until_final_target_reached();
-      add_target(13.491_in, 34.9911_in, 0_deg);
-      wait_until_final_target_reached();
-      // wait(5000);
+      wait(5000);
 
       // add_target(5.8129_in, 5.8129_in, -135_deg, 6_in);
       // wait(500);

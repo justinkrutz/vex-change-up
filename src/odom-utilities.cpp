@@ -97,7 +97,7 @@ bool first_goal_reached = false;
 ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
 
 bool waiting = false;
-int time_triggered;
+int time_triggered = 0;
 const int kWaitTime = 100;
 const QLength kGoalOffset = 12.2274_in;
 const QLength kDetectionDistance = 15_in;
