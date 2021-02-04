@@ -20,7 +20,7 @@ class SmartMotorController {
   void run();
   void add_target(double target, int speed);
   void add_target(double target, int speed, int timeout);
-  int all_manual_speeds[6];
+  int all_manual_speeds[5];
   void set_manual_speed (int index, int speed);
   int auto_timeout(double relative_target, int speed);
 
@@ -44,7 +44,25 @@ class SmartMotorController {
   std::queue<Target> target_queue = {};
 };
 
+struct {
+  double forward;
+  double strafe;
+  double turn;
+} set_drive;
+
+// void driveToPosition(QLength x, QLength y, QAngle theta, QLength offset = 0_in);
+void intakeBalls(int balls);
+void scoreBalls(int balls);
+
+void count_up_task();
+void count_down_task();
+void count_task(void * arg);
+void single_use_button();
+
+void check_for_warnings();
+
 void set_callbacks();
+// void motor_task();
 
 namespace rollers {
   extern int score_queue;

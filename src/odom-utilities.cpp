@@ -112,7 +112,7 @@ void loop() {
     if (goal_sensor_triggered) {
       waiting = true;
       time_triggered = pros::millis();
-      // if (auto_goal_center) autondrive::goal_center.start();
+      if (auto_goal_center) autondrive::goal_center.start();
     }
 
     if (waiting && pros::millis() - time_triggered > kWaitTime) {
