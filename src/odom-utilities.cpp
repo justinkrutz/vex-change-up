@@ -46,6 +46,7 @@ Goal goal_7 ({134.8593_in,   5.8129_in}, {315_deg}, GoalType::kCorner);
 Goal goal_8 ({134.7450_in,  70.3361_in}, {  0_deg}, GoalType::kSide);
 Goal goal_9 ({134.8593_in, 134.8593_in}, { 45_deg}, GoalType::kCorner);
 
+
 /*        MATCH SETUP
    │                       │
    └───────────────────────┘
@@ -66,6 +67,16 @@ Goal goal_9 ({134.8593_in, 134.8593_in}, { 45_deg}, GoalType::kCorner);
    │                       │
 */
 
+namespace matchballs {
+  Point ball_a { 12.0304_in,  12.0304_in};
+  Point ball_b { 12.0304_in, 128.6418_in};
+  Point ball_c { 61.5432_in,  70.3361_in};
+  Point ball_d { 70.3361_in,  34.9916_in};
+  Point ball_e { 70.3361_in,  61.5432_in};
+  Point ball_f { 70.3361_in,  79.1290_in};
+  Point ball_g { 70.3361_in, 105.6806_in};
+}
+
 /*       SKILLS SETUP
    │                       │
    └───────────────────────┘
@@ -85,6 +96,23 @@ Goal goal_9 ({134.8593_in, 134.8593_in}, { 45_deg}, GoalType::kCorner);
    ┌───────────────────────┐
    │                       │
 */
+
+namespace skillsballs {
+  Point ball_a { 22.8361_in,  34.9911_in};
+  Point ball_b { 22.8361_in, 105.8361_in};
+  Point ball_c { 34.9911_in,   3.3361_in};
+  Point ball_d { 34.9911_in, 137.3361_in};
+  Point ball_e { 46.8361_in,  70.3361_in};
+  Point ball_f { 70.3361_in,  23.3361_in};
+  Point ball_g { 70.3361_in,  46.8361_in};
+  Point ball_h { 70.3361_in,  93.8361_in};
+  Point ball_i { 70.3361_in, 117.3361_in};
+  Point ball_j { 93.8361_in,  70.3361_in};
+  Point ball_k {105.8361_in,   3.3361_in};
+  Point ball_l {105.8361_in, 137.3361_in};
+  Point ball_m {117.6361_in,  34.9911_in};
+  Point ball_n {117.6361_in, 105.6361_in};
+}
 
 namespace errorcorrection {
 
@@ -112,7 +140,7 @@ void loop() {
     if (goal_sensor_triggered) {
       waiting = true;
       time_triggered = pros::millis();
-      if (auto_goal_center) autondrive::goal_center.start();
+      // if (auto_goal_center) autondrive::goal_center.start();
     }
 
     if (waiting && pros::millis() - time_triggered > kWaitTime) {

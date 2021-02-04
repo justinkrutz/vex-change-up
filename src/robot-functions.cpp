@@ -56,10 +56,6 @@ controllerbuttons::Macro right_intake_back(
     {&intake_group});
 
 
-
-
-// class SmartMotorController {
-  // public:
   SmartMotorController::SmartMotorController(pros::Motor &motor, double timeout_ratio, double slew, int manual_controlls)
       : motor(motor),
       timeout_ratio(timeout_ratio),
@@ -159,6 +155,7 @@ int eject_queue = 0;
 int intake_queue = 0;
 bool intake_ball = false;
 bool eject_balls = false;
+bool score_balls = false;
 // bool ball_between_intake_and_rollers = false;
 int time_when_last_ball_lost = 0;
 double pos_when_ball_at_top = 0;
@@ -170,9 +167,6 @@ const int kBallColorBlue[2] = {212, 252};
 const int kBallColorRed[2] = {350, 30};
 const double kBallSaturation = 0;
 // const double kBallSaturation = 0.5;
-
-enum ActualColor {kRed, kBlue};
-enum AllianceColor {kOurColor, kOpposingColor};
 
 AllianceColor get_ball_color(ActualColor match_color) {
   // optical_sensor.set_led_pwm(100);
@@ -214,7 +208,6 @@ int distance_to_ball() {
   return min_distance;
 }
 
-bool score_balls = false;
 
 void main_task() {
   intake_left.set_zero_position(360);
@@ -288,10 +281,11 @@ void main_task() {
     
 
     if (ball_intake_found) {
-      // bottom_roller_smart.set_manual_speed(4, 100);
+      // bottom_roller_smart.set_manual_speed(5, 100);
       bottom_roller_smart.add_target(1200, 100);
     } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10) {
       if (balls_in_robot.size() > 0) balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
+      if (eject_queue > 0) eject_queue--; // remove ball from eject_queue
     }
 
     if (ball_bottom_found && bottom_roller.get_actual_velocity() > 10) {
@@ -300,10 +294,10 @@ void main_task() {
 
         switch (balls_in_robot.size()) {
           case 1:
-            top_roller_smart.set_manual_speed(3, 100);
+            top_roller_smart.set_manual_speed(4, 100);
             break;
           // case 3:
-          //   bottom_roller_smart.set_manual_speed(4, 0); // stop because the robot is full
+          //   bottom_roller_smart.set_manual_speed(5, 0); // stop because the robot is full
           //   break;
         }
     } else if (ball_bottom_lost) {
@@ -311,7 +305,7 @@ void main_task() {
     }
     
     if (ball_middle_found && bottom_roller.get_actual_velocity() > 10) {
-        if (balls_in_robot.size() > 1) bottom_roller_smart.set_manual_speed(4, 0);
+        if (balls_in_robot.size() > 1) bottom_roller_smart.set_manual_speed(5, 0);
     }
 
     if (ball_top_found) {
@@ -319,8 +313,8 @@ void main_task() {
         if (balls_in_robot.size() >= 3) balls_in_robot.pop_back();
         balls_in_robot.push_front(get_ball_color(match_color));
       } else {
-        top_roller_smart.set_manual_speed(3, 0);
-        bottom_roller_smart.set_manual_speed(3, 0);
+        top_roller_smart.set_manual_speed(4, 0);
+        bottom_roller_smart.set_manual_speed(4, 0);
         pos_when_ball_at_top = top_roller.get_position();
       }
     } else if (ball_top_lost) {
@@ -329,8 +323,8 @@ void main_task() {
         balls_in_robot.pop_front();
       }
       if (balls_in_robot.size() > 0) {
-        top_roller_smart.set_manual_speed(3, 100);
-        bottom_roller_smart.set_manual_speed(3, 50);
+        top_roller_smart.set_manual_speed(4, 100);
+        bottom_roller_smart.set_manual_speed(4, 50);
       } else {
         robot_empty_time = pros::millis();
       }
@@ -342,11 +336,11 @@ void main_task() {
 
     if (score_queue > 0 && (score_balls || goal_os.is_detected)) {
       score_balls = false;
-      top_roller_smart.set_manual_speed(2, 100);
-      bottom_roller_smart.set_manual_speed(2, 100);
+      top_roller_smart.set_manual_speed(3, 100);
+      bottom_roller_smart.set_manual_speed(3, 100);
     } else if (score_queue == 0) {
-      top_roller_smart.set_manual_speed(2, 0);
-      bottom_roller_smart.set_manual_speed(2, 0);
+      top_roller_smart.set_manual_speed(3, 0);
+      bottom_roller_smart.set_manual_speed(3, 0);
     }
 
     if (intake_ball && !ball_in_intake && intake_queue == 0 && InRange(distance_to_ball(), 50, 300)) {
@@ -371,6 +365,14 @@ void main_task() {
         intake_left.move_velocity(200);
         intake_right.move_velocity(200);
       }
+    }
+
+    if (eject_queue > 0) {
+      top_roller_smart.set_manual_speed(2, -100);
+      bottom_roller_smart.set_manual_speed(2, -100);
+    } else {
+      top_roller_smart.set_manual_speed(2, 0);
+      bottom_roller_smart.set_manual_speed(2, 0);
     }
 
     bottom_roller_smart.set_manual_speed(0, okapi::deadband(partner.get_analog(ANALOG_RIGHT_Y), -10, 10));
@@ -477,8 +479,9 @@ void set_callbacks() {
   button_handler.master.l2.pressed.set_macro(intakes_back);
   // button_handler.master.r2.pressed.set(intake_ball_true);
   // button_handler.master.r2.released.set(intake_ball_false);
-  button_handler.master. r2.   pressed .set([&](){ eject_balls = true; });
-  button_handler.master. r2.   released.set([&](){ eject_balls = false; });
+  // button_handler.master. r2.   pressed .set([&](){ eject_balls = true; });
+  // button_handler.master. r2.   released.set([&](){ eject_balls = false; });
+  button_handler.master. r2.   pressed .set([&](){ eject_queue++; });
   button_handler.master. r1.   pressed .set(add_ball_to_intake_queue);
   button_handler.master. down. pressed .set(rollers_reverse);
   button_handler.master. down. released.set(rollers_stop);

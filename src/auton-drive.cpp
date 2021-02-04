@@ -50,65 +50,6 @@ double forward = 0;
 double strafe  = 0;
 double turn    = 0;
 
-void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle) {
-  QLength x_offset = cos(offset_angle) * offset_distance;
-  QLength y_offset = sin(offset_angle) * offset_distance;
-  targets.push({x - x_offset, y - y_offset, theta});
-  final_target_reached = false;
-  target_position_enabled = true;
-  controllermenu::master_print_array[2] = "FTR = false";
-
-}
-
-void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance) {
-  add_target(x, y, theta, offset_distance, theta);
-}
-
-void add_target(QLength x, QLength y, QAngle theta) {
-  add_target(x, y, theta, 0_in);
-}
-
-void add_target(odomutilities::Goal goal, QAngle theta, QLength offset_distance, QAngle offset_angle) {
-  add_target(goal.point.x, goal.point.y, theta, offset_distance, offset_angle);
-}
-
-void add_target(odomutilities::Goal goal, QAngle theta, QLength offset_distance) {
-  add_target(goal, theta, offset_distance, theta);
-}
-
-void add_target(odomutilities::Goal goal, QAngle theta) {
-  add_target(goal, theta, 0_in);
-}
-
-void wait_until_final_target_reached() {
-  // controllermenu::master_print_array[1] = "FTR " + std::to_string(final_target_reached);
-  while (!final_target_reached) {
-    controllerbuttons::wait(10);
-  }
-}
-
-// void clear_targets() {
-//   targets = {};
-// }
-
-using namespace controllerbuttons;
-
-void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
-  ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
-  add_target(goal.point.y, goal.point.x, angle, 12.4_in);
-  while (!goal_os.get_new_found()) {
-    goal_os.get_new_lost();
-    if (final_target_reached) {
-      target_position_enabled = false;
-      button_forward = 20;
-    }
-    wait(10);
-  }
-  target_position_enabled = false;
-  final_target_reached = false;
-  button_forward = 0;
-}
-
 void update() {
   if (target_position_enabled && targets.size() > 0) {
     Target &target = targets.front();
@@ -182,6 +123,87 @@ void update() {
     targets = {};
   }
 }
+
+void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle) {
+  QLength x_offset = cos(offset_angle) * offset_distance;
+  QLength y_offset = sin(offset_angle) * offset_distance;
+  targets.push({x - x_offset, y - y_offset, theta});
+  final_target_reached = false;
+  target_position_enabled = true;
+  controllermenu::master_print_array[2] = "FTR = false";
+
+}
+
+void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance) {
+  add_target(x, y, theta, offset_distance, theta);
+}
+
+void add_target(QLength x, QLength y, QAngle theta) {
+  add_target(x, y, theta, 0_in);
+}
+
+void add_target(odomutilities::Goal goal, QAngle theta, QLength offset_distance, QAngle offset_angle) {
+  add_target(goal.point.x, goal.point.y, theta, offset_distance, offset_angle);
+}
+
+void add_target(odomutilities::Goal goal, QAngle theta, QLength offset_distance) {
+  add_target(goal, theta, offset_distance, theta);
+}
+
+void add_target(odomutilities::Goal goal, QAngle theta) {
+  add_target(goal, theta, 0_in);
+}
+
+void add_target(Point point, QAngle theta, QLength offset_distance, QAngle offset_angle) {
+  add_target(point.x, point.y, theta, offset_distance, offset_angle);
+}
+
+void add_target(Point point, QAngle theta, QLength offset_distance) {
+  add_target(point, theta, offset_distance, theta);
+}
+
+void add_target(Point point, QAngle theta) {
+  add_target(point, theta, 0_in);
+}
+
+void eject_all_but(int balls_to_keep) {
+  // robotfunctions::rollers::
+}
+
+using namespace controllerbuttons;
+
+// blocking functions
+
+void wait_until_final_target_reached() {
+  // controllermenu::master_print_array[1] = "FTR " + std::to_string(final_target_reached);
+  while (!final_target_reached) {
+    wait(10);
+  }
+}
+
+void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
+  ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
+  add_target(goal.point.y, goal.point.x, angle, 12.4_in);
+  while (!goal_os.get_new_found()) {
+    goal_os.get_new_lost();
+    if (final_target_reached) {
+      target_position_enabled = false;
+      button_forward = 20;
+    }
+    wait(10);
+  }
+  target_position_enabled = false;
+  final_target_reached = false;
+  button_forward = 0;
+}
+
+void score_balls(int balls_to_score) {
+  robotfunctions::rollers::score_queue = balls_to_score;
+  while (!robotfunctions::rollers::score_queue == 0) {
+    wait(10);
+  }
+}
+
 
 } // namespace drivetoposition
 
@@ -339,23 +361,34 @@ Macro none([&](){},[](){});
 
 Macro test(
     [&](){
-      chassis->setState({0_in, 0_in, 0_deg});
-      // add_target(15_in, 15_in, -90_deg);
-      // wait(3000);
-      // add_target(15_in, 15_in, 0_deg);
-      // wait(3000);
-      // add_target(15_in, 0_in, 0_deg);
-      // wait(3000);
-      add_target(0_in, 0_in, 0_deg);
-      wait(500);
-      add_target(0_in, 0_in, 360_deg);
-      wait(500);
-      add_target(0_in, 0_in, 0_deg);
-      wait(3000);
-      // WAIT_UNTIL(final_target_reached);
+      time = pros::millis();
+
+      chassis->setState({13.491_in, 34.9911_in, 0_deg});
+
+      move_settings.start_output = 100;
+      move_settings.end_output = 20;
+
+      // intake_queue = 1;
+      add_target(18_in, 34.9911_in, 0_deg);
+      add_target(goal_1, -135_deg, 17_in);
+      // intake_queue = 1;
+      // wait_until_final_target_reached();
+      drive_to_goal(goal_1, -135_deg);
+      // score_queue = 1;
+      // WAIT_UNTIL(score_queue == 0);
+      // intake_queue = 1;
+      add_target(goal_1, -135_deg, 20_in, -135_deg);
+      // add_target(goal_1, -135_deg, 25_in);
+      // wait_until_final_target_reached();
+      // add_target(goal_1, 0_deg, 25_in, -135_deg);
+      // wait_until_final_target_reached();
+      // add_target(13.491_in, 34.9911_in, 0_deg);
+      wait_until_final_target_reached();
+      wait(5000);
     },
     [](){
       target_position_enabled = false;
+      controllermenu::master_print_array[0] = "Time: " + std::to_string(pros::millis() - time);
     },
     {&auton_group});
 
@@ -395,8 +428,7 @@ Macro home_row_three(
       add_target(17_in, 72_in, -180_deg);
       move_settings.start_output = 20;
       move_settings.end_output = 20;
-      wait(700
-      );
+      wait(900);
       score_queue = 1;
       wait(200);
       targets.pop();
@@ -754,6 +786,8 @@ Macro skills_one(
 
 Macro skills_two(
     [&](){
+      using namespace skillsballs;
+
       time = pros::millis();
 
 
@@ -762,29 +796,20 @@ Macro skills_two(
       move_settings.start_output = 100;
       move_settings.end_output = 20;
 
-      // intake_queue = 1;
-      add_target(18_in, 34.9911_in, 0_deg);
-      add_target(goal_1, -135_deg, 17_in);
-      // intake_queue = 1;
-      // wait_until_final_target_reached();
-      drive_to_goal(goal_1, -135_deg);
-      // score_queue = 1;
-      // WAIT_UNTIL(score_queue == 0);
-      // intake_queue = 1;
-      add_target(goal_1, -135_deg, 20_in, -135_deg);
-      // add_target(goal_1, -135_deg, 25_in);
-      // wait_until_final_target_reached();
-      // add_target(goal_1, 0_deg, 25_in, -135_deg);
-      // wait_until_final_target_reached();
-      // add_target(13.491_in, 34.9911_in, 0_deg);
+      intake_queue = 1;
+      add_target(34.9911_in, 34.9911_in, 0_deg);
       wait_until_final_target_reached();
-      wait(5000);
+      intake_queue = 1;
+      add_target(ball_c, -90_deg, 12_in);
+      add_target(goal_1, -135_deg, 17_in);
+      intake_queue = 2;
+      drive_to_goal(goal_1, -135_deg);
+      score_balls(1);
 
-      // add_target(5.8129_in, 5.8129_in, -135_deg, 6_in);
-      // wait(500);
-      // wait(300);
-      // targets.pop();
+      add_target(goal_1, -135_deg, 20_in);
+      add_target(goal_1, -135_deg, 20_in);
 
+      add_target(goal_2, -180_deg, 20_in);
       // stop_scoring();
       // add_target(5.9272_in, 70.3361_in, -180_deg, 20_in);
       // wait_until_final_target_reached();
