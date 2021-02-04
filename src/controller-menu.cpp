@@ -307,17 +307,17 @@ MenuAutonomous &selected_auton = default_auton;
 
 void create_folder_structure() {
   root_folder = new MenuFolder("", {
+    new MenuAutonomous("Test", autonroutines::test),
     new MenuAutonomous("Skills 2.0", autonroutines::skills_two),
     new MenuAutonomous("Home Row Three", autonroutines::home_row_three),
     new MenuAutonomous("Home Row Two", autonroutines::home_row_two),
     new MenuAutonomous("Left ShawnTon", autonroutines::left_shawnton),
     new MenuAutonomous("Right ShawnTon", autonroutines::right_shawnton),
+    new MenuAutonomous("ShawnTon 3.0", autonroutines::shawnton_three),
     new MenuFolder("Other", {
       new MenuAutonomous("Skills 1.0", autonroutines::skills_one),
-      new MenuAutonomous("ShawnTon 3.0", autonroutines::shawnton_three),
       new MenuAutonomous("shawnton_cycle", autonroutines::shawnton_cycle),
       new MenuAutonomous("None", autonroutines::none),
-      new MenuAutonomous("Test", autonroutines::test),
     })
   });
 }

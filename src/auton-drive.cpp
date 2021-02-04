@@ -127,11 +127,10 @@ void update() {
 void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle) {
   QLength x_offset = cos(offset_angle) * offset_distance;
   QLength y_offset = sin(offset_angle) * offset_distance;
-  targets.push({x - x_offset, y - y_offset, theta});
   final_target_reached = false;
   target_position_enabled = true;
+  targets.push({x - x_offset, y - y_offset, theta});
   controllermenu::master_print_array[2] = "FTR = false";
-
 }
 
 void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance) {
@@ -374,17 +373,20 @@ Macro test(
       // intake_queue = 1;
       // wait_until_final_target_reached();
       drive_to_goal(goal_1, -135_deg);
+      // add_target(goal_1, -135_deg, 14_in);
       // score_queue = 1;
       // WAIT_UNTIL(score_queue == 0);
       // intake_queue = 1;
-      add_target(goal_1, -135_deg, 20_in, -135_deg);
+      add_target(goal_1, 0_deg, 20_in, -135_deg);
+      add_target(goal_1, -135_deg, 20_in);
+      add_target(13.491_in, 34.9911_in, 0_deg);
       // add_target(goal_1, -135_deg, 25_in);
       // wait_until_final_target_reached();
       // add_target(goal_1, 0_deg, 25_in, -135_deg);
-      // wait_until_final_target_reached();
+      // wait_until_final_target_reached();a
       // add_target(13.491_in, 34.9911_in, 0_deg);
       wait_until_final_target_reached();
-      wait(5000);
+      // wait(5000);
     },
     [](){
       target_position_enabled = false;
