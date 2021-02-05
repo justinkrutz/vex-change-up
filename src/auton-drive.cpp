@@ -35,6 +35,11 @@ void Target::init_if_new() {
 }
 
 std::queue<Target> targets;
+std::queue<Target> target_queue;
+
+int tpe_count = 0;
+
+bool auton_drive_enabled = true;
 bool target_position_enabled = false;
 bool final_target_reached = true;
 bool target_heading_reached = false;
@@ -51,77 +56,77 @@ double strafe  = 0;
 double turn    = 0;
 
 void update() {
-  if (target_position_enabled && targets.size() > 0) {
-    Target &target = targets.front();
-    target.init_if_new();
-    controllermenu::master_print_array[0] =
-          "x " + std::to_string(target.x.convert(inch))
-          + " y " + std::to_string(target.y.convert(inch))
-          + " t " + std::to_string(target.theta.convert(degree));
+  controllermenu::partner_print_array[0] = "TS  " + std::to_string(targets.size()) + "TQS  " + std::to_string(target_queue.size());
+  controllermenu::partner_print_array[1] = "TPE " + std::to_string(target_position_enabled) + " FTR " + std::to_string(final_target_reached);
+  while (!target_queue.empty()) { 
+    targets.push(target_queue.front());
+    target_queue.pop();
+  }
 
-    controllermenu::master_print_array[1] =
-          "x " + std::to_string(target.starting_state.x.convert(inch))
-          + " y " + std::to_string(target.starting_state.y.convert(inch))
-          + " t " + std::to_string(target.starting_state.theta.convert(degree));
+  if (!target_position_enabled) {
+    targets = {};
+  }
 
-    double move_speed;
-    double turn_speed;
-
-    Point target_point{target.x, target.y};
-
-    OdomState target_state{target.x, target.y, target.theta};
-    Point starting_point{target.starting_state.x, target.starting_state.y};
-
-    auto [distance_to_target, direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, get_odom_state());
-    QLength distance_traveled = OdomMath::computeDistanceToPoint(starting_point, get_odom_state());
-    QLength total_distance = OdomMath::computeDistanceToPoint(starting_point, target_state);
-
-    QAngle total_angle = target.theta - target.starting_state.theta;
-
-
-    if (distance_traveled >= total_distance) {
-      target_distance_reached = true;
-    }
-
-    if (abs(get_odom_state().theta - target_state.theta) < 2.5_deg) {
-      target_heading_reached = true;
-    }
-
-    // controllermenu::master_print_array[0] = "FTR " + std::to_string(final_target_reached);
-    // controllermenu::master_print_array[2] = "H " + std::to_string(target_heading_reached) + " D " + std::to_string(target_heading_reached);
-    if (target_heading_reached && target_distance_reached) {
-      if (targets.size() > 1) {
-        target_heading_reached = false;
-        target_distance_reached = false;
-        targets.pop();
-        return;
-      } else {
-        final_target_reached = true;
-      }
-    } 
-    
-    if (target_distance_reached) {
-      move_speed = std::min(100.0, 5 * distance_to_target.convert(inch));
-    } else {
-      move_speed = rampMath(distance_traveled.convert(inch), total_distance.convert(inch), move_settings);
-    }
-
-    if (target_heading_reached) {
-      turn_speed = std::min(100.0, 100 * (target.theta - get_odom_state().theta).convert(radian));
-    } else {
-      turn_speed = std::min(100.0, 100 * (target.theta - get_odom_state().theta).convert(radian));
-    }
-
-    forward = move_speed * cos(direction.convert(radian));
-    strafe  = move_speed * sin(direction.convert(radian));
-    turn    = turn_speed;
-
-  } else {
+  if (targets.empty() || !auton_drive_enabled) {
     forward = 0;
     strafe = 0;
     turn = 0;
-    targets = {};
+    final_target_reached = true;
+    return;
   }
+
+  Target &target = targets.front();
+  target.init_if_new();
+
+  double move_speed;
+  double turn_speed;
+
+  Point target_point{target.x, target.y};
+
+  OdomState target_state{target.x, target.y, target.theta};
+  Point starting_point{target.starting_state.x, target.starting_state.y};
+
+  auto [distance_to_target, direction] = OdomMath::computeDistanceAndAngleToPoint(target_point, get_odom_state());
+  QLength distance_traveled = OdomMath::computeDistanceToPoint(starting_point, get_odom_state());
+  QLength total_distance = OdomMath::computeDistanceToPoint(starting_point, target_state);
+
+  QAngle total_angle = target.theta - target.starting_state.theta;
+
+
+  if (distance_traveled >= total_distance) {
+    target_distance_reached = true;
+  }
+
+  if (abs(get_odom_state().theta - target_state.theta) < 2.5_deg) {
+    target_heading_reached = true;
+  }
+
+  if (target_heading_reached && target_distance_reached) {
+    if (!targets.empty()) {
+      target_heading_reached = false;
+      target_distance_reached = false;
+      targets.pop();
+      return;
+    } else {
+      final_target_reached = true;
+    }
+  } 
+  
+  if (target_distance_reached) {
+    move_speed = std::min(100.0, 5 * distance_to_target.convert(inch));
+  } else {
+    move_speed = rampMath(distance_traveled.convert(inch), total_distance.convert(inch), move_settings);
+  }
+
+  if (target_heading_reached) {
+    turn_speed = std::min(100.0, 100 * (target.theta - get_odom_state().theta).convert(radian));
+  } else {
+    turn_speed = std::min(100.0, 100 * (target.theta - get_odom_state().theta).convert(radian));
+  }
+
+  forward = move_speed * cos(direction.convert(radian));
+  strafe  = move_speed * sin(direction.convert(radian));
+  turn    = turn_speed;
 }
 
 void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle) {
@@ -129,8 +134,7 @@ void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAn
   QLength y_offset = sin(offset_angle) * offset_distance;
   final_target_reached = false;
   target_position_enabled = true;
-  targets.push({x - x_offset, y - y_offset, theta});
-  controllermenu::master_print_array[2] = "FTR = false";
+  target_queue.push({x - x_offset, y - y_offset, theta});
 }
 
 void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance) {
@@ -169,12 +173,16 @@ void eject_all_but(int balls_to_keep) {
   // robotfunctions::rollers::
 }
 
+void clear_all_targets() {
+  target_position_enabled = false;
+  controllermenu::partner_print_array[2] = "CAT " + std::to_string(tpe_count++) + "tpe" + std::to_string(target_position_enabled);
+}
+
 using namespace controllerbuttons;
 
 // blocking functions
 
 void wait_until_final_target_reached() {
-  // controllermenu::master_print_array[1] = "FTR " + std::to_string(final_target_reached);
   while (!final_target_reached) {
     wait(10);
   }
@@ -186,13 +194,12 @@ void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
   while (!goal_os.get_new_found()) {
     goal_os.get_new_lost();
     if (final_target_reached) {
-      target_position_enabled = false;
+      clear_all_targets();
       button_forward = 20;
     }
     wait(10);
   }
-  target_position_enabled = false;
-  final_target_reached = false;
+  clear_all_targets();
   button_forward = 0;
 }
 
@@ -202,7 +209,6 @@ void score_balls(int balls_to_score) {
     wait(10);
   }
 }
-
 
 } // namespace drivetoposition
 
@@ -282,8 +288,6 @@ Macro goal_center(
 
       while (abs(get_odom_state().theta - target) > 1_deg && pros::millis() - time < 2000) {
         double speed = 2 * (target - get_odom_state().theta).convert(degree);
-        // controllermenu::partner_print_array[0] = "T " + std::to_string(target.convert(degree));
-        // controllermenu::partner_print_array[1] = "S " + std::to_string(speed);
         button_strafe = -speed;
         button_turn = speed * 0.7;
         button_forward = 0.04 * (MIN(goal_sensor_one.get_value(), goal_sensor_two.get_value() - 2300));
@@ -346,6 +350,8 @@ void set_callbacks() {
 
 } // namespace autondrive
 
+
+
 namespace autonroutines {
 using namespace autondrive;
 using namespace drivetoposition;
@@ -354,43 +360,46 @@ using namespace controllerbuttons;
 using namespace robotfunctions;
 using namespace rollers;
 
-int time = 0;
+int start_time = 0;
+
+void auton_init(OdomState odom_state) {
+  chassis->setState(odom_state);
+  start_time = pros::millis();
+  auton_drive_enabled = true;
+}
+
+void auton_clean_up() {
+  clear_all_targets();
+  auton_drive_enabled = false;
+  button_strafe = 0;
+  button_turn = 0;
+  button_forward = 0;
+  controllermenu::master_print_array[0] = "Completed";
+  controllermenu::master_print_array[1] = "Time: " + std::to_string(pros::millis() - start_time);
+  controllermenu::master_print_array[2] = "";
+}
 
 Macro none([&](){},[](){});
 
+
 Macro test(
     [&](){
-      time = pros::millis();
-
-      chassis->setState({13.491_in, 34.9911_in, 0_deg});
+      auton_init({13.491_in, 34.9911_in, 0_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
 
-      // intake_queue = 1;
       add_target(18_in, 34.9911_in, 0_deg);
       add_target(goal_1, -135_deg, 17_in);
-      // intake_queue = 1;
-      // wait_until_final_target_reached();
       drive_to_goal(goal_1, -135_deg);
-      // add_target(goal_1, -135_deg, 14_in);
-      // score_queue = 1;
-      // WAIT_UNTIL(score_queue == 0);
-      // intake_queue = 1;
-      add_target(goal_1, 0_deg, 20_in, -135_deg);
       add_target(goal_1, -135_deg, 20_in);
+      add_target(goal_1, 0_deg, 20_in, -135_deg);
       add_target(13.491_in, 34.9911_in, 0_deg);
-      // add_target(goal_1, -135_deg, 25_in);
-      // wait_until_final_target_reached();
-      // add_target(goal_1, 0_deg, 25_in, -135_deg);
-      // wait_until_final_target_reached();a
-      // add_target(13.491_in, 34.9911_in, 0_deg);
+
       wait_until_final_target_reached();
-      // wait(5000);
     },
     [](){
-      target_position_enabled = false;
-      controllermenu::master_print_array[0] = "Time: " + std::to_string(pros::millis() - time);
+      auton_clean_up();
     },
     {&auton_group});
 
@@ -790,9 +799,6 @@ Macro skills_two(
     [&](){
       using namespace skillsballs;
 
-      time = pros::millis();
-
-
       chassis->setState({13.491_in, 34.9911_in, 0_deg});
 
       move_settings.start_output = 100;
@@ -976,7 +982,6 @@ Macro skills_two(
       button_turn = 0;
       button_forward = 0;
       target_position_enabled = false;
-      // controllermenu::master_print_array[0] = "Time: " + std::to_string(pros::millis() - time);
     },
     {&auton_group});
 

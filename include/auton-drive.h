@@ -37,8 +37,8 @@ class Target {
 // void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle);
 // void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance);
 // void add_target(QLength x, QLength y, QAngle theta);
-extern bool target_position_enabled;
-extern bool final_target_reached;
+// extern bool target_position_enabled;
+// extern bool final_target_reached;
 } // namespace drivetoposition
 
 extern controllerbuttons::Macro goal_center;
