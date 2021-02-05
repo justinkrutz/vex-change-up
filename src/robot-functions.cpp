@@ -244,7 +244,7 @@ void main_task() {
 
 
     bool ball_top_found = ball_os_top.get_new_found();
-    bool ball_top_lost = ball_os_top.get_new_lost(fabs(pos_when_ball_at_top - top_roller.get_position()) > 50);
+    bool ball_top_lost = ball_os_top.get_new_lost(fabs(pos_when_ball_at_top - top_roller.get_position()) > 25);
 
     bool ball_score_found = ball_os_score.get_new_found();
     bool ball_score_lost = ball_os_score.get_new_lost(top_roller.get_position() - pos_when_ball_at_top  > 90);
@@ -313,7 +313,7 @@ void main_task() {
       if (top_roller.get_actual_velocity() < -10) {
         if (balls_in_robot.size() >= 3) balls_in_robot.pop_back();
         balls_in_robot.push_front(get_ball_color(match_color));
-      } else {
+      } else if (top_roller.get_actual_velocity() > 10) {
         top_roller_smart.set_manual_speed(4, 0);
         bottom_roller_smart.set_manual_speed(4, 0);
         pos_when_ball_at_top = top_roller.get_position();
@@ -338,7 +338,7 @@ void main_task() {
     if (score_queue > 0 && (score_balls || goal_os.is_detected)) {
       score_balls = false;
       top_roller_smart.set_manual_speed(3, 100);
-      bottom_roller_smart.set_manual_speed(3, 100);
+      bottom_roller_smart.set_manual_speed(3, 50);
     } else if (score_queue == 0) {
       top_roller_smart.set_manual_speed(3, 0);
       bottom_roller_smart.set_manual_speed(3, 0);
