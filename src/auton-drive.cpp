@@ -166,13 +166,20 @@ void add_target(Point point, QAngle theta) {
   add_target(point, theta, 0_in);
 }
 
+void clear_all_targets() {
+  targets_should_clear = true;
+}
+
 void eject_all_but(int balls_to_keep) {
   using namespace robotfunctions::rollers;
   eject_queue = balls_in_robot.size() - balls_to_keep;
 }
 
-void clear_all_targets() {
-  targets_should_clear = true;
+void splay_intakes_if_running() {
+  using namespace robotfunctions;
+  if (rollers::intake_queue > 0) {
+    intake_splay();
+  }
 }
 
 using namespace controllerbuttons;
@@ -187,7 +194,7 @@ void wait_until_final_target_reached() {
 
 void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
   ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
-  add_target(goal.point.y, goal.point.x, angle, 12.4_in);
+  add_target(goal.point.x, goal.point.y, angle, 12.4_in);
   while (!goal_os.is_detected) {
     goal_os.get_new_found();
     goal_os.get_new_lost();
@@ -202,8 +209,9 @@ void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
 }
 
 void score_balls(int balls_to_score) {
-  robotfunctions::rollers::score_queue = balls_to_score;
-  while (!robotfunctions::rollers::score_queue == 0) {
+  using namespace robotfunctions::rollers;
+  score_queue = balls_to_score;
+  while (!score_queue == 0) {
     wait(10);
   }
 }
@@ -402,6 +410,64 @@ Macro test(
     {&auton_group});
 
 Macro home_row_three(
+    [&](){
+      auton_init({15.7416_in, 31.4911_in, -90_deg});
+
+      move_settings.start_output = 100;
+      move_settings.end_output = 20;
+
+      add_target(goal_1, -90_deg, 29_in, -135_deg); // first movement
+      wait_until_final_target_reached();
+      add_target(goal_1, -135_deg, 29_in);
+      wait(500);
+      intake_queue = 2;
+      wait(500);
+      drive_to_goal(goal_1, -135_deg); // at goal 1
+      splay_intakes_if_running();
+      score_balls(1); // score
+      intake_queue = 1;
+      add_target(goal_1, -135_deg, 29_in); // back away
+      wait(200);
+      splay_intakes_if_running();
+      eject_all_but(2);
+
+      add_target(goal_2, -180_deg, 29_in);
+      wait_until_final_target_reached();
+      intake_queue = 1;
+      drive_to_goal(goal_2, -180_deg); // at goal 2
+      splay_intakes_if_running();
+      score_balls(1); // score
+      intake_queue = 1;
+      wait(300);
+      add_target(goal_2, -180_deg, 35_in); // back away
+      wait(700);
+      intakes_back.start();
+      eject_all_but(0);
+
+      add_target(goal_3, -180_deg, 35_in, -225_deg);
+      wait_until_final_target_reached();
+      add_target(goal_3, -225_deg, 35_in);
+      wait(500);
+      intake_queue = 2;
+      wait(500);
+      drive_to_goal(goal_3, -225_deg); // at goal 3
+      splay_intakes_if_running();
+      score_balls(2); // score
+      intake_queue = 1;
+      add_target(goal_3, -225_deg, 35_in); // back away
+      // wait(200);
+      // splay_intakes_if_running();
+      // eject_all_but(0);
+
+
+      wait_until_final_target_reached();
+    },
+    [](){
+      auton_clean_up();
+    },
+    {&auton_group});
+
+Macro home_row_three_old(
     [&](){
       chassis->setState({15.7416_in, 31.4911_in, -90_deg});
 

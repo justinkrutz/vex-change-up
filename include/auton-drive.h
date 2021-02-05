@@ -52,6 +52,7 @@ namespace autonroutines {
 
 extern controllerbuttons::Macro none;
 extern controllerbuttons::Macro home_row_three;
+extern controllerbuttons::Macro home_row_three_old;
 extern controllerbuttons::Macro home_row_two;
 extern controllerbuttons::Macro left_shawnton;
 extern controllerbuttons::Macro right_shawnton;

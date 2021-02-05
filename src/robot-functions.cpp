@@ -220,10 +220,10 @@ void main_task() {
   ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
 
   // ObjectSensor ball_os_score  ({ball_sensor_score},  2000, 2200);
-  ObjectSensor ball_os_score  ({&ball_sensor_top},    2000, 2200);
-  ObjectSensor ball_os_top    ({&ball_sensor_top},    2200, 2400);
+  ObjectSensor ball_os_score  ({&ball_sensor_top},    2000, 2200, true);
+  ObjectSensor ball_os_top    ({&ball_sensor_top},    2200, 2400, true);
   ObjectSensor ball_os_middle ({&ball_sensor_middle}, 1000, 2200);
-  ObjectSensor ball_os_bottom ({&ball_sensor_bottom}, 1000, 2200, true);
+  ObjectSensor ball_os_bottom ({&ball_sensor_bottom}, 1000, 2200);
   ObjectSensor ball_os_intake ({&ball_sensor_intake}, 1000, 2200);
 
   // AllianceColor last_color = kOurColor;
@@ -390,7 +390,10 @@ void main_task() {
     {
       ball_string += std::to_string(balls_in_robot[i]) + " ";
     }
-    controllermenu::master_print_array[0] = ball_string;
+
+    if (pros::competition::is_connected()) {
+      controllermenu::master_print_array[0] = ball_string;
+    }
     // controllermenu::partner_print_array[0] = "SQ: " + std::to_string(score_queue) + " IQ: " + std::to_string(intake_queue);
     // controllermenu::partner_print_array[1] = "GS1: " + std::to_string(goal_sensor_one.get_value()) + " GS2: " + std::to_string(goal_sensor_two.get_value());
     // controllermenu::partner_print_array[2] = "MIN: " + std::to_string(goal_os.get_min_value()) + " MAX: " + std::to_string(goal_os.get_max_value());

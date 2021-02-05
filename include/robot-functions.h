@@ -8,6 +8,8 @@
 
 namespace robotfunctions {
 
+void intake_splay();
+
 class SmartMotorController {
   public:
   SmartMotorController(pros::Motor &motor, double timeout_ratio, double slew, int manual_controlls);
