@@ -37,7 +37,7 @@ class Target {
 // void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle);
 // void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance);
 // void add_target(QLength x, QLength y, QAngle theta);
-// extern bool target_position_enabled;
+// extern bool targets_should_clear;
 // extern bool final_target_reached;
 } // namespace drivetoposition
 

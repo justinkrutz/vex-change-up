@@ -38,9 +38,10 @@ std::queue<Target> targets;
 std::queue<Target> target_queue;
 
 int tpe_count = 0;
+int at_count = 0;
 
 bool auton_drive_enabled = true;
-bool target_position_enabled = false;
+bool targets_should_clear = true;
 bool final_target_reached = true;
 bool target_heading_reached = false;
 bool target_distance_reached = false;
@@ -57,15 +58,17 @@ double turn    = 0;
 
 void update() {
   controllermenu::partner_print_array[0] = "TS  " + std::to_string(targets.size()) + "TQS  " + std::to_string(target_queue.size());
-  controllermenu::partner_print_array[1] = "TPE " + std::to_string(target_position_enabled) + " FTR " + std::to_string(final_target_reached);
+  controllermenu::partner_print_array[1] = "TPE " + std::to_string(targets_should_clear) + " FTR " + std::to_string(final_target_reached);
+  if (targets_should_clear) {
+    targets = {};
+  }
+
   while (!target_queue.empty()) { 
     targets.push(target_queue.front());
     target_queue.pop();
+    targets_should_clear = false;
   }
 
-  if (!target_position_enabled) {
-    targets = {};
-  }
 
   if (targets.empty() || !auton_drive_enabled) {
     forward = 0;
@@ -133,8 +136,8 @@ void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAn
   QLength x_offset = cos(offset_angle) * offset_distance;
   QLength y_offset = sin(offset_angle) * offset_distance;
   final_target_reached = false;
-  target_position_enabled = true;
   target_queue.push({x - x_offset, y - y_offset, theta});
+  controllermenu::master_print_array[1] = "AT " + std::to_string(at_count++) + " TPE " + std::to_string(targets_should_clear);
 }
 
 void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance) {
@@ -174,8 +177,8 @@ void eject_all_but(int balls_to_keep) {
 }
 
 void clear_all_targets() {
-  target_position_enabled = false;
-  controllermenu::partner_print_array[2] = "CAT " + std::to_string(tpe_count++) + "tpe" + std::to_string(target_position_enabled);
+  targets_should_clear = true;
+  controllermenu::partner_print_array[2] = "CAT " + std::to_string(tpe_count++) + " TPE " + std::to_string(targets_should_clear);
 }
 
 using namespace controllerbuttons;
@@ -191,7 +194,8 @@ void wait_until_final_target_reached() {
 void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
   ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
   add_target(goal.point.y, goal.point.x, angle, 12.4_in);
-  while (!goal_os.get_new_found()) {
+  while (!goal_os.is_detected) {
+    goal_os.get_new_found();
     goal_os.get_new_lost();
     if (final_target_reached) {
       clear_all_targets();
@@ -200,6 +204,7 @@ void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
     wait(10);
   }
   clear_all_targets();
+  controllermenu::master_print_array[0] = "drive_to_goal " + std::to_string(targets_should_clear);
   button_forward = 0;
 }
 
@@ -487,7 +492,7 @@ Macro home_row_three(
       score_queue = 0;
     },
     [](){
-      target_position_enabled = false;
+      targets_should_clear = true;
     },
     {&auton_group});
 
@@ -538,7 +543,7 @@ Macro home_row_two(
       score_queue = 0;
     },
     [](){
-      target_position_enabled = false;
+      targets_should_clear = true;
     },
     {&auton_group});
 
@@ -566,7 +571,7 @@ Macro left_shawnton(
       WAIT_UNTIL(final_target_reached)
     },
     [](){
-      target_position_enabled = false;
+      targets_should_clear = true;
     },
     {&auton_group});
 
@@ -597,7 +602,7 @@ Macro right_shawnton(
       WAIT_UNTIL(final_target_reached)
     },
     [](){
-      target_position_enabled = false;
+      targets_should_clear = true;
     },
     {&auton_group});
 
@@ -791,7 +796,7 @@ Macro skills_one(
       button_strafe = 0;
       button_turn = 0;
       button_forward = 0;
-      target_position_enabled = false;
+      targets_should_clear = true;
     },
     {&auton_group});
 
@@ -981,7 +986,7 @@ Macro skills_two(
       button_strafe = 0;
       button_turn = 0;
       button_forward = 0;
-      target_position_enabled = false;
+      targets_should_clear = true;
     },
     {&auton_group});
 
@@ -1057,7 +1062,7 @@ Macro shawnton_three(
       WAIT_UNTIL(final_target_reached)
     },
     [](){
-      target_position_enabled = false;
+      targets_should_clear = true;
     },
 
     {&auton_group});
@@ -1110,7 +1115,7 @@ Macro shawnton_cycle(
       WAIT_UNTIL(final_target_reached)
     },
     [](){
-      target_position_enabled = false;
+      targets_should_clear = true;
     },
     {&auton_group});
 
