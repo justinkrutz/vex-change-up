@@ -4,6 +4,8 @@
 #include "odom-utilities.h"
 #include "auton-drive.h"
 #include "controller-menu.h"
+#include "odometry.h"
+
 
 #include <bits/stdc++.h>
 // #include "json.hpp"
@@ -147,7 +149,7 @@ void loop() {
     if (waiting && pros::millis() - time_triggered > kWaitTime) {
       waiting = false;
       if (goal_os.is_detected) {
-        OdomState odom = chassis->getState();
+        OdomState odom = imu_odom->getState();
         QLength offset_x = odom.x + cos(odom.theta) * kGoalOffset;
         QLength offset_y = odom.y + sin(odom.theta) * kGoalOffset;
         
@@ -183,7 +185,8 @@ void loop() {
                && (new_theta - odom.theta).abs() < 20_deg) {
             last_goal = closest_goal;
             last_odom_point = closest_goal->point;
-            chassis->setState({new_x, new_y, new_theta});
+            // chassis->setState({new_x, new_y, new_theta});
+            imu_odom->setState({new_x, new_y, new_theta});
           }
         }
       }

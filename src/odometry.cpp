@@ -95,6 +95,10 @@ const double deltaR = itickDiff[1] / chassisScales.straight;
 
 // double deltaTheta = (deltaL - deltaR) / chassisScales.wheelTrack.convert(meter);
 double deltaTheta = imuDiff.convert(radian);
+if (abs(deltaTheta) > 0.01) {
+  deltaTheta = (deltaL - deltaR) / chassisScales.wheelTrack.convert(meter);
+}
+
 double localOffX, localOffY;
 
 const auto deltaM = static_cast<const double>(
@@ -131,8 +135,8 @@ if (isnan(deltaTheta) || isinf(deltaTheta)) {
   deltaTheta = 0;
 }
 
-controllermenu::partner_print_array[0] = "dt " + std::to_string(deltaTheta);
-controllermenu::partner_print_array[1] = "imu " + std::to_string(imu.get_rotation());
+// controllermenu::partner_print_array[0] = "dt " + std::to_string(deltaTheta);
+// controllermenu::partner_print_array[1] = "imu " + std::to_string(imu.get_rotation());
 
 return OdomState{dX * meter, dY * meter, deltaTheta * radian};
 }

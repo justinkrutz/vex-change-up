@@ -9,6 +9,8 @@
 #include "odom-utilities.h"
 #include <stdio.h>
 #include <complex.h>
+#include "odometry.h"
+
 
 namespace autondrive {
 
@@ -16,7 +18,7 @@ controllerbuttons::MacroGroup auton_group;
 controllerbuttons::MacroGroup drive_group;
 
 OdomState get_odom_state() {
-  return chassis->getState();
+  return imu_odom->getState();
 }
 
 double button_strafe = 0;
@@ -358,7 +360,7 @@ void auton_log() {
   std::string odom_log_number_new = "";
 
   for (int i = 0; i < 1500; i++) {
-    OdomState odom = chassis->getState();
+    OdomState odom = get_odom_state();
     odom_log.append("\n" +
         std::to_string(odom.x.convert(inch)) + "," +
         std::to_string(odom.y.convert(inch)) + "," +
@@ -390,7 +392,7 @@ void auton_log() {
 }
 
 void auton_init(OdomState odom_state) {
-  chassis->setState(odom_state);
+  imu_odom->setState(odom_state);
   start_time = pros::millis();
   auton_drive_enabled = true;
   (pros::Task(auton_log));
@@ -493,7 +495,7 @@ Macro home_row_three(
 
 Macro home_row_three_old(
     [&](){
-      chassis->setState({15.7416_in, 31.4911_in, -90_deg});
+      imu_odom->setState({15.7416_in, 31.4911_in, -90_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -532,7 +534,7 @@ Macro home_row_three_old(
       wait(200);
       targets.pop();
       wait(10);
-      // chassis->setState({20.75_in, 71.63_in, -171.5_deg});
+      // imu_odom->setState({20.75_in, 71.63_in, -171.5_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 50;
@@ -581,7 +583,7 @@ Macro home_row_three_old(
 
 Macro home_row_two(
     [&](){
-      chassis->setState({15.7416_in, 31.4911_in, -90_deg});
+      imu_odom->setState({15.7416_in, 31.4911_in, -90_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -632,7 +634,7 @@ Macro home_row_two(
 
 Macro left_shawnton(
     [&](){
-      chassis->setState({15.7416_in, 31.4911_in, -90_deg});
+      imu_odom->setState({15.7416_in, 31.4911_in, -90_deg});
 
       add_target(26.319_in, 26.319_in, -90_deg);
       add_target(26.319_in, 26.319_in, -135_deg);
@@ -660,7 +662,7 @@ Macro left_shawnton(
 
 Macro right_shawnton(
     [&](){
-      chassis->setState({31.4911_in, 15.7416_in, -180_deg});
+      imu_odom->setState({31.4911_in, 15.7416_in, -180_deg});
 
       add_target(26.319_in, 26.319_in, -180_deg);
       WAIT_UNTIL(final_target_reached)
@@ -699,7 +701,7 @@ void stop_scoring() {
 
 Macro skills_one(
     [&](){
-      chassis->setState({13.491_in, 34.9911_in, 0_deg});
+      imu_odom->setState({13.491_in, 34.9911_in, 0_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -887,7 +889,7 @@ Macro skills_two(
     [&](){
       using namespace skillsballs;
 
-      chassis->setState({13.491_in, 34.9911_in, 0_deg});
+      imu_odom->setState({13.491_in, 34.9911_in, 0_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -1075,7 +1077,7 @@ Macro skills_two(
 
 Macro shawnton_three(
     [&](){
-      chassis->setState({15.7416_in, 109.181_in, 90_deg});
+      imu_odom->setState({15.7416_in, 109.181_in, 90_deg});
 
       add_target(23.49_in, 117.18_in, 90_deg);
       add_target(5.8129_in, 134.8593_in, 135_deg, 25_in);
@@ -1152,7 +1154,7 @@ Macro shawnton_three(
 
 Macro shawnton_cycle(
     [&](){
-      chassis->setState({15.7416_in, 109.181_in, 90_deg});
+      imu_odom->setState({15.7416_in, 109.181_in, 90_deg});
 
       add_target(23.49_in, 117.18_in, 90_deg);
       add_target(5.8129_in, 134.8593_in, 135_deg, 25_in);
