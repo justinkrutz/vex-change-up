@@ -210,7 +210,10 @@ void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
 
 void score_balls(int balls_to_score) {
   using namespace robotfunctions::rollers;
-  score_queue = balls_to_score;
+  for (int i = 0; i < balls_to_score; i++) {
+    score_queue++;
+    wait(500);
+  }
   while (!score_queue == 0) {
     wait(10);
   }
@@ -420,24 +423,24 @@ Macro home_row_three(
       wait_until_final_target_reached();
       add_target(goal_1, -135_deg, 29_in);
       wait(500);
-      intake_queue = 2;
+      intake_queue = 3;
       wait(500);
       drive_to_goal(goal_1, -135_deg); // at goal 1
-      splay_intakes_if_running();
-      score_balls(1); // score
-      intake_queue = 1;
+      // splay_intakes_if_running();
+      score_balls(2); // score
+      // intake_queue = 1;
       add_target(goal_1, -135_deg, 29_in); // back away
       wait(200);
-      splay_intakes_if_running();
-      eject_all_but(2);
+      // splay_intakes_if_running();
+      eject_all_but(1);
 
       add_target(goal_2, -180_deg, 29_in);
       wait_until_final_target_reached();
-      intake_queue = 1;
+      intake_queue = 2;
       drive_to_goal(goal_2, -180_deg); // at goal 2
-      splay_intakes_if_running();
-      score_balls(1); // score
-      intake_queue = 1;
+      // splay_intakes_if_running();
+      score_balls(2); // score
+      // intake_queue = 1;
       wait(300);
       add_target(goal_2, -180_deg, 35_in); // back away
       wait(700);
@@ -448,12 +451,12 @@ Macro home_row_three(
       wait_until_final_target_reached();
       add_target(goal_3, -225_deg, 35_in);
       wait(500);
-      intake_queue = 2;
+      intake_queue = 3;
       wait(500);
       drive_to_goal(goal_3, -225_deg); // at goal 3
-      splay_intakes_if_running();
+      // splay_intakes_if_running();
       score_balls(2); // score
-      intake_queue = 1;
+      // intake_queue = 1;
       add_target(goal_3, -225_deg, 35_in); // back away
       // wait(200);
       // splay_intakes_if_running();
