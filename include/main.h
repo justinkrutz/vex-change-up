@@ -78,4 +78,6 @@ void opcontrol(void);
 //#include <iostream>
 #endif
 
+extern bool menu_enabled;
+
 #endif  // _PROS_MAIN_H_

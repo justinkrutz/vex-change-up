@@ -119,6 +119,7 @@ namespace errorcorrection {
 using namespace odomutilities;
 
 Goal *last_goal = &goal_9;
+Point last_odom_point;
 
 bool first_goal_reached = false;
 
@@ -147,27 +148,29 @@ void loop() {
       waiting = false;
       if (goal_os.is_detected) {
         OdomState odom = chassis->getState();
+        QLength offset_x = odom.x + cos(odom.theta) * kGoalOffset;
+        QLength offset_y = odom.y + sin(odom.theta) * kGoalOffset;
+        
         Goal *closest_goal = Goal::closest({odom.x, odom.y});
-        Point last_point = last_goal->point;
+        // Point last_goal_point = last_goal->point;
         Point closest_goal_point = closest_goal->point;
 
-        QLength measured_x = odom.x + cos(odom.theta) * kGoalOffset;
-        QLength measured_y = odom.y + sin(odom.theta) * kGoalOffset;
-        QLength distance_to_goal = OdomMath::computeDistanceToPoint(closest_goal_point, {measured_x, measured_y, odom.theta});
-
+        QLength distance_to_goal = OdomMath::computeDistanceToPoint(closest_goal_point, {offset_x, offset_y, odom.theta});
         if (distance_to_goal > kDetectionDistance) {
           continue;
         }
 
+
         if (!first_goal_reached) {
           first_goal_reached = true;
           last_goal = closest_goal;
-        } else if (closest_goal_point.x != last_point.x || closest_goal_point.y != last_point.y) {
-          QAngle desired_angle = OdomMath::computeAngleToPoint(closest_goal_point, {last_point.x, last_point.y, 0_deg});
-          Point measured_point = {measured_x, measured_y};
-          QAngle measured_angle = OdomMath::computeAngleToPoint(measured_point, {last_point.x, last_point.y, 0_deg});
-          controllermenu::partner_print_array[0] = "d " + std::to_string(desired_angle.convert(degree)) + " x " + std::to_string(measured_x.convert(inch));
-          controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(measured_y.convert(inch));
+          last_odom_point = {offset_x, offset_y};
+        } else if (closest_goal_point.x != last_goal->point.x || closest_goal_point.y != last_goal->point.y) {
+          QAngle desired_angle = OdomMath::computeAngleToPoint(closest_goal_point, {last_goal->point.x, last_goal->point.y, 0_deg});
+          Point measured_point = {offset_x, offset_y};
+          QAngle measured_angle = OdomMath::computeAngleToPoint(measured_point, {last_odom_point.x, last_odom_point.y, 0_deg});
+          controllermenu::partner_print_array[0] = "d " + std::to_string(desired_angle.convert(degree)) + " x " + std::to_string(offset_x.convert(inch));
+          controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(offset_y.convert(inch));
 
           QAngle error = mod(measured_angle - desired_angle + 180_deg, 360_deg) - 180_deg;
 
@@ -179,6 +182,7 @@ void loop() {
                && (new_y - odom.y).abs() < 30_in
                && (new_theta - odom.theta).abs() < 20_deg) {
             last_goal = closest_goal;
+            last_odom_point = closest_goal->point;
             chassis->setState({new_x, new_y, new_theta});
           }
         }

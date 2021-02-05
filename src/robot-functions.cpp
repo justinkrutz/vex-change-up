@@ -6,6 +6,7 @@
 #include "controller-menu.h"
 #include "robot-functions.h"
 #include "odom-utilities.h"
+#include "auton-drive.h"
 #include <stdio.h>
 #include <complex.h>
 
@@ -322,7 +323,7 @@ void main_task() {
         last_scored_ball = balls_in_robot.back();
         balls_in_robot.pop_front();
       }
-      if (balls_in_robot.size() > 0) {
+      if (!balls_in_robot.empty() || autondrive::auton_group.is_running()) {
         top_roller_smart.set_manual_speed(4, 100);
         bottom_roller_smart.set_manual_speed(4, 50);
       } else {
@@ -330,7 +331,7 @@ void main_task() {
       }
     }
 
-    if (ball_score_lost || (balls_in_robot.size() == 0 && pros::millis() - robot_empty_time > 500)) {
+    if (ball_score_lost || (balls_in_robot.size() == 0 && pros::millis() - robot_empty_time > 1000)) {
       if (score_queue > 0) score_queue--;
     }
 
@@ -391,8 +392,8 @@ void main_task() {
       ball_string += std::to_string(balls_in_robot[i]) + " ";
     }
 
-    if (pros::competition::is_connected()) {
-      controllermenu::master_print_array[0] = ball_string;
+    if (!menu_enabled) {
+      // controllermenu::master_print_array[0] = ball_string;
     }
     // controllermenu::partner_print_array[0] = "SQ: " + std::to_string(score_queue) + " IQ: " + std::to_string(intake_queue);
     // controllermenu::partner_print_array[1] = "GS1: " + std::to_string(goal_sensor_one.get_value()) + " GS2: " + std::to_string(goal_sensor_two.get_value());

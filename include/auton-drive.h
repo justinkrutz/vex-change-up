@@ -39,9 +39,9 @@ class Target {
 // void add_target(QLength x, QLength y, QAngle theta);
 // extern bool targets_should_clear;
 // extern bool final_target_reached;
+extern controllerbuttons::Macro goal_center;
 } // namespace drivetoposition
 
-extern controllerbuttons::Macro goal_center;
 
 void motor_task();
 void set_callbacks();

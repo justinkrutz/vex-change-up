@@ -98,8 +98,6 @@ namespace skillsballs {
 
 namespace errorcorrection {
 
-extern Point last_point;
-
 extern bool auto_goal_center;
 
 void start();

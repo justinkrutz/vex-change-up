@@ -192,10 +192,32 @@ void wait_until_final_target_reached() {
   }
 }
 
-void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
+QAngle goal_center_angle;
+
+Macro goal_center(
+    [&](){
+      int time = pros::millis();
+
+      while (abs(get_odom_state().theta - goal_center_angle) > 1_deg && pros::millis() - time < 2000) {
+        double speed = 2 * (goal_center_angle - get_odom_state().theta).convert(degree);
+        button_strafe = -speed;
+        button_turn = speed * 0.7;
+        button_forward = 0.04 * (MIN(goal_sensor_one.get_value(), goal_sensor_two.get_value() - 2300));
+        wait(10);
+      }
+    },
+    [](){
+        button_strafe = 0;
+        button_turn = 0;
+        button_forward = 0;
+    },
+    {&drive_group, &auton_group});
+
+void drive_to_goal(odomutilities::Goal goal, QAngle angle, int timeout = 2000) {
   ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
   add_target(goal.point.x, goal.point.y, angle, 12.4_in);
-  while (!goal_os.is_detected) {
+  int time = pros::millis();
+  while (!goal_os.is_detected && pros::millis() - time < timeout) {
     goal_os.get_new_found();
     goal_os.get_new_lost();
     if (final_target_reached) {
@@ -205,14 +227,16 @@ void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
     wait(10);
   }
   clear_all_targets();
-  button_forward = 0;
+  // button_forward = 0;
+  goal_center_angle = angle;
+  goal_center.start();
 }
 
 void score_balls(int balls_to_score) {
   using namespace robotfunctions::rollers;
   for (int i = 0; i < balls_to_score; i++) {
     score_queue++;
-    wait(500);
+    wait(200);
   }
   while (!score_queue == 0) {
     wait(10);
@@ -265,50 +289,6 @@ void motor_task()
 
 
 using namespace controllerbuttons;
-
-QAngle get_abs_goal_angle(OdomState odom, QAngle angle) {
-  QAngle target_right = (odom.theta - mod(odom.theta, 360_deg)) + angle;
-  QAngle target_left = target_right - 360_deg;
-
-  if (abs(target_right - odom.theta) < abs(target_left - odom.theta)) {
-    return target_right;
-  } else {
-    return target_left;
-  }
-}
-
-Macro goal_center(
-    [&](){
-      using namespace odomutilities;
-      int time = pros::millis();
-      OdomState odom = get_odom_state();
-      Goal *closest_goal = Goal::closest({odom.x, odom.y});
-      QAngle target = get_abs_goal_angle(odom, closest_goal->angles.front());
-
-      // finds nearest rotation
-      for (auto &&angle : closest_goal->angles) {
-        QAngle temp_target = get_abs_goal_angle(odom, angle);
-
-        if (abs(temp_target - odom.theta) < abs(target - odom.theta)) {
-          target = temp_target;
-        }
-      }
-      
-
-      while (abs(get_odom_state().theta - target) > 1_deg && pros::millis() - time < 2000) {
-        double speed = 2 * (target - get_odom_state().theta).convert(degree);
-        button_strafe = -speed;
-        button_turn = speed * 0.7;
-        button_forward = 0.04 * (MIN(goal_sensor_one.get_value(), goal_sensor_two.get_value() - 2300));
-        wait(10);
-      }
-    },
-    [](){
-        button_strafe = 0;
-        button_turn = 0;
-        button_forward = 0;
-    },
-    {&drive_group});
 
 Macro goal_turn_right(
     [&](){
@@ -419,19 +399,20 @@ Macro home_row_three(
       move_settings.start_output = 100;
       move_settings.end_output = 20;
 
-      add_target(goal_1, -90_deg, 29_in, -135_deg); // first movement
-      wait_until_final_target_reached();
-      add_target(goal_1, -135_deg, 29_in);
-      wait(500);
+      // add_target(goal_1, -90_deg, 29_in, -135_deg); // first movement
+      // wait_until_final_target_reached();
       intake_queue = 3;
-      wait(500);
+      wait(700);
+      // add_target(goal_1, -135_deg, 29_in);
+      // wait(500);
       drive_to_goal(goal_1, -135_deg); // at goal 1
       // splay_intakes_if_running();
       score_balls(2); // score
       // intake_queue = 1;
       add_target(goal_1, -135_deg, 29_in); // back away
-      wait(200);
+      wait(1000);
       // splay_intakes_if_running();
+      intakes_back.start();
       eject_all_but(1);
 
       add_target(goal_2, -180_deg, 29_in);
