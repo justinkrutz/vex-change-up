@@ -13,8 +13,8 @@ std::shared_ptr<ImuOdom> imu_odom;
 
 void odom_init() {
   imu_odom = std::make_shared<ImuOdom>(TimeUtilFactory().createDefault(),
-      chassis->getModel(),
-      chassis->getChassisScales());
+      chassis->getOdometry()->getModel(),
+      chassis->getOdometry()->getScales());
   pros::Task([&](){ imu_odom->loop(); });
 }
 
@@ -127,9 +127,12 @@ if (isnan(dY)) {
   dY = 0;
 }
 
-if (isnan(deltaTheta)) {
+if (isnan(deltaTheta) || isinf(deltaTheta)) {
   deltaTheta = 0;
 }
+
+controllermenu::partner_print_array[0] = "dt " + std::to_string(deltaTheta);
+controllermenu::partner_print_array[1] = "imu " + std::to_string(imu.get_rotation());
 
 return OdomState{dX * meter, dY * meter, deltaTheta * radian};
 }
