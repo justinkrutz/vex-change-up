@@ -351,10 +351,47 @@ using namespace rollers;
 
 int start_time = 0;
 
+
+void auton_log() {
+  std::string odom_log = "x,y,theta,balls_in_robot,intake_queue,score_queue,eject_queue,final_target_reached,targets";
+  std::string odom_log_number_old = "";
+  std::string odom_log_number_new = "";
+
+  for (int i = 0; i < 1500; i++) {
+    OdomState odom = chassis->getState();
+    odom_log.append("\n" +
+        std::to_string(odom.x.convert(inch)) + "," +
+        std::to_string(odom.y.convert(inch)) + "," +
+        std::to_string(odom.theta.convert(degree)) + "," +
+        std::to_string(balls_in_robot.size()) + "," +
+        std::to_string(intake_queue) + "," +
+        std::to_string(score_queue) + "," +
+        std::to_string(eject_queue) + "," +
+        std::to_string(final_target_reached) + "," +
+        std::to_string(targets.size()));
+    pros::delay(10); 
+  }
+  
+  std::ifstream odl_i("/usd/odom_log_number.txt");
+  odl_i >> odom_log_number_old;
+  odl_i.close();
+
+  odom_log_number_new = std::to_string(std::stoi(odom_log_number_old) + 1);
+
+  std::ofstream odl_o("/usd/odom_log_number.txt");
+  odl_o << odom_log_number_new << std::endl;
+  odl_o.close();
+
+  std::ofstream logfile(("/usd/auton_log_" + odom_log_number_new + ".csv").c_str());
+  logfile << odom_log << std::endl;
+  logfile.close();
+}
+
 void auton_init(OdomState odom_state) {
   chassis->setState(odom_state);
   start_time = pros::millis();
   auton_drive_enabled = true;
+  (pros::Task(auton_log));
 }
 
 void auton_clean_up() {
