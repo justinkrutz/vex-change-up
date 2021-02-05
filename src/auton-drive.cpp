@@ -37,9 +37,6 @@ void Target::init_if_new() {
 std::queue<Target> targets;
 std::queue<Target> target_queue;
 
-int tpe_count = 0;
-int at_count = 0;
-
 bool auton_drive_enabled = true;
 bool targets_should_clear = true;
 bool final_target_reached = true;
@@ -56,9 +53,8 @@ double forward = 0;
 double strafe  = 0;
 double turn    = 0;
 
+
 void update() {
-  controllermenu::partner_print_array[0] = "TS  " + std::to_string(targets.size()) + "TQS  " + std::to_string(target_queue.size());
-  controllermenu::partner_print_array[1] = "TPE " + std::to_string(targets_should_clear) + " FTR " + std::to_string(final_target_reached);
   if (targets_should_clear) {
     targets = {};
   }
@@ -68,7 +64,6 @@ void update() {
     target_queue.pop();
     targets_should_clear = false;
   }
-
 
   if (targets.empty() || !auton_drive_enabled) {
     forward = 0;
@@ -137,7 +132,6 @@ void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAn
   QLength y_offset = sin(offset_angle) * offset_distance;
   final_target_reached = false;
   target_queue.push({x - x_offset, y - y_offset, theta});
-  controllermenu::master_print_array[1] = "AT " + std::to_string(at_count++) + " TPE " + std::to_string(targets_should_clear);
 }
 
 void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance) {
@@ -178,7 +172,6 @@ void eject_all_but(int balls_to_keep) {
 
 void clear_all_targets() {
   targets_should_clear = true;
-  controllermenu::partner_print_array[2] = "CAT " + std::to_string(tpe_count++) + " TPE " + std::to_string(targets_should_clear);
 }
 
 using namespace controllerbuttons;
@@ -204,7 +197,6 @@ void drive_to_goal(odomutilities::Goal goal, QAngle angle) {
     wait(10);
   }
   clear_all_targets();
-  controllermenu::master_print_array[0] = "drive_to_goal " + std::to_string(targets_should_clear);
   button_forward = 0;
 }
 
@@ -395,10 +387,10 @@ Macro test(
       move_settings.end_output = 20;
 
       add_target(18_in, 34.9911_in, 0_deg);
-      add_target(goal_1, -135_deg, 17_in);
+      add_target(goal_1, -135_deg, 25_in);
       drive_to_goal(goal_1, -135_deg);
-      add_target(goal_1, -135_deg, 20_in);
-      add_target(goal_1, 0_deg, 20_in, -135_deg);
+      add_target(goal_1, -135_deg, 30_in);
+      add_target(goal_1, 0_deg, 30_in, -135_deg);
       add_target(13.491_in, 34.9911_in, 0_deg);
 
       wait_until_final_target_reached();
