@@ -58,6 +58,11 @@ namespace rollers {
 
   enum ActualColor {kRed, kBlue};
   enum AllianceColor {kOurColor, kOpposingColor};
+
+  extern ActualColor match_color;
+  extern std::deque<AllianceColor> balls_in_robot;
+  extern AllianceColor last_scored_ball;
+
 }
 
 extern controllerbuttons::Macro intakes_back;

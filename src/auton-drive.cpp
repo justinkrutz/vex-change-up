@@ -167,7 +167,8 @@ void add_target(Point point, QAngle theta) {
 }
 
 void eject_all_but(int balls_to_keep) {
-  // robotfunctions::rollers::
+  using namespace robotfunctions::rollers;
+  eject_queue = balls_in_robot.size() - balls_to_keep;
 }
 
 void clear_all_targets() {

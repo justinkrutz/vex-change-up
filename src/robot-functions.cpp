@@ -318,7 +318,7 @@ void main_task() {
         pos_when_ball_at_top = top_roller.get_position();
       }
     } else if (ball_top_lost) {
-      if (balls_in_robot.size() > 0) {
+      if (!balls_in_robot.empty() && top_roller.get_actual_velocity() > 10) {
         last_scored_ball = balls_in_robot.back();
         balls_in_robot.pop_front();
       }
@@ -367,6 +367,10 @@ void main_task() {
       }
     }
 
+    if (balls_in_robot.empty()) {
+      eject_queue = 0;
+    }
+
     if (eject_queue > 0) {
       top_roller_smart.set_manual_speed(2, -100);
       bottom_roller_smart.set_manual_speed(2, -100);
@@ -386,7 +390,7 @@ void main_task() {
     {
       ball_string += std::to_string(balls_in_robot[i]) + " ";
     }
-    // controllermenu::master_print_array[0] = ball_string;
+    controllermenu::master_print_array[0] = ball_string;
     // controllermenu::partner_print_array[0] = "SQ: " + std::to_string(score_queue) + " IQ: " + std::to_string(intake_queue);
     // controllermenu::partner_print_array[1] = "GS1: " + std::to_string(goal_sensor_one.get_value()) + " GS2: " + std::to_string(goal_sensor_two.get_value());
     // controllermenu::partner_print_array[2] = "MIN: " + std::to_string(goal_os.get_min_value()) + " MAX: " + std::to_string(goal_os.get_max_value());
