@@ -353,7 +353,7 @@ int start_time = 0;
 
 
 void auton_log() {
-  std::string odom_log = "x,y,theta,balls_in_robot,intake_queue,score_queue,eject_queue,final_target_reached,targets";
+  std::string odom_log = "x,y,theta,balls_in_robot,intake_queue,score_queue,eject_queue,target_distance_reached,target_heading_reached,final_target_reached,targets";
   std::string odom_log_number_old = "";
   std::string odom_log_number_new = "";
 
@@ -367,6 +367,8 @@ void auton_log() {
         std::to_string(intake_queue) + "," +
         std::to_string(score_queue) + "," +
         std::to_string(eject_queue) + "," +
+        std::to_string(target_distance_reached) + "," +
+        std::to_string(target_heading_reached) + "," +
         std::to_string(final_target_reached) + "," +
         std::to_string(targets.size()));
     pros::delay(10); 
@@ -447,12 +449,13 @@ Macro home_row_three(
       score_balls(2); // score
       // intake_queue = 1;
       add_target(goal_1, -135_deg, 29_in); // back away
-      wait(1000);
+      wait_until_final_target_reached();
+      add_target(goal_2, -180_deg, 29_in);
+      wait(500);
       // splay_intakes_if_running();
       intakes_back.start();
       eject_all_but(1);
 
-      add_target(goal_2, -180_deg, 29_in);
       wait_until_final_target_reached();
       intake_queue = 2;
       drive_to_goal(goal_2, -180_deg); // at goal 2
@@ -460,7 +463,7 @@ Macro home_row_three(
       score_balls(2); // score
       // intake_queue = 1;
       wait(300);
-      add_target(goal_2, -180_deg, 35_in); // back away
+      add_target(goal_2, -180_deg, 25_in); // back away
       wait(700);
       intakes_back.start();
       eject_all_but(0);

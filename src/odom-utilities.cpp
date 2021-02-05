@@ -6,8 +6,8 @@
 #include "controller-menu.h"
 
 #include <bits/stdc++.h>
-#include "json.hpp"
-using json = nlohmann::ordered_json;
+// #include "json.hpp"
+// using json = nlohmann::ordered_json;
 
 #define DEFAULT_GOAL_OFFSET 13_in
 #define DEFAULT_BALL_OFFSET 10_in
@@ -169,15 +169,15 @@ void loop() {
           QAngle desired_angle = OdomMath::computeAngleToPoint(closest_goal_point, {last_goal->point.x, last_goal->point.y, 0_deg});
           Point measured_point = {offset_x, offset_y};
           QAngle measured_angle = OdomMath::computeAngleToPoint(measured_point, {last_odom_point.x, last_odom_point.y, 0_deg});
-          controllermenu::partner_print_array[0] = "d " + std::to_string(desired_angle.convert(degree)) + " x " + std::to_string(offset_x.convert(inch));
-          controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(offset_y.convert(inch));
+          // controllermenu::partner_print_array[0] = "d " + std::to_string(desired_angle.convert(degree)) + " x " + std::to_string(offset_x.convert(inch));
+          // controllermenu::partner_print_array[1] = "m " + std::to_string(measured_angle.convert(degree)) + " y " + std::to_string(offset_y.convert(inch));
 
           QAngle error = mod(measured_angle - desired_angle + 180_deg, 360_deg) - 180_deg;
 
           QAngle new_theta = odom.theta - error;
           QLength new_x = closest_goal_point.x - kGoalOffset * cos(new_theta);
           QLength new_y = closest_goal_point.y - kGoalOffset * sin(new_theta);
-          controllermenu::partner_print_array[2] = "e " + std::to_string(error.convert(degree));
+          // controllermenu::partner_print_array[2] = "e " + std::to_string(error.convert(degree));
           if ((new_x - odom.x).abs() < 30_in
                && (new_y - odom.y).abs() < 30_in
                && (new_theta - odom.theta).abs() < 20_deg) {

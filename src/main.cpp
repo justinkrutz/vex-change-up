@@ -7,6 +7,8 @@
 #include "auton-drive.h"
 #include "odom-utilities.h"
 #include "ball-system.h"
+#include "odometry.h"
+
 
 
 bool menu_enabled = true;
@@ -33,6 +35,8 @@ void initialize() {
   optical_sensor.set_led_pwm(100);
   // chassis->setState({13.491_in, 34.9911_in, 0_deg});
   chassis->setState({15.7416_in, 31.4911_in, -90_deg});
+  imu_odom.setState({15.7416_in, 31.4911_in, -90_deg});
+  pros::Task([&](){ imu_odom.loop(); });
   pros::Task(autondrive::motor_task);
   // robotfunctions::set_callbacks();
   // ballsystem::set_callbacks();
@@ -109,12 +113,19 @@ void opcontrol() {
     controllerbuttons::run_buttons();
     // ballsystem::debug();
     if (!menu_enabled) {
+      QLength imu_x = imu_odom.getState().x;
+      QLength imu_y = imu_odom.getState().y;
+      QAngle imu_theta = imu_odom.getState().theta;
+      controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(imu_x.convert(inch));
+      controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(imu_y.convert(inch));
+      controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(imu_theta.convert(degree));
+      
       QLength x = chassis->getState().x;
       QLength y = chassis->getState().y;
       QAngle theta = chassis->getState().theta;
-      controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(x.convert(inch));
-      controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(y.convert(inch));
-      controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(theta.convert(degree));
+      controllermenu::partner_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(x.convert(inch));
+      controllermenu::partner_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(y.convert(inch));
+      controllermenu::partner_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(theta.convert(degree));
       
       // controllermenu::master_print_array[0] = std::to_string(optical_sensor.get_raw().red)   + " " + std::to_string(optical_sensor.get_rgb().red);
       // controllermenu::master_print_array[1] = std::to_string(optical_sensor.get_hue());
