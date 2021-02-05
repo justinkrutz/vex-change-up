@@ -9,15 +9,20 @@
 
 #include <bits/stdc++.h>
 
-ImuOdom imu_odom(TimeUtilFactory().createDefault(),
-                chassis->getModel(),
-                chassis->getChassisScales());
+std::shared_ptr<ImuOdom> imu_odom;
+
+void odom_init() {
+  imu_odom = std::make_shared<ImuOdom>(TimeUtilFactory().createDefault(),
+      chassis->getModel(),
+      chassis->getChassisScales());
+  pros::Task([&](){ imu_odom->loop(); });
+}
 
 ImuOdom::ImuOdom(const TimeUtil &itimeUtil,
-                                           const std::shared_ptr<ReadOnlyChassisModel> &imodel,
-                                           const ChassisScales &ichassisScales,
-                                           const std::shared_ptr<Logger> &logger)
-  : TwoEncoderOdometry(itimeUtil, imodel, ichassisScales, logger) {
+    const std::shared_ptr<ReadOnlyChassisModel> &imodel,
+    const ChassisScales &ichassisScales,
+    const std::shared_ptr<Logger> &logger)
+    : TwoEncoderOdometry(itimeUtil, imodel, ichassisScales, logger) {
   if (ichassisScales.middle == 0) {
     std::string msg = "ThreeEncoderOdometry: Middle scale cannot be zero.";
     LOG_ERROR(msg);

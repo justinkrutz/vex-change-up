@@ -1,4 +1,9 @@
+#ifndef ODOMETRY_H
+#define ODOMETRY_H
+
 #include "main.h"
+
+void odom_init();
 
 class ImuOdom : okapi::TwoEncoderOdometry {
  public:
@@ -23,4 +28,6 @@ class ImuOdom : okapi::TwoEncoderOdometry {
   QAngle newImu, imuDiff, lastImu;
 };
 
-extern ImuOdom imu_odom;
+extern std::shared_ptr<ImuOdom> imu_odom;
+
+#endif // ODOMETRY_H
