@@ -238,7 +238,7 @@ void score_balls(int balls_to_score) {
   using namespace robotfunctions::rollers;
   for (int i = 0; i < balls_to_score; i++) {
     score_queue++;
-    wait(200);
+    wait(400);
   }
   while (!score_queue == 0) {
     wait(10);
@@ -452,11 +452,11 @@ Macro home_row_three(
       // intake_queue = 1;
       add_target(goal_1, -135_deg, 29_in); // back away
       wait_until_final_target_reached();
-      add_target(goal_2, -180_deg, 29_in);
-      wait(500);
-      // splay_intakes_if_running();
+      wait(100);
       intakes_back.start();
       eject_all_but(1);
+      add_target(goal_2, -180_deg, 29_in);
+      // splay_intakes_if_running();
 
       wait_until_final_target_reached();
       intake_queue = 2;
@@ -466,7 +466,7 @@ Macro home_row_three(
       // intake_queue = 1;
       wait(300);
       add_target(goal_2, -180_deg, 25_in); // back away
-      wait(700);
+      wait(200);
       intakes_back.start();
       eject_all_but(0);
 

@@ -93,11 +93,11 @@ for (auto &&elem : itickDiff) {
 const double deltaL = itickDiff[0] / chassisScales.straight;
 const double deltaR = itickDiff[1] / chassisScales.straight;
 
-// double deltaTheta = (deltaL - deltaR) / chassisScales.wheelTrack.convert(meter);
-double deltaTheta = imuDiff.convert(radian);
-if (abs(deltaTheta) > 0.01) {
-  deltaTheta = (deltaL - deltaR) / chassisScales.wheelTrack.convert(meter);
-}
+double deltaTheta = (deltaL - deltaR) / chassisScales.wheelTrack.convert(meter);
+// double deltaTheta = imuDiff.convert(radian);
+// if (abs(deltaTheta) > 0.01) {
+//   deltaTheta = (deltaL - deltaR) / chassisScales.wheelTrack.convert(meter);
+// }
 
 double localOffX, localOffY;
 
