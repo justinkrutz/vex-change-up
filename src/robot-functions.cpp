@@ -218,7 +218,7 @@ void main_task() {
   bottom_roller.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
   top_roller.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-  ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
+  ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2600, 2750);
 
   // ObjectSensor ball_os_score  ({ball_sensor_score},  2000, 2200);
   ObjectSensor ball_os_score  ({&ball_sensor_top},    2000, 2200, true);

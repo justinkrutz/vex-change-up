@@ -216,7 +216,7 @@ Macro goal_center(
     {&drive_group, &auton_group});
 
 void drive_to_goal(odomutilities::Goal goal, QAngle angle, int timeout = 2000) {
-  ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
+  ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2600, 2750);
   add_target(goal.point.x, goal.point.y, angle, 12.4_in);
   int time = pros::millis();
   while (!goal_os.is_detected && pros::millis() - time < timeout) {
@@ -355,7 +355,7 @@ int start_time = 0;
 
 
 void auton_log() {
-  std::string odom_log = "x,y,theta,balls_in_robot,intake_queue,score_queue,eject_queue,target_distance_reached,target_heading_reached,final_target_reached,targets";
+  std::string odom_log = "x,y,theta,balls_in_robot,intake_queue,score_queue,eject_queue,target_distance_reached,target_heading_reached,final_target_reached,targets,goal_sensor_one.get_value(),goal_sensor_two.get_value()";
   std::string odom_log_number_old = "";
   std::string odom_log_number_new = "";
 
@@ -372,7 +372,9 @@ void auton_log() {
         std::to_string(target_distance_reached) + "," +
         std::to_string(target_heading_reached) + "," +
         std::to_string(final_target_reached) + "," +
-        std::to_string(targets.size()));
+        std::to_string(targets.size()) + "," +
+        std::to_string(goal_sensor_one.get_value()) + "," +
+        std::to_string(goal_sensor_two.get_value()));
     pros::delay(10); 
   }
   
@@ -459,11 +461,12 @@ Macro home_row_three(
       score_balls(2); // score
       wait(300);
       add_target(goal_2, -180_deg, 25_in); // back away
+      add_target(goal_3, -180_deg, 35_in, -225_deg);
+      wait(200);
+      eject_all_but(0);
       wait(200);
       intakes_back.start();
-      eject_all_but(0);
 
-      add_target(goal_3, -180_deg, 35_in, -225_deg);
       wait_until_final_target_reached();
       add_target(goal_3, -225_deg, 35_in);
       wait(500);

@@ -125,7 +125,7 @@ Point last_odom_point;
 
 bool first_goal_reached = false;
 
-ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2800, 2850);
+ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2600, 2750);
 
 bool waiting = false;
 int time_triggered = 0;
