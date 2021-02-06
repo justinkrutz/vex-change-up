@@ -693,6 +693,7 @@ void stop_scoring() {
 Macro skills_one(
     [&](){
       imu_odom->setState({13.491_in, 34.9911_in, 0_deg});
+      using namespace skillsballs;
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -708,14 +709,20 @@ Macro skills_one(
       score_queue = 1;
       wait(300);
       targets.pop();
-
       stop_scoring();
+
+      add_target(ball_e, -300_deg, 14_in);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      wait(700);
+      intakes_back.start();
+
       add_target(5.9272_in, 70.3361_in, -180_deg, 20_in);
       WAIT_UNTIL(final_target_reached)
       add_target(5.9272_in, 70.3361_in, -180_deg, 6_in);
       wait(600);
-      score_queue = 1;
-      wait(400);
+      score_queue = 2;
+      wait(1000);
       targets.pop();
 
       stop_scoring();
@@ -779,23 +786,30 @@ Macro skills_one(
       stop_scoring();
       add_target(118_in, 125_in, -360_deg);
       add_target(118_in, 125_in, -450_deg);
-      add_target(117.6361_in, 105.6361_in, -450_deg, 12_in);
+      add_target(117.6361_in, 105.6361_in, -450_deg, 13_in);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
       add_target(117.6361_in, 70.3361_in, -450_deg);
       wait(1000);
       intakes_back.start();
+
+      add_target(ball_j, -480_deg, 14_in);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      wait(700);
+      intakes_back.start();
+
       add_target(117.6361_in, 70.3361_in, -360_deg);
       WAIT_UNTIL(final_target_reached)
       add_target(134.745_in,  70.3361_in, -360_deg, 6_in);
       wait(1000);
-      score_queue = 1;
-      wait(200);
+      score_queue = 2;
+      wait(1000);
       targets.pop();
 
       stop_scoring();
       add_target(117.6361_in, 70.3361_in, -360_deg);
-      add_target(117.6361_in, 35.0361_in, -450_deg, 12_in);
+      add_target(117.6361_in, 35.0361_in, -450_deg, 13_in);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
       add_target(117.1816_in, 23.4906_in, -450_deg);
