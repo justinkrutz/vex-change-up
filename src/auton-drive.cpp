@@ -736,7 +736,7 @@ Macro skills_one(
       stop_scoring();
       add_target(23_in, 117.18_in, -270_deg);
       WAIT_UNTIL(final_target_reached)
-      intake_right.move_relative(180, 200);
+      // intake_right.move_relative(180, 200);
       add_target(34.8361_in, 123.6722_in, -270_deg);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
@@ -759,7 +759,7 @@ Macro skills_one(
       stop_scoring();
       add_target(70.3361_in, 117.4624_in, -270_deg);
       WAIT_UNTIL(final_target_reached)
-      intake_right.move_relative(180, 200);
+      // intake_right.move_relative(180, 200);
       add_target(105.8361_in, 123.6722_in, -270_deg);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
@@ -809,7 +809,7 @@ Macro skills_one(
       stop_scoring();
       add_target(117.1816_in, 23.4906_in, -450_deg);
       WAIT_UNTIL(final_target_reached)
-      intake_right.move_relative(180, 200);
+      // intake_right.move_relative(180, 200);
       add_target(106.8361_in, 3.3361_in, -450_deg , 13_in);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
