@@ -810,17 +810,18 @@ Macro skills_one(
       add_target(117.1816_in, 23.4906_in, -450_deg);
       WAIT_UNTIL(final_target_reached)
       intake_right.move_relative(180, 200);
-      add_target(105.8361_in, 3.3361_in, -450_deg , 13_in);
+      add_target(106.8361_in, 3.3361_in, -450_deg , 13_in);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
       wait(1000);
       intakes_back.start();
-      add_target(70.3361_in, 23.3361_in, -540_deg, 11_in);
+      add_target(70.3361_in, 23.3361_in, -540_deg, 13_in);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
       add_target(70.3361_in, 23.3361_in, -540_deg);
       wait(1000);
       intakes_back.start();
+      wait(300);
       add_target(70.3361_in, 23.3361_in, -450_deg);
       WAIT_UNTIL(final_target_reached)
       add_target(70.3361_in, 5.9272_in, -450_deg, 6_in);
@@ -1067,71 +1068,48 @@ Macro shawnton_three(
     [&](){
       imu_odom->setState({15.7416_in, 109.181_in, 90_deg});
 
-      add_target(23.49_in, 117.18_in, 90_deg);
-      add_target(5.8129_in, 134.8593_in, 135_deg, 25_in);
-      // add_target(5.8129_in, 134.8593_in, 135_deg, 16_in);
+      add_target(goal_3, 135_deg, 22_in);
       WAIT_UNTIL(final_target_reached)
-      intake_queue = 1;
-      add_target(5.8129_in, 134.8593_in, 135_deg, 16_in);
-      // wait(800);
-      // intakes_back.start();
-      // wait(400);
-      WAIT_UNTIL(final_target_reached)
-      add_target(5.8129_in, 134.8593_in, 135_deg, 6_in);
-      intake_queue++;
-      wait(500);
-      // score_queue = 1;
-      top_roller_smart.set_manual_speed(1, 600);
-      wait(200);
-      top_roller_smart.set_manual_speed(1, 0);
-      targets.pop();
-      stop_scoring();
+      intake_queue = 2;
+      wait(700);
+      drive_to_goal(goal_3, 135_deg);
+      score_balls(1);
 
 
       add_target(5.8129_in, 134.8593_in, 135_deg, 20_in);
-      add_target(56.193_in, 124.602_in, 0_deg);
       WAIT_UNTIL(final_target_reached)
+      add_target(goal_6, 0_deg, 20_in, 40_deg);
+      add_target(70.3361_in, 132.7450_in, 25_deg, 20_in);
+      wait(300);
       intake_queue = 1;
-      // wait(500);
+
+      WAIT_UNTIL(final_target_reached)
+      add_target(70.3361_in, 132.7450_in, 25_deg, 6_in, 25_deg);
+      wait(1000);
+      clear_all_targets();
+
       add_target(70.3361_in, 134.745_in, 40_deg, 20_in);
       WAIT_UNTIL(final_target_reached)
-      add_target(70.3361_in, 134.745_in, 40_deg, 6_in);
-      wait(800);
-      targets.pop();
-
-      add_target(70.3361_in, 134.745_in, 30_deg, 20_in);
-      WAIT_UNTIL(final_target_reached)
       intakes_back.start();
-      wait(200);
-      add_target(70.3361_in, 134.745_in, 30_deg, 6_in);
-      wait(800);
-      score_queue = 1;
-      wait(200);
-      targets.pop();
-      stop_scoring();
+      wait(300);
+      drive_to_goal(goal_6, 30_deg);
+      score_balls(1);
+      add_target(goal_6, 30_deg, 20_in);
+      // add_target(70.3361_in, 134.745_in, 30_deg, 20_in);
 
-
-      // add_target(41.393_in, 114.745_in, 40_deg);
-      add_target(51.393_in, 114.745_in, 0_deg);
-      add_target(51.393_in, 70.3361_in, 0_deg);
-      // add_target(70.3361_in, 70.3361_in, 0_deg, 16_in);
-      // wait(300);
-      // intake_queue = 1;
-      // wait(500);
-      // intakes_back.start();
-      // wait(100);
+      add_target(goal_5, 0_deg, 23_in);
       WAIT_UNTIL(final_target_reached)
-      add_target(70.3361_in, 70.3361_in, 0_deg, 6_in);
-      wait(1200);
-      score_queue = 1;
-      wait(500);
+      drive_to_goal(goal_5, 0_deg);
+      // wait(1200);
+      score_balls(1);
       intake_left.move_relative(50, 200);
       intake_right.move_relative(50, 200);
       wait(800);
       intake_left.move_relative(-50, 200);
       intake_right.move_relative(-50, 200);
-      wait(300);
-      targets.pop();
+      // wait(300);
+      // targets.pop();
+      add_target(70.3361_in, 70.3361_in, 0_deg, 16_in);
       WAIT_UNTIL(final_target_reached)
     },
     [](){

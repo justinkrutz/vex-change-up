@@ -269,6 +269,10 @@ void main_task() {
         balls_possibly_in_robot--;
       }
     }
+    if (balls_definitely_in_robot > 0 && !ball_os_top.is_detected) {
+      top_roller_smart.set_manual_speed(4, 100);
+      bottom_roller_smart.set_manual_speed(4, 50);
+    }
     int balls_to_push = balls_definitely_in_robot - balls_in_robot.size();
     int balls_to_pop = balls_in_robot.size() - balls_possibly_in_robot;
     for (int i = 0; i < balls_to_push; i++) {
