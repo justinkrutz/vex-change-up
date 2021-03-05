@@ -462,9 +462,9 @@ Macro home_row_three(
       wait(300);
       add_target(goal_2, -180_deg, 25_in); // back away
       add_target(goal_3, -180_deg, 35_in, -225_deg);
-      wait(200);
+      wait(100);
       eject_all_but(0);
-      wait(200);
+      wait(300);
       intakes_back.start();
 
       wait_until_final_target_reached();
@@ -789,7 +789,6 @@ Macro skills_one(
       add_target(117.6361_in, 105.6361_in, -450_deg, 13_in);
       WAIT_UNTIL(final_target_reached)
       intake_queue = 1;
-      add_target(117.6361_in, 70.3361_in, -450_deg);
       wait(1000);
       intakes_back.start();
 
@@ -798,6 +797,7 @@ Macro skills_one(
       intake_queue = 1;
       wait(700);
       intakes_back.start();
+      add_target(117.6361_in, 70.3361_in, -450_deg);
 
       add_target(117.6361_in, 70.3361_in, -360_deg);
       WAIT_UNTIL(final_target_reached)
@@ -865,11 +865,11 @@ Macro skills_one(
       button_strafe = 10;
       button_turn = -6.84;
       button_forward = 3;
-      wait(2000);
+      wait(1000);
       button_strafe = -10;
       button_turn = 6.84;
       button_forward = 3;
-      wait(3000);
+      wait(2000);
       intake_queue = 1;
       score_queue = 1;
       button_strafe = 10;
@@ -1114,7 +1114,7 @@ Macro shawnton_three(
       add_target(goal_6, 30_deg, 20_in);
       // add_target(70.3361_in, 134.745_in, 30_deg, 20_in);
 
-      add_target(goal_5, 0_deg, 23_in);
+      add_target(goal_5, 0_deg, 24_in);
       WAIT_UNTIL(final_target_reached)
       drive_to_goal(goal_5, 0_deg);
       // wait(1200);
