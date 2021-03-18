@@ -5,13 +5,13 @@
 
 #define WAIT_UNTIL(condition) \
 while (!(condition)) {        \
-  pros::delay(5);             \
+  controllerbuttons::wait(5);             \
 }
 
 #define WAIT_UNTIL_T(condition, timeout) \
 int wait_until_timeout_start = pros::millis(); \
 while (!(condition) && pros::millis() - wait_until_timeout_start < timeout) { \
-  pros::delay(5); \
+  controllerbuttons::wait(5); \
 }
 
 namespace autondrive {
@@ -22,12 +22,13 @@ namespace drivetoposition {
 
 class Target {
  public:
-  Target(QLength x, QLength y, QAngle theta);
+  Target(QLength x, QLength y, QAngle theta, bool hold = true);
 
   QLength x = 0_in;
   QLength y = 0_in;
   QAngle theta = 0_deg;
   OdomState starting_state;
+  bool hold;
   int millis_at_start;
 
   bool is_new = true;

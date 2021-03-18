@@ -27,7 +27,7 @@ double button_forward = 0;
 
 namespace drivetoposition {
 
-Target::Target(QLength x, QLength y, QAngle theta) : x(x), y(y), theta(theta) {}
+Target::Target(QLength x, QLength y, QAngle theta, bool hold) : x(x), y(y), theta(theta), hold(hold) {}
 
 void Target::init_if_new() {
   if (is_new) {
@@ -112,13 +112,13 @@ void update() {
     }
   } 
   
-  if (target_distance_reached) {
+  if (target_distance_reached && target.hold) {
     move_speed = std::min(100.0, 5 * distance_to_target.convert(inch));
   } else {
     move_speed = rampMath(distance_traveled.convert(inch), total_distance.convert(inch), move_settings);
   }
 
-  if (target_heading_reached) {
+  if (target_heading_reached && target.hold) {
     turn_speed = std::min(100.0, 100 * (target.theta - get_odom_state().theta).convert(radian));
   } else {
     turn_speed = std::min(100.0, 100 * (target.theta - get_odom_state().theta).convert(radian));
@@ -129,43 +129,43 @@ void update() {
   turn    = turn_speed;
 }
 
-void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle) {
+void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, QAngle offset_angle, bool hold = true) {
   QLength x_offset = cos(offset_angle) * offset_distance;
   QLength y_offset = sin(offset_angle) * offset_distance;
   final_target_reached = false;
-  target_queue.push({x - x_offset, y - y_offset, theta});
+  target_queue.push({x - x_offset, y - y_offset, theta, hold});
 }
 
-void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance) {
-  add_target(x, y, theta, offset_distance, theta);
+void add_target(QLength x, QLength y, QAngle theta, QLength offset_distance, bool hold = true) {
+  add_target(x, y, theta, offset_distance, theta, hold);
 }
 
-void add_target(QLength x, QLength y, QAngle theta) {
-  add_target(x, y, theta, 0_in);
+void add_target(QLength x, QLength y, QAngle theta, bool hold = true) {
+  add_target(x, y, theta, 0_in, hold);
 }
 
-void add_target(odomutilities::Goal goal, QAngle theta, QLength offset_distance, QAngle offset_angle) {
-  add_target(goal.point.x, goal.point.y, theta, offset_distance, offset_angle);
+void add_target(odomutilities::Goal goal, QAngle theta, QLength offset_distance, QAngle offset_angle, bool hold = true) {
+  add_target(goal.point.x, goal.point.y, theta, offset_distance, offset_angle, hold);
 }
 
-void add_target(odomutilities::Goal goal, QAngle theta, QLength offset_distance) {
-  add_target(goal, theta, offset_distance, theta);
+void add_target(odomutilities::Goal goal, QAngle theta, QLength offset_distance, bool hold = true) {
+  add_target(goal, theta, offset_distance, theta, hold);
 }
 
-void add_target(odomutilities::Goal goal, QAngle theta) {
-  add_target(goal, theta, 0_in);
+void add_target(odomutilities::Goal goal, QAngle theta, bool hold = true) {
+  add_target(goal, theta, 0_in, hold);
 }
 
-void add_target(Point point, QAngle theta, QLength offset_distance, QAngle offset_angle) {
-  add_target(point.x, point.y, theta, offset_distance, offset_angle);
+void add_target(Point point, QAngle theta, QLength offset_distance, QAngle offset_angle, bool hold = true) {
+  add_target(point.x, point.y, theta, offset_distance, offset_angle, hold);
 }
 
-void add_target(Point point, QAngle theta, QLength offset_distance) {
-  add_target(point, theta, offset_distance, theta);
+void add_target(Point point, QAngle theta, QLength offset_distance, bool hold = true) {
+  add_target(point, theta, offset_distance, theta, hold);
 }
 
-void add_target(Point point, QAngle theta) {
-  add_target(point, theta, 0_in);
+void add_target(Point point, QAngle theta, bool hold = true) {
+  add_target(point, theta, 0_in, hold);
 }
 
 void clear_all_targets() {
@@ -194,6 +194,31 @@ void wait_until_final_target_reached() {
   }
 }
 
+Macro ball_allign(
+    [&](){
+      // int time = pros::millis();
+
+      // while (abs(get_odom_state().theta - goal_center_angle) > 1_deg && pros::millis() - time < 2000) {
+      while (true) {
+        int distance_left = distance_sensor_left.get();
+        int distance_right = distance_sensor_right.get() * 1.15 -18.6;
+        if (InRange(distance_left, 50, 200) && InRange(distance_right, 50, 200)) {
+          // double distance = MIN(distance_left, distance_right);
+          double error = distance_right - distance_left;
+          button_strafe = error;
+        } else {
+          button_strafe = 0;
+        }
+        wait(10);
+      }
+    },
+    [](){
+        button_strafe = 0;
+        button_turn = 0;
+        button_forward = 0;
+    },
+    {&drive_group, &auton_group});
+
 QAngle goal_center_angle;
 
 Macro goal_center(
@@ -216,6 +241,7 @@ Macro goal_center(
     {&drive_group, &auton_group});
 
 void drive_to_goal(odomutilities::Goal goal, QAngle angle, int timeout = 2000) {
+  wait_until_final_target_reached();
   ObjectSensor goal_os ({&goal_sensor_one, &goal_sensor_two}, 2600, 2750);
   add_target(goal.point.x, goal.point.y, angle, 12.4_in);
   int time = pros::millis();
@@ -337,6 +363,7 @@ void set_callbacks() {
   button_handler.master.right.pressed.set_macro(goal_turn_right);
   button_handler.master.left.released.set(drive_group_terminate);
   button_handler.master.right.released.set(drive_group_terminate);
+  // button_handler.master.right.pressed.set_macro(drivetoposition::ball_allign);
 }
 
 } // namespace autondrive
@@ -894,190 +921,75 @@ Macro skills_one(
 Macro skills_two(
     [&](){
       using namespace skillsballs;
-
-      imu_odom->setState({13.491_in, 34.9911_in, 0_deg});
+      auton_init({13.491_in, 34.9911_in, 0_deg});
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
 
-      intake_queue = 1;
-      add_target(34.9911_in, 34.9911_in, 0_deg);
+      QLength ball_field_offset = 12_in;
+      QLength ball_wall_offset = 15_in;
+
+      intake_queue = 4;
+      add_target(ball_c, -90_deg, ball_wall_offset);
+      drive_to_goal(goal_1, -135_deg);
+      score_balls(3);
+
+      add_target(goal_1, -122.42_deg, 20_in);
+      wait_until_final_target_reached();
+      add_target(ball_e, -180_deg, 40_in, -302.42_deg);
+      // eject_all_but(1);
+      eject_queue = 3;
+      wait_until_final_target_reached();
+      // move_settings.end_output = 100;
+      add_target(ball_e, -302.42_deg, ball_field_offset, false);
+      intakes_back.start();
+      wait(630);
       wait_until_final_target_reached();
       intake_queue = 1;
-      add_target(ball_c, -90_deg, 12_in);
-      add_target(goal_1, -135_deg, 17_in);
-      intake_queue = 2;
-      drive_to_goal(goal_1, -135_deg);
+      wait(700);
+      intakes_back.start();
+      // move_settings.end_output = 20;
+      add_target(ball_h, -315_deg, ball_field_offset);
+      wait_until_final_target_reached();
+      intake_queue = 1;
+      wait(700);
+      wait_until_final_target_reached();
+      drive_to_goal(goal_2, -180_deg, 3000);
+      intake_queue = 1;
+      score_balls(2);
+
+      eject_queue = 1;
+      intakes_back.start();
+      add_target(goal_2, -160_deg, 25_in);
+      wait_until_final_target_reached();
+      add_target(ball_b, -270_deg, ball_field_offset);
+      wait(500);
+      intake_queue = 3;
+      add_target(goal_3, -225_deg, 20_in);
+      drive_to_goal(goal_3, -225_deg);
       score_balls(1);
 
-      add_target(goal_1, -135_deg, 20_in);
-      add_target(goal_1, -135_deg, 20_in);
+      add_target(ball_d, -270_deg, 25_in);
+      add_target(ball_d, -270_deg, ball_wall_offset);
+      wait(500);
+      intake_queue = 3;
+      add_target(ball_i, -270_deg, 30_in);
+      drive_to_goal(goal_6, -270_deg);
+      score_balls(2);
 
-      add_target(goal_2, -180_deg, 20_in);
-      // stop_scoring();
-      // add_target(5.9272_in, 70.3361_in, -180_deg, 20_in);
-      // wait_until_final_target_reached();
-      // add_target(5.9272_in, 70.3361_in, -180_deg, 6_in);
-      // wait(600);
-      // score_queue = 1;
-      // wait(400);
-      // targets.pop();
+      intakes_back.start();
+      add_target(ball_l, -270_deg, 25_in);
+      add_target(ball_l, -270_deg, ball_wall_offset);
+      wait_until_final_target_reached();
+      intake_queue = 3;
+      
 
-      // stop_scoring();
-      // // move_settings.end_output = 100;
-      // add_target(23_in, 70.3361_in, -180_deg);
-      // add_target(23_in, 90_in, -270_deg);
-      // wait_until_final_target_reached();
-      // intake_queue = 1;
-      // add_target(23_in, 117.18_in, -270_deg);
-      // // move_settings.end_output = 20;
-      // wait_until_final_target_reached();
-      // intakes_back.start();
-      // add_target(5.8129_in, 134.8593_in, -225_deg, 24.5_in);
-      // wait_until_final_target_reached();
-      // add_target(5.8129_in, 134.8593_in, -225_deg, 6_in);
-      // wait(1000);
-      // score_queue = 1;
-      // wait(400);
-      // targets.pop();
 
-      // stop_scoring();
-      // add_target(23_in, 117.18_in, -270_deg);
-      // wait_until_final_target_reached();
-      // intake_right.move_relative(180, 200);
-      // add_target(34.8361_in, 123.6722_in, -270_deg);
-      // wait_until_final_target_reached();
-      // intake_queue = 1;
-      // wait(1000);
-      // intakes_back.start();
-      // add_target(70.3361_in, 117.4624_in, -360_deg, 12_in);
-      // wait_until_final_target_reached();
-      // intake_queue = 1;
-      // add_target(70.3361_in, 117.4624_in, -360_deg);
-      // wait(1000);
-      // intakes_back.start();
-      // add_target(70.3361_in, 117.4624_in, -270_deg);
-      // wait_until_final_target_reached();
-      // add_target(70.3361_in, 134.745_in, -270_deg, 6_in);
-      // wait(500);
-      // score_queue = 2;
-      // wait(700);
-      // targets.pop();
 
-      // stop_scoring();
-      // add_target(70.3361_in, 117.4624_in, -270_deg);
-      // wait_until_final_target_reached();
-      // intake_right.move_relative(180, 200);
-      // add_target(105.8361_in, 123.6722_in, -270_deg);
-      // wait_until_final_target_reached();
-      // intake_queue = 1;
-      // wait(1000);
-      // intakes_back.start();
-      // add_target(134.8593_in, 134.8593_in, -315_deg, 17_in);
-      // wait_until_final_target_reached();
-      // add_target(134.8593_in, 134.8593_in, -315_deg, 6_in);
-      // wait(300);
-      // score_queue = 1;
-      // wait(300);
-      // targets.pop();
-
-      // stop_scoring();
-      // add_target(118_in, 125_in, -360_deg);
-      // add_target(118_in, 125_in, -450_deg);
-      // add_target(117.6361_in, 105.6361_in, -450_deg, 12_in);
-      // wait_until_final_target_reached();
-      // intake_queue = 1;
-      // add_target(117.6361_in, 70.3361_in, -450_deg);
-      // wait(1000);
-      // intakes_back.start();
-      // add_target(117.6361_in, 70.3361_in, -360_deg);
-      // wait_until_final_target_reached();
-      // add_target(134.745_in,  70.3361_in, -360_deg, 6_in);
-      // wait(1000);
-      // score_queue = 1;
-      // wait(200);
-      // targets.pop();
-
-      // stop_scoring();
-      // add_target(117.6361_in, 70.3361_in, -360_deg);
-      // add_target(117.6361_in, 35.0361_in, -450_deg, 12_in);
-      // wait_until_final_target_reached();
-      // intake_queue = 1;
-      // add_target(117.1816_in, 23.4906_in, -450_deg);
-      // wait_until_final_target_reached();
-      // intakes_back.start();
-      // add_target(134.8593_in, 5.8129_in, -405_deg, 24.5_in);
-      // wait_until_final_target_reached();
-      // add_target(134.8593_in, 5.8129_in, -405_deg, 6_in);
-      // wait(700);
-      // score_queue = 1;
-      // wait(400);
-      // targets.pop();
-
-      // stop_scoring();
-      // add_target(117.1816_in, 23.4906_in, -450_deg);
-      // wait_until_final_target_reached();
-      // intake_right.move_relative(180, 200);
-      // add_target(105.8361_in, 3.3361_in, -450_deg , 13_in);
-      // wait_until_final_target_reached();
-      // intake_queue = 1;
-      // wait(1000);
-      // intakes_back.start();
-      // add_target(70.3361_in, 23.3361_in, -540_deg, 11_in);
-      // wait_until_final_target_reached();
-      // intake_queue = 1;
-      // add_target(70.3361_in, 23.3361_in, -540_deg);
-      // wait(1000);
-      // intakes_back.start();
-      // add_target(70.3361_in, 23.3361_in, -450_deg);
-      // wait_until_final_target_reached();
-      // add_target(70.3361_in, 5.9272_in, -450_deg, 6_in);
-      // wait(600);
-      // score_queue = 2;
-      // wait(1700);
-      // targets.pop();
-
-      // stop_scoring();
-      // add_target(70.3361_in, 23.3361_in, -450_deg);
-      // add_target(70.3361_in, 23.3361_in, -270_deg);
-      // add_target(70.3361_in, 46.8361_in, -270_deg, 10_in);
-      // wait_until_final_target_reached();
-      // intake_queue = 1;
-      // wait(1000);
-      // add_target(70.3361_in, 70.3361_in, -270_deg, 16_in);
-      // wait_until_final_target_reached();
-      // add_target(70.3361_in, 70.3361_in, -270_deg, 6_in);
-      // wait(300);
-      // intake_queue = 50;
-      // wait(200);
-      // targets.pop();
-
-      // button_strafe = 10;
-      // button_turn = -6.84;
-      // button_forward = 3;
-      // wait(2000);
-      // button_strafe = -10;
-      // button_turn = 6.84;
-      // button_forward = 3;
-      // wait(3000);
-      // intake_queue = 1;
-      // score_queue = 1;
-      // button_strafe = 10;
-      // button_turn = -6.84;
-      // button_forward = 3;
-      // // wait(4000);
-      // WAIT_UNTIL(intake_queue == 0)
-      // button_strafe = 0;
-      // button_turn = 0;
-      // button_forward = 0;
-
-      // intakes_back.start();
+      wait_until_final_target_reached();
     },
     [](){
-      button_strafe = 0;
-      button_turn = 0;
-      button_forward = 0;
-      targets_should_clear = true;
+      auton_clean_up();
     },
     {&auton_group});
 

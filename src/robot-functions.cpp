@@ -372,7 +372,7 @@ void main_task() {
       }
     }
 
-    if (balls_in_robot.empty()) {
+    if (balls_in_robot.empty() && pros::millis() - robot_empty_time > 700) {
       eject_queue = 0;
     }
 
@@ -499,6 +499,8 @@ void set_callbacks() {
   button_handler.master. down. released.set(rollers_stop);
   button_handler.master. up.   pressed .set(rollers_forward);
   button_handler.master. up.   released.set(rollers_stop);
+  // button_handler.partner.right.pressed .set([&](){ score_queue++; });
+  // button_handler.partner.left. pressed .set([&](){ score_queue = 0; });
   button_handler.master. x.    pressed .set(bottom_roller_forward);
   button_handler.master. x.    released.set(rollers_stop);
   button_handler.master. b.    pressed .set(bottom_roller_reverse);
