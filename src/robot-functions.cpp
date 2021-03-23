@@ -56,6 +56,20 @@ controllerbuttons::Macro right_intake_back(
     },
     {&intake_group});
 
+controllerbuttons::Macro intakes_wiggle(
+    [](){
+
+      double intake_left_pos = intake_left.get_position();
+      double intake_right_pos = intake_right.get_position();
+      intake_left.move_absolute(intake_left_pos - 45, 100);
+      intake_right.move_absolute(intake_right_pos - 45, 100);
+      controllerbuttons::wait(500);
+      intake_left.move_absolute(intake_left_pos, 50);
+      intake_right.move_absolute(intake_right_pos, 50);
+    },
+    [](){
+    },
+    {&intake_group});
 
   SmartMotorController::SmartMotorController(pros::Motor &motor, double timeout_ratio, double slew, int manual_controlls)
       : motor(motor),
@@ -158,6 +172,7 @@ bool intake_ball = false;
 bool eject_balls = false;
 bool score_balls = false;
 // bool ball_between_intake_and_rollers = false;
+int time_when_last_ball_ejected = 0;
 int time_when_last_ball_lost = 0;
 double pos_when_ball_at_top = 0;
 double pos_when_ball_at_bottom = 0;
@@ -288,9 +303,15 @@ void main_task() {
     if (ball_intake_found) {
       // bottom_roller_smart.set_manual_speed(5, 100);
       bottom_roller_smart.add_target(1200, 100);
-    } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10) {
+      if (eject_queue == 1 ||
+          !(ball_os_middle.is_detected || pros::millis() - ball_os_middle.time_when_lost < 100
+            || ball_os_top.is_detected || pros::millis() - ball_os_top.time_when_lost < 400)) {
+        intakes_wiggle.start();
+      }
+    } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10 && pros::millis() - time_when_last_ball_ejected > 50) {
       if (balls_in_robot.size() > 0) balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
       if (eject_queue > 0) eject_queue--; // remove ball from eject_queue
+      time_when_last_ball_ejected = pros::millis();
     }
 
     if (ball_bottom_found && bottom_roller.get_actual_velocity() > 10) {
@@ -372,7 +393,7 @@ void main_task() {
       }
     }
 
-    if (balls_in_robot.empty() && pros::millis() - robot_empty_time > 700) {
+    if (balls_in_robot.empty() && pros::millis() - robot_empty_time > 2000) {
       eject_queue = 0;
     }
 
