@@ -170,7 +170,8 @@ int eject_queue = 0;
 int intake_queue = 0;
 bool intake_ball = false;
 bool eject_balls = false;
-bool score_balls = false;
+bool stow_after_eject = false;
+bool score_balls_manually = false;
 // bool ball_between_intake_and_rollers = false;
 int time_when_last_ball_ejected = 0;
 int time_when_last_ball_lost = 0;
@@ -306,7 +307,11 @@ void main_task() {
       if (eject_queue == 1 ||
           !(ball_os_middle.is_detected || pros::millis() - ball_os_middle.time_when_lost < 100
             || ball_os_top.is_detected || pros::millis() - ball_os_top.time_when_lost < 400)) {
-        intakes_wiggle.start();
+        if (stow_after_eject) {
+          intakes_back.start();
+        } else {
+          intakes_wiggle.start();
+        }
       }
     } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10 && pros::millis() - time_when_last_ball_ejected > 50) {
       if (balls_in_robot.size() > 0) balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
@@ -360,8 +365,8 @@ void main_task() {
       if (score_queue > 0) score_queue--;
     }
 
-    if (score_queue > 0 && (score_balls || goal_os.is_detected)) {
-      score_balls = false;
+    if (score_queue > 0 && (score_balls_manually || goal_os.is_detected)) {
+      score_balls_manually = false;
       top_roller_smart.set_manual_speed(3, 100);
       bottom_roller_smart.set_manual_speed(3, 50);
     } else if (score_queue == 0) {
@@ -428,11 +433,11 @@ void main_task() {
 }
 
 void score_balls_true() {
-  score_balls = true;
+  score_balls_manually = true;
 }
 
 void score_balls_false() {
-  score_balls = false;
+  score_balls_manually = false;
 }
 
 // void eject_balls() {
