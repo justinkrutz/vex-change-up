@@ -1013,7 +1013,7 @@ Macro shawnton_three(
       intake_queue = 1;
 
       WAIT_UNTIL(final_target_reached)
-      add_target(70.3361_in, 132.7450_in, 25_deg, 6_in, 25_deg);
+      add_target(70.3361_in, 131.7450_in, 25_deg, 6_in, 25_deg);
       wait(1000);
       clear_all_targets();
 
