@@ -382,12 +382,30 @@ using namespace rollers;
 int start_time = 0;
 
 
-void auton_log() {
-  std::string odom_log = "x,y,theta,balls_in_robot,intake_queue,score_queue,eject_queue,target_distance_reached,target_heading_reached,final_target_reached,targets,goal_sensor_one.get_value(),goal_sensor_two.get_value()";
+void auton_log(std::string name, bool is_skills) {
+  if (!pros::usd::is_installed()) return;
+
+  std::string odom_log =
+      "x,"
+      "y,"
+      "theta,"
+      "balls_in_robot,"
+      "intake_queue,"
+      "score_queue,"
+      "eject_queue,"
+      "target_distance_reached,"
+      "target_heading_reached,"
+      "final_target_reached,"
+      "targets,"
+      "goal_sensor_one.get_value,"
+      "goal_sensor_two.get_value";
   std::string odom_log_number_old = "";
   std::string odom_log_number_new = "";
 
-  for (int i = 0; i < 1500; i++) {
+  int count = 1500;
+  if (is_skills) count = 6000;
+
+  for (int i = 0; i < count; i++) {
     OdomState odom = get_odom_state();
     odom_log.append("\n" +
         std::to_string(odom.x.convert(inch)) + "," +
@@ -416,16 +434,16 @@ void auton_log() {
   odl_o << odom_log_number_new << std::endl;
   odl_o.close();
 
-  std::ofstream logfile(("/usd/auton_log_" + odom_log_number_new + ".csv").c_str());
+  std::ofstream logfile(("/usd/auton_log_" + odom_log_number_new + + "_" + name + ".csv").c_str());
   logfile << odom_log << std::endl;
   logfile.close();
 }
 
-void auton_init(OdomState odom_state) {
+void auton_init(OdomState odom_state, std::string name = "unnamed", bool is_skills = false) {
   imu_odom->setState(odom_state);
   start_time = pros::millis();
   auton_drive_enabled = true;
-  (pros::Task(auton_log));
+  (pros::Task([&](){ auton_log(name, is_skills); }));
 }
 
 void auton_clean_up() {
@@ -464,37 +482,42 @@ Macro test(
     },
     {&auton_group});
 
+// Our main autonomous routine
 Macro home_row_three(
     [&](){
-      auton_init({15.7416_in, 31.4911_in, -90_deg});
-
-      move_settings.start_output = 100;
+      using namespace matchballs;
+      auton_init({15.7416_in, 31.4911_in, -90_deg}, "home_row_three");
+      stow_after_eject = true;
+      move_settings.start_output = 80;
       move_settings.end_output = 20;
 
       intake_queue = 3;
       wait(700);
       drive_to_goal(goal_1, -135_deg); // at goal 1
       score_balls(2); // score
+      
       add_target(goal_1, -135_deg, 29_in); // back away
       wait_until_final_target_reached();
-      wait(100);
-      intakes_back.start();
+      // wait(100);
+      // intakes_back.start();
       add_target(goal_2, -180_deg, 29_in);
       eject_queue = 1;
       wait(1000);
-      eject_all_but(1);
+      // eject_all_but(1); // be extra safe
 
       wait_until_final_target_reached();
       intake_queue = 2;
       drive_to_goal(goal_2, -180_deg); // at goal 2
       score_balls(2); // score
+
       wait(300);
       add_target(goal_2, -180_deg, 25_in); // back away
       add_target(goal_3, -180_deg, 35_in, -225_deg);
       wait(100);
-      eject_all_but(0);
-      wait(300);
-      intakes_back.start();
+      eject_queue = 1;
+      // eject_all_but(0);
+      // wait(300);
+      // intakes_back.start();
 
       wait_until_final_target_reached();
       add_target(goal_3, -225_deg, 35_in);
@@ -503,6 +526,7 @@ Macro home_row_three(
       wait(500);
       drive_to_goal(goal_3, -225_deg); // at goal 3
       score_balls(2); // score
+
       add_target(goal_3, -225_deg, 35_in); // back away
 
 
@@ -515,7 +539,7 @@ Macro home_row_three(
 
 Macro home_row_three_old(
     [&](){
-      auton_init({15.7416_in, 31.4911_in, -90_deg});
+      auton_init({15.7416_in, 31.4911_in, -90_deg}, "home_row_three_old");
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -923,7 +947,7 @@ Macro skills_one(
 Macro skills_two(
     [&](){
       using namespace skillsballs;
-      auton_init({13.491_in, 34.9911_in, 0_deg});
+      auton_init({13.491_in, 34.9911_in, 0_deg}, "skills_two", true);
       stow_after_eject = true;
 
       move_settings.start_output = 100;
@@ -1027,7 +1051,7 @@ Macro shawnton_three(
       intake_queue = 1;
 
       WAIT_UNTIL(final_target_reached)
-      add_target(70.3361_in, 132.7450_in, 25_deg, 6_in, 25_deg);
+      add_target(70.3361_in, 131.7450_in, 25_deg, 6_in, 25_deg);
       wait(1000);
       clear_all_targets();
 

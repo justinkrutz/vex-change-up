@@ -174,6 +174,7 @@ bool stow_after_eject = false;
 bool score_balls_manually = false;
 // bool ball_between_intake_and_rollers = false;
 int time_when_last_ball_ejected = 0;
+int time_since_eject_queue_zero = 0;
 int time_when_last_ball_lost = 0;
 double pos_when_ball_at_top = 0;
 double pos_when_ball_at_bottom = 0;
@@ -398,16 +399,18 @@ void main_task() {
       }
     }
 
-    if (balls_in_robot.empty() && pros::millis() - robot_empty_time > 2000) {
-      eject_queue = 0;
-    }
-
     if (eject_queue > 0) {
       top_roller_smart.set_manual_speed(2, -100);
       bottom_roller_smart.set_manual_speed(2, -100);
     } else {
+      time_since_eject_queue_zero = pros::millis();
       top_roller_smart.set_manual_speed(2, 0);
       bottom_roller_smart.set_manual_speed(2, 0);
+    }
+
+    if (balls_in_robot.empty() && (pros::millis() - time_since_eject_queue_zero > 700)) {
+      if (stow_after_eject) intakes_back.start();
+      eject_queue = 0;
     }
 
     bottom_roller_smart.set_manual_speed(0, okapi::deadband(partner.get_analog(ANALOG_RIGHT_Y), -10, 10));
