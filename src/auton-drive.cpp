@@ -513,10 +513,10 @@ Macro home_row_three(
 
       wait_until_final_target_reached();
       add_target(goal_3, -225_deg, 35_in);
-      intakes_back.terminate();
+      // intakes_back.terminate();
       wait(500);
-      intake_queue = 3;
-      wait(20);
+      // intake_queue = 3;
+      // wait(20);
       intake_queue = 3;
       wait(500);
       drive_to_goal(goal_3, -225_deg); // at goal 3
