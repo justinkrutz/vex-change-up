@@ -382,23 +382,10 @@ using namespace rollers;
 int start_time = 0;
 
 
-void auton_log(std::string name, bool is_skills) {
+void auton_log(std::string name = "", bool is_skills = false) {
   if (!pros::usd::is_installed()) return;
 
-  std::string odom_log =
-      "x,"
-      "y,"
-      "theta,"
-      "balls_in_robot,"
-      "intake_queue,"
-      "score_queue,"
-      "eject_queue,"
-      "target_distance_reached,"
-      "target_heading_reached,"
-      "final_target_reached,"
-      "targets,"
-      "goal_sensor_one.get_value,"
-      "goal_sensor_two.get_value";
+  std::string odom_log = "x,y,theta,balls_in_robot,intake_queue,score_queue,eject_queue,target_distance_reached,target_heading_reached,final_target_reached,targets,goal_sensor_one.get_value,goal_sensor_two.get_value";
   std::string odom_log_number_old = "";
   std::string odom_log_number_new = "";
 
@@ -434,7 +421,9 @@ void auton_log(std::string name, bool is_skills) {
   odl_o << odom_log_number_new << std::endl;
   odl_o.close();
 
-  std::ofstream logfile(("/usd/auton_log_" + odom_log_number_new + + "_" + name + ".csv").c_str());
+  std::string output_name = "/usd/auton_log_" + odom_log_number_new + + "_" + name + ".csv";
+
+  std::ofstream logfile(output_name.c_str());
   logfile << odom_log << std::endl;
   logfile.close();
 }
@@ -443,7 +432,7 @@ void auton_init(OdomState odom_state, std::string name = "unnamed", bool is_skil
   imu_odom->setState(odom_state);
   start_time = pros::millis();
   auton_drive_enabled = true;
-  (pros::Task([&](){ auton_log(name, is_skills); }));
+  pros::Task task([&](){ auton_log(name, is_skills); });
 }
 
 void auton_clean_up() {
@@ -502,20 +491,21 @@ Macro home_row_three(
       // intakes_back.start();
       add_target(goal_2, -180_deg, 29_in);
       eject_queue = 1;
-      wait(1000);
+      wait(1500);
       // eject_all_but(1); // be extra safe
 
-      wait_until_final_target_reached();
       intake_queue = 2;
+      // wait_until_final_target_reached();
       drive_to_goal(goal_2, -180_deg); // at goal 2
       score_balls(2); // score
 
+      wait(1000);
       add_target(goal_2, -180_deg, 25_in); // back away
       eject_queue = 1;
-      wait_until_final_target_reached();
-      wait(500);
+      // wait_until_final_target_reached();
+      // wait(500);
       add_target(goal_3, -180_deg, 35_in, -225_deg);
-      intakes_back.start();
+      // intakes_back.start();
       // wait(100);
       // eject_all_but(0);
       // wait(300);
@@ -523,7 +513,10 @@ Macro home_row_three(
 
       wait_until_final_target_reached();
       add_target(goal_3, -225_deg, 35_in);
+      intakes_back.terminate();
       wait(500);
+      intake_queue = 3;
+      wait(20);
       intake_queue = 3;
       wait(500);
       drive_to_goal(goal_3, -225_deg); // at goal 3

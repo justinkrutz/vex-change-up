@@ -29,12 +29,32 @@ double nearest_nut(double pos) {
   return pos - fmod(pos, 45);
 }
 
+controllerbuttons::Macro intake_splay_macro(
+    [](){
+      rollers::intake_queue = 0;
+      intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+      intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+      double left_target = nearest_nut(intake_left.get_position() + 20) - 40;
+      intake_left.move_absolute(left_target, 200);
+      intake_right.move_absolute(nearest_nut(intake_right.get_position() + 20) - 40, 200);
+      controllerbuttons::wait(1000);
+      if (!InRange(intake_left.get_position(), left_target - 5, left_target + 5)) {
+        intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+        intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+        intake_left.move_velocity(0);
+        intake_right.move_velocity(0);
+      }
+    },
+    [](){
+    });
+
 void intake_splay(){
-  rollers::intake_queue = 0;
-  intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-  intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-  intake_left.move_absolute(nearest_nut(intake_left.get_position() + 20) - 40, 200);
-  intake_right.move_absolute(nearest_nut(intake_right.get_position() + 20) - 40, 200);
+  intake_splay_macro.start();
+  // rollers::intake_queue = 0;
+  // intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  // intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  // intake_left.move_absolute(nearest_nut(intake_left.get_position() + 20) - 40, 200);
+  // intake_right.move_absolute(nearest_nut(intake_right.get_position() + 20) - 40, 200);
 }
 
 
