@@ -262,8 +262,8 @@ void drive_to_goal(odomutilities::Goal goal, QAngle angle, int timeout = 2000) {
 
 void score_balls(int balls_to_score) {
   using namespace robotfunctions::rollers;
-  score_balls_manually = true;
   for (int i = 0; i < balls_to_score; i++) {
+    score_balls_manually = true;
     score_queue++;
     wait(200);
   }
@@ -510,11 +510,13 @@ Macro home_row_three(
       drive_to_goal(goal_2, -180_deg); // at goal 2
       score_balls(2); // score
 
-      wait(300);
       add_target(goal_2, -180_deg, 25_in); // back away
-      add_target(goal_3, -180_deg, 35_in, -225_deg);
-      wait(100);
       eject_queue = 1;
+      wait_until_final_target_reached();
+      wait(500);
+      add_target(goal_3, -180_deg, 35_in, -225_deg);
+      intakes_back.start();
+      // wait(100);
       // eject_all_but(0);
       // wait(300);
       // intakes_back.start();
@@ -528,6 +530,8 @@ Macro home_row_three(
       score_balls(2); // score
 
       add_target(goal_3, -225_deg, 35_in); // back away
+      wait(500);
+      eject_queue = 1;
 
 
       wait_until_final_target_reached();

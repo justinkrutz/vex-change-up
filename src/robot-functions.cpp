@@ -44,8 +44,7 @@ controllerbuttons::Macro left_intake_back(
     },
     [](){
       intake_left.move_velocity(0);
-    },
-    {&intake_group});
+    });
 
 controllerbuttons::Macro right_intake_back(
     [](){
@@ -53,8 +52,7 @@ controllerbuttons::Macro right_intake_back(
     },
     [](){
       intake_right.move_velocity(0);
-    },
-    {&intake_group});
+    });
 
 controllerbuttons::Macro intakes_wiggle(
     [](){
@@ -305,9 +303,9 @@ void main_task() {
     if (ball_intake_found) {
       // bottom_roller_smart.set_manual_speed(5, 100);
       bottom_roller_smart.add_target(1200, 100);
-      if (eject_queue == 1 ||
+      if (bottom_roller.get_actual_velocity() < -10 && (eject_queue == 1 ||
           !(ball_os_middle.is_detected || pros::millis() - ball_os_middle.time_when_lost < 100
-            || ball_os_top.is_detected || pros::millis() - ball_os_top.time_when_lost < 400)) {
+            || ball_os_top.is_detected || pros::millis() - ball_os_top.time_when_lost < 400))) {
         if (stow_after_eject) {
           intakes_back.start();
         } else {
@@ -316,7 +314,13 @@ void main_task() {
       }
     } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10 && pros::millis() - time_when_last_ball_ejected > 50) {
       if (balls_in_robot.size() > 0) balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
-      if (eject_queue > 0) eject_queue--; // remove ball from eject_queue
+      if (eject_queue > 0) {
+        eject_queue--; // remove ball from eject_queue
+        if (eject_queue == 0) {
+          // top_roller_smart.add_target(1000, 50);
+          // bottom_roller_smart.add_target(1000, 25);
+        }
+      }
       time_when_last_ball_ejected = pros::millis();
     }
 
@@ -409,6 +413,11 @@ void main_task() {
     }
 
     if (balls_in_robot.empty() && (pros::millis() - time_since_eject_queue_zero > 700)) {
+      if (stow_after_eject) intakes_back.start();
+      eject_queue = 0;
+    }
+
+    if (balls_in_robot.empty() && (pros::millis() - robot_empty_time > 700)) {
       if (stow_after_eject) intakes_back.start();
       eject_queue = 0;
     }
