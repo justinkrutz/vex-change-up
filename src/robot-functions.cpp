@@ -334,15 +334,11 @@ void main_task() {
       }
     } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10 && pros::millis() - time_when_last_ball_ejected > 50) {
       if (balls_in_robot.size() > 0) balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
-      if (eject_queue > 0) {
-        eject_queue--; // remove ball from eject_queue
-        if (eject_queue == 0) {
-          // top_roller_smart.add_target(1000, 50);
-          // bottom_roller_smart.add_target(1000, 25);
-        }
-      }
+      if (eject_queue >= 1) eject_queue--; // remove ball from eject_queue
       time_when_last_ball_ejected = pros::millis();
     }
+
+    // if (!(eject_queue >= 0)) eject_queue = 0;
 
     if (ball_bottom_found && bottom_roller.get_actual_velocity() > 10) {
         if (balls_in_robot.size() >= 3) balls_in_robot.pop_front(); // balls_in_robot.size() was 3 but the top ball was removed because a fourth cannot be added
@@ -423,7 +419,7 @@ void main_task() {
       }
     }
 
-    if (eject_queue > 0) {
+    if (eject_queue >= 1) {
       top_roller_smart.set_manual_speed(2, -100);
       bottom_roller_smart.set_manual_speed(2, -100);
     } else {
@@ -432,15 +428,15 @@ void main_task() {
       bottom_roller_smart.set_manual_speed(2, 0);
     }
 
-    if (balls_in_robot.empty() && (pros::millis() - time_since_eject_queue_zero > 700)) {
+    if (eject_queue >= 1 && balls_in_robot.empty() && (pros::millis() - time_since_eject_queue_zero > 700)) {
       if (stow_after_eject) intakes_back.start();
       eject_queue = 0;
     }
 
-    if (balls_in_robot.empty() && (pros::millis() - robot_empty_time > 700)) {
-      if (stow_after_eject) intakes_back.start();
-      eject_queue = 0;
-    }
+    // if (balls_in_robot.empty() && (pros::millis() - robot_empty_time > 700)) {
+    //   if (stow_after_eject) intakes_back.start();
+    //   eject_queue = 0;
+    // }
 
     bottom_roller_smart.set_manual_speed(0, okapi::deadband(partner.get_analog(ANALOG_RIGHT_Y), -10, 10));
     top_roller_smart.set_manual_speed(0, okapi::deadband(partner.get_analog(ANALOG_LEFT_Y), -10, 10));
@@ -457,6 +453,8 @@ void main_task() {
     if (!menu_enabled) {
       // controllermenu::master_print_array[0] = ball_string;
     }
+    controllermenu::master_print_array[0] = "intake_queue: " + std::to_string(intake_queue);
+    controllermenu::master_print_array[1] = "eject_queue: " + std::to_string(eject_queue);
     // controllermenu::partner_print_array[0] = "SQ: " + std::to_string(score_queue) + " IQ: " + std::to_string(intake_queue);
     // controllermenu::partner_print_array[1] = "GS1: " + std::to_string(goal_sensor_one.get_value()) + " GS2: " + std::to_string(goal_sensor_two.get_value());
     // controllermenu::partner_print_array[2] = "MIN: " + std::to_string(goal_os.get_min_value()) + " MAX: " + std::to_string(goal_os.get_max_value());

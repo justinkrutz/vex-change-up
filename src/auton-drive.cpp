@@ -382,17 +382,12 @@ using namespace rollers;
 int start_time = 0;
 
 
-void auton_log(std::string name = "", bool is_skills = false) {
-  if (!pros::usd::is_installed()) return;
-
-  std::string odom_log = "x,y,theta,balls_in_robot,intake_queue,score_queue,eject_queue,target_distance_reached,target_heading_reached,final_target_reached,targets,goal_sensor_one.get_value,goal_sensor_two.get_value";
+void auton_log() {
+  std::string odom_log = "x,y,theta,balls_in_robot,intake_queue,score_queue,eject_queue,target_distance_reached,target_heading_reached,final_target_reached,targets,goal_sensor_one.get_value(),goal_sensor_two.get_value()";
   std::string odom_log_number_old = "";
   std::string odom_log_number_new = "";
 
-  int count = 1500;
-  if (is_skills) count = 6000;
-
-  for (int i = 0; i < count; i++) {
+  for (int i = 0; i < 1500; i++) {
     OdomState odom = get_odom_state();
     odom_log.append("\n" +
         std::to_string(odom.x.convert(inch)) + "," +
@@ -421,9 +416,7 @@ void auton_log(std::string name = "", bool is_skills = false) {
   odl_o << odom_log_number_new << std::endl;
   odl_o.close();
 
-  std::string output_name = "/usd/auton_log_" + odom_log_number_new + + "_" + name + ".csv";
-
-  std::ofstream logfile(output_name.c_str());
+  std::ofstream logfile(("/usd/auton_log_" + odom_log_number_new + ".csv").c_str());
   logfile << odom_log << std::endl;
   logfile.close();
 }
@@ -432,7 +425,7 @@ void auton_init(OdomState odom_state, std::string name = "unnamed", bool is_skil
   imu_odom->setState(odom_state);
   start_time = pros::millis();
   auton_drive_enabled = true;
-  pros::Task task([&](){ auton_log(name, is_skills); });
+  (pros::Task(auton_log));
 }
 
 void auton_clean_up() {

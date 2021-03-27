@@ -117,9 +117,9 @@ void opcontrol() {
       QLength imu_x = imu_odom->getState().x;
       QLength imu_y = imu_odom->getState().y;
       QAngle imu_theta = imu_odom->getState().theta;
-      controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(imu_x.convert(inch));
-      controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(imu_y.convert(inch));
-      controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(imu_theta.convert(degree));
+      // controllermenu::master_print_array[0] = std::to_string(tracker_left.get_position())  + " " + std::to_string(imu_x.convert(inch));
+      // controllermenu::master_print_array[1] = std::to_string(tracker_right.get_position()) + " " + std::to_string(imu_y.convert(inch));
+      // controllermenu::master_print_array[2] = std::to_string(tracker_back.get_position())  + " " + std::to_string(imu_theta.convert(degree));
       
       QLength x = chassis->getState().x;
       QLength y = chassis->getState().y;
