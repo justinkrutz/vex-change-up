@@ -59,6 +59,7 @@ extern controllerbuttons::Macro left_shawnton;
 extern controllerbuttons::Macro right_shawnton;
 extern controllerbuttons::Macro test;
 extern controllerbuttons::Macro skills_one;
+extern controllerbuttons::Macro skills_one_one;
 extern controllerbuttons::Macro skills_two;
 extern controllerbuttons::Macro shawnton_three;
 extern controllerbuttons::Macro shawnton_cycle;

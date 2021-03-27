@@ -736,6 +736,193 @@ void stop_scoring() {
 Macro skills_one(
     [&](){
       imu_odom->setState({13.491_in, 34.9911_in, 0_deg});
+
+      move_settings.start_output = 100;
+      move_settings.end_output = 20;
+
+      intake_queue = 1;
+      add_target(18_in, 34.9911_in, 0_deg);
+      add_target(5.8129_in, 5.8129_in, -135_deg, 17_in);
+      wait(500);
+      intakes_back.start();
+      WAIT_UNTIL(final_target_reached)
+      add_target(5.8129_in, 5.8129_in, -135_deg, 6_in);
+      wait(500);
+      score_queue = 1;
+      wait(300);
+      targets.pop();
+
+      stop_scoring();
+      add_target(5.9272_in, 70.3361_in, -180_deg, 20_in);
+      WAIT_UNTIL(final_target_reached)
+      add_target(5.9272_in, 70.3361_in, -180_deg, 6_in);
+      wait(600);
+      score_queue = 1;
+      wait(400);
+      targets.pop();
+
+      stop_scoring();
+      // move_settings.end_output = 100;
+      add_target(23_in, 70.3361_in, -180_deg);
+      add_target(23_in, 90_in, -270_deg);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      add_target(23_in, 117.18_in, -270_deg);
+      // move_settings.end_output = 20;
+      WAIT_UNTIL(final_target_reached)
+      intakes_back.start();
+      add_target(5.8129_in, 134.8593_in, -225_deg, 24.5_in);
+      WAIT_UNTIL(final_target_reached)
+      add_target(5.8129_in, 134.8593_in, -225_deg, 6_in);
+      wait(1000);
+      score_queue = 1;
+      wait(400);
+      targets.pop();
+
+      stop_scoring();
+      add_target(23_in, 117.18_in, -270_deg);
+      WAIT_UNTIL(final_target_reached)
+      // intake_right.move_relative(180, 200);
+      add_target(34.8361_in, 123.6722_in, -270_deg);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      wait(1000);
+      intakes_back.start();
+      add_target(70.3361_in, 117.4624_in, -360_deg, 12_in);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      add_target(70.3361_in, 117.4624_in, -360_deg);
+      wait(1000);
+      intakes_back.start();
+      add_target(70.3361_in, 117.4624_in, -270_deg);
+      WAIT_UNTIL(final_target_reached)
+      add_target(70.3361_in, 134.745_in, -270_deg, 6_in);
+      wait(500);
+      score_queue = 2;
+      wait(700);
+      targets.pop();
+
+      stop_scoring();
+      add_target(70.3361_in, 117.4624_in, -270_deg);
+      WAIT_UNTIL(final_target_reached)
+      // intake_right.move_relative(180, 200);
+      add_target(105.8361_in, 123.6722_in, -270_deg);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      wait(1000);
+      intakes_back.start();
+      add_target(134.8593_in, 134.8593_in, -315_deg, 17_in);
+      WAIT_UNTIL(final_target_reached)
+      add_target(134.8593_in, 134.8593_in, -315_deg, 6_in);
+      wait(300);
+      score_queue = 1;
+      wait(300);
+      targets.pop();
+
+      stop_scoring();
+      add_target(118_in, 125_in, -360_deg);
+      add_target(118_in, 125_in, -450_deg);
+      add_target(117.6361_in, 105.6361_in, -450_deg, 12_in);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      add_target(117.6361_in, 70.3361_in, -450_deg);
+      wait(1000);
+      intakes_back.start();
+      add_target(117.6361_in, 70.3361_in, -360_deg);
+      WAIT_UNTIL(final_target_reached)
+      add_target(134.745_in,  70.3361_in, -360_deg, 6_in);
+      wait(1000);
+      score_queue = 1;
+      wait(200);
+      targets.pop();
+
+      stop_scoring();
+      add_target(117.6361_in, 70.3361_in, -360_deg);
+      add_target(117.6361_in, 35.0361_in, -450_deg, 12_in);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      add_target(117.1816_in, 23.4906_in, -450_deg);
+      WAIT_UNTIL(final_target_reached)
+      intakes_back.start();
+      add_target(134.8593_in, 5.8129_in, -405_deg, 24.5_in);
+      WAIT_UNTIL(final_target_reached)
+      add_target(134.8593_in, 5.8129_in, -405_deg, 6_in);
+      wait(700);
+      score_queue = 1;
+      wait(400);
+      targets.pop();
+
+      stop_scoring();
+      add_target(117.1816_in, 23.4906_in, -450_deg);
+      WAIT_UNTIL(final_target_reached)
+      // intake_right.move_relative(180, 200);
+      add_target(106.8361_in, 3.3361_in, -450_deg , 13_in);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      wait(1000);
+      intakes_back.start();
+      add_target(70.3361_in, 23.3361_in, -540_deg, 13_in);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      add_target(70.3361_in, 23.3361_in, -540_deg);
+      wait(1000);
+      intakes_back.start();
+      wait(300);
+      add_target(70.3361_in, 23.3361_in, -450_deg);
+      WAIT_UNTIL(final_target_reached)
+      add_target(70.3361_in, 5.9272_in, -450_deg, 6_in);
+      wait(600);
+      score_queue = 2;
+      wait(1700);
+      targets.pop();
+
+      stop_scoring();
+      add_target(70.3361_in, 23.3361_in, -450_deg);
+      add_target(70.3361_in, 23.3361_in, -270_deg);
+      add_target(70.3361_in, 46.8361_in, -270_deg, 14_in);
+      WAIT_UNTIL(final_target_reached)
+      intake_queue = 1;
+      wait(1000);
+      add_target(70.3361_in, 70.3361_in, -270_deg, 16_in);
+      WAIT_UNTIL(final_target_reached)
+      add_target(70.3361_in, 70.3361_in, -270_deg, 6_in);
+      wait(300);
+      intake_queue = 50;
+      wait(200);
+      targets.pop();
+
+      button_strafe = 10;
+      button_turn = -6.84;
+      button_forward = 3;
+      wait(2000);
+      button_strafe = -10;
+      button_turn = 6.84;
+      button_forward = 3;
+      wait(3000);
+      intake_queue = 1;
+      score_queue = 1;
+      button_strafe = 10;
+      button_turn = -6.84;
+      button_forward = 3;
+      // wait(4000);
+      WAIT_UNTIL(intake_queue == 0)
+      button_strafe = 0;
+      button_turn = 0;
+      button_forward = 0;
+
+      intakes_back.start();
+    },
+    [](){
+      button_strafe = 0;
+      button_turn = 0;
+      button_forward = 0;
+      targets_should_clear = true;
+    },
+    {&auton_group});
+
+Macro skills_one_one(
+    [&](){
+      imu_odom->setState({13.491_in, 34.9911_in, 0_deg});
       using namespace skillsballs;
 
       move_settings.start_output = 100;
