@@ -1192,11 +1192,36 @@ Macro skills_two(
       drive_to_goal(goal_6, -270_deg);
       score_balls(2);
 
-      // intakes_back.start();
+      /* ======================= untested from here on ======================= */
+
+      add_target(goal_6, -270_deg, 25_in);
+      wait_until_final_target_reached();
+      add_target(goal_6, -200_deg, 25_in, -270_deg);
+      wait(300);
+      eject_queue = 1;
+      wait(500);
       add_target(ball_l, -270_deg, 25_in);
       add_target(ball_l, -270_deg, ball_wall_offset);
       wait_until_final_target_reached();
       intake_queue = 1;
+      wait(700);
+
+      add_target(goal_9, -315_deg, 25_in);
+      wait_until_final_target_reached();
+      intake_queue = 2;
+      drive_to_goal(goal_9, -315_deg);
+      score_balls(2);
+      add_target(goal_9, -270_deg, 25_in, -315_deg);
+      wait_until_final_target_reached();
+      add_target(goal_9, -450_deg, 25_in, -315_deg);
+      wait(300);
+      eject_queue = 1;
+      wait(500);
+      add_target(ball_n, -450_deg, ball_field_offset);
+      wait_until_final_target_reached();
+      intake_queue = 1;
+      wait(700);
+
       
 
 
@@ -1259,7 +1284,6 @@ Macro shawnton_three(
     [](){
       targets_should_clear = true;
     },
-
     {&auton_group});
 
 Macro shawnton_cycle(
