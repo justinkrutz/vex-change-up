@@ -1,7 +1,7 @@
 {
     "py/object": "pros.conductor.project.Project",
     "py/state": {
-        "project_name": "Development",
+        "project_name": "Stable",
         "target": "v5",
         "templates": {
             "kernel": {
@@ -301,8 +301,8 @@
         "upload_options": {
             "compress_bin": true,
             "description": "Created by 3018E Paracord",
-            "remote_name": "Main Program Dev",
-            "slot": 2
+            "remote_name": "Stable",
+            "slot": 1
         }
     }
 }
