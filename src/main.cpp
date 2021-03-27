@@ -18,6 +18,7 @@ void set_drive_callbacks() {
   controllerbuttons::button_handler.clear_group("menu");
   robotfunctions::set_callbacks();
   autondrive::set_callbacks();
+  autondrive::auton_group.terminate();
   controllermenu::master_print_array[0] = "";
   controllermenu::master_print_array[1] = "";
   controllermenu::master_print_array[2] = "";

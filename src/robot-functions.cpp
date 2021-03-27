@@ -29,12 +29,32 @@ double nearest_nut(double pos) {
   return pos - fmod(pos, 45);
 }
 
+controllerbuttons::Macro intake_splay_macro(
+    [](){
+      rollers::intake_queue = 0;
+      intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+      intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+      double left_target = nearest_nut(intake_left.get_position() + 20) - 40;
+      intake_left.move_absolute(left_target, 200);
+      intake_right.move_absolute(nearest_nut(intake_right.get_position() + 20) - 40, 200);
+      controllerbuttons::wait(1000);
+      if (!InRange(intake_left.get_position(), left_target - 5, left_target + 5)) {
+        intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+        intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+        intake_left.move_velocity(0);
+        intake_right.move_velocity(0);
+      }
+    },
+    [](){
+    });
+
 void intake_splay(){
-  rollers::intake_queue = 0;
-  intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-  intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-  intake_left.move_absolute(nearest_nut(intake_left.get_position() + 20) - 40, 200);
-  intake_right.move_absolute(nearest_nut(intake_right.get_position() + 20) - 40, 200);
+  intake_splay_macro.start();
+  // rollers::intake_queue = 0;
+  // intake_left.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  // intake_right.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  // intake_left.move_absolute(nearest_nut(intake_left.get_position() + 20) - 40, 200);
+  // intake_right.move_absolute(nearest_nut(intake_right.get_position() + 20) - 40, 200);
 }
 
 
@@ -44,8 +64,7 @@ controllerbuttons::Macro left_intake_back(
     },
     [](){
       intake_left.move_velocity(0);
-    },
-    {&intake_group});
+    });
 
 controllerbuttons::Macro right_intake_back(
     [](){
@@ -53,9 +72,22 @@ controllerbuttons::Macro right_intake_back(
     },
     [](){
       intake_right.move_velocity(0);
+    });
+
+controllerbuttons::Macro intakes_wiggle(
+    [](){
+
+      double intake_left_pos = intake_left.get_position();
+      double intake_right_pos = intake_right.get_position();
+      intake_left.move_absolute(intake_left_pos - 45, 100);
+      intake_right.move_absolute(intake_right_pos - 45, 100);
+      controllerbuttons::wait(500);
+      intake_left.move_absolute(intake_left_pos, 50);
+      intake_right.move_absolute(intake_right_pos, 50);
+    },
+    [](){
     },
     {&intake_group});
-
 
   SmartMotorController::SmartMotorController(pros::Motor &motor, double timeout_ratio, double slew, int manual_controlls)
       : motor(motor),
@@ -156,8 +188,11 @@ int eject_queue = 0;
 int intake_queue = 0;
 bool intake_ball = false;
 bool eject_balls = false;
-bool score_balls = false;
+bool stow_after_eject = false;
+bool score_balls_manually = false;
 // bool ball_between_intake_and_rollers = false;
+int time_when_last_ball_ejected = 0;
+int time_since_eject_queue_zero = 0;
 int time_when_last_ball_lost = 0;
 double pos_when_ball_at_top = 0;
 double pos_when_ball_at_bottom = 0;
@@ -288,10 +323,22 @@ void main_task() {
     if (ball_intake_found) {
       // bottom_roller_smart.set_manual_speed(5, 100);
       bottom_roller_smart.add_target(1200, 100);
-    } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10) {
+      if (bottom_roller.get_actual_velocity() < -10 && (eject_queue == 1 ||
+          !(ball_os_middle.is_detected || pros::millis() - ball_os_middle.time_when_lost < 100
+            || ball_os_top.is_detected || pros::millis() - ball_os_top.time_when_lost < 400))) {
+        if (stow_after_eject) {
+          intakes_back.start();
+        } else {
+          intakes_wiggle.start();
+        }
+      }
+    } else if (ball_intake_lost && bottom_roller.get_actual_velocity() < -10 && pros::millis() - time_when_last_ball_ejected > 50) {
       if (balls_in_robot.size() > 0) balls_in_robot.pop_back(); // remove the bottom ball from the robot because it was ejected
-      if (eject_queue > 0) eject_queue--; // remove ball from eject_queue
+      if (eject_queue >= 1) eject_queue--; // remove ball from eject_queue
+      time_when_last_ball_ejected = pros::millis();
     }
+
+    // if (!(eject_queue >= 0)) eject_queue = 0;
 
     if (ball_bottom_found && bottom_roller.get_actual_velocity() > 10) {
         if (balls_in_robot.size() >= 3) balls_in_robot.pop_front(); // balls_in_robot.size() was 3 but the top ball was removed because a fourth cannot be added
@@ -339,8 +386,8 @@ void main_task() {
       if (score_queue > 0) score_queue--;
     }
 
-    if (score_queue > 0 && (score_balls || goal_os.is_detected)) {
-      score_balls = false;
+    if (score_queue > 0 && (score_balls_manually || goal_os.is_detected)) {
+      score_balls_manually = false;
       top_roller_smart.set_manual_speed(3, 100);
       bottom_roller_smart.set_manual_speed(3, 50);
     } else if (score_queue == 0) {
@@ -372,17 +419,24 @@ void main_task() {
       }
     }
 
-    if (balls_in_robot.empty() && pros::millis() - robot_empty_time > 700) {
-      eject_queue = 0;
-    }
-
-    if (eject_queue > 0) {
+    if (eject_queue >= 1) {
       top_roller_smart.set_manual_speed(2, -100);
       bottom_roller_smart.set_manual_speed(2, -100);
     } else {
+      time_since_eject_queue_zero = pros::millis();
       top_roller_smart.set_manual_speed(2, 0);
       bottom_roller_smart.set_manual_speed(2, 0);
     }
+
+    if (eject_queue >= 1 && balls_in_robot.empty() && (pros::millis() - time_since_eject_queue_zero > 700)) {
+      if (stow_after_eject) intakes_back.start();
+      eject_queue = 0;
+    }
+
+    // if (balls_in_robot.empty() && (pros::millis() - robot_empty_time > 700)) {
+    //   if (stow_after_eject) intakes_back.start();
+    //   eject_queue = 0;
+    // }
 
     bottom_roller_smart.set_manual_speed(0, okapi::deadband(partner.get_analog(ANALOG_RIGHT_Y), -10, 10));
     top_roller_smart.set_manual_speed(0, okapi::deadband(partner.get_analog(ANALOG_LEFT_Y), -10, 10));
@@ -399,6 +453,8 @@ void main_task() {
     if (!menu_enabled) {
       // controllermenu::master_print_array[0] = ball_string;
     }
+    // controllermenu::master_print_array[0] = "intake_queue: " + std::to_string(intake_queue);
+    // controllermenu::master_print_array[1] = "eject_queue: " + std::to_string(eject_queue);
     // controllermenu::partner_print_array[0] = "SQ: " + std::to_string(score_queue) + " IQ: " + std::to_string(intake_queue);
     // controllermenu::partner_print_array[1] = "GS1: " + std::to_string(goal_sensor_one.get_value()) + " GS2: " + std::to_string(goal_sensor_two.get_value());
     // controllermenu::partner_print_array[2] = "MIN: " + std::to_string(goal_os.get_min_value()) + " MAX: " + std::to_string(goal_os.get_max_value());
@@ -407,11 +463,11 @@ void main_task() {
 }
 
 void score_balls_true() {
-  score_balls = true;
+  score_balls_manually = true;
 }
 
 void score_balls_false() {
-  score_balls = false;
+  score_balls_manually = false;
 }
 
 // void eject_balls() {

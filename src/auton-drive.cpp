@@ -263,6 +263,7 @@ void drive_to_goal(odomutilities::Goal goal, QAngle angle, int timeout = 2000) {
 void score_balls(int balls_to_score) {
   using namespace robotfunctions::rollers;
   for (int i = 0; i < balls_to_score; i++) {
+    score_balls_manually = true;
     score_queue++;
     wait(200);
   }
@@ -420,7 +421,7 @@ void auton_log() {
   logfile.close();
 }
 
-void auton_init(OdomState odom_state) {
+void auton_init(OdomState odom_state, std::string name = "unnamed", bool is_skills = false) {
   imu_odom->setState(odom_state);
   start_time = pros::millis();
   auton_drive_enabled = true;
@@ -430,6 +431,7 @@ void auton_init(OdomState odom_state) {
 void auton_clean_up() {
   clear_all_targets();
   auton_drive_enabled = false;
+  stow_after_eject = false;
   button_strafe = 0;
   button_turn = 0;
   button_forward = 0;
@@ -462,46 +464,60 @@ Macro test(
     },
     {&auton_group});
 
+// Our main autonomous routine
 Macro home_row_three(
     [&](){
-      auton_init({15.7416_in, 31.4911_in, -90_deg});
-
-      move_settings.start_output = 100;
+      using namespace matchballs;
+      auton_init({15.7416_in, 31.4911_in, -90_deg}, "home_row_three");
+      stow_after_eject = true;
+      move_settings.start_output = 80;
       move_settings.end_output = 20;
 
       intake_queue = 3;
       wait(700);
       drive_to_goal(goal_1, -135_deg); // at goal 1
       score_balls(2); // score
+      
       add_target(goal_1, -135_deg, 29_in); // back away
       wait_until_final_target_reached();
-      wait(100);
-      intakes_back.start();
+      // wait(100);
+      // intakes_back.start();
       add_target(goal_2, -180_deg, 29_in);
       eject_queue = 1;
-      wait(1000);
-      eject_all_but(1);
+      wait(1500);
+      // eject_all_but(1); // be extra safe
 
-      wait_until_final_target_reached();
       intake_queue = 2;
+      // wait_until_final_target_reached();
       drive_to_goal(goal_2, -180_deg); // at goal 2
       score_balls(2); // score
-      wait(300);
+
+      wait(1000);
       add_target(goal_2, -180_deg, 25_in); // back away
+      eject_queue = 1;
+      // wait_until_final_target_reached();
+      // wait(500);
       add_target(goal_3, -180_deg, 35_in, -225_deg);
-      wait(100);
-      eject_all_but(0);
-      wait(300);
-      intakes_back.start();
+      // intakes_back.start();
+      // wait(100);
+      // eject_all_but(0);
+      // wait(300);
+      // intakes_back.start();
 
       wait_until_final_target_reached();
       add_target(goal_3, -225_deg, 35_in);
+      // intakes_back.terminate();
       wait(500);
+      // intake_queue = 3;
+      // wait(20);
       intake_queue = 3;
       wait(500);
       drive_to_goal(goal_3, -225_deg); // at goal 3
       score_balls(2); // score
-      add_target(goal_3, -225_deg, 35_in); // back away
+
+      add_target(goal_3, -225_deg, 25_in); // back away
+      wait(500);
+      eject_queue = 1;
 
 
       wait_until_final_target_reached();
@@ -513,7 +529,7 @@ Macro home_row_three(
 
 Macro home_row_three_old(
     [&](){
-      auton_init({15.7416_in, 31.4911_in, -90_deg});
+      auton_init({15.7416_in, 31.4911_in, -90_deg}, "home_row_three_old");
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -921,7 +937,8 @@ Macro skills_one(
 Macro skills_two(
     [&](){
       using namespace skillsballs;
-      auton_init({13.491_in, 34.9911_in, 0_deg});
+      auton_init({13.491_in, 34.9911_in, 0_deg}, "skills_two", true);
+      stow_after_eject = true;
 
       move_settings.start_output = 100;
       move_settings.end_output = 20;
@@ -934,54 +951,65 @@ Macro skills_two(
       drive_to_goal(goal_1, -135_deg);
       score_balls(3);
 
-      add_target(goal_1, -122.42_deg, 20_in);
-      wait_until_final_target_reached();
-      add_target(ball_e, -180_deg, 40_in, -302.42_deg);
+      // pick up the two balls ===================
+      add_target(goal_1, -122.42_deg, 30_in);
+      wait(500);
+      eject_queue = 2;
+      wait(300);
+      // add_target(ball_e, -180_deg, 40_in, -302.42_deg);
       // eject_all_but(1);
-      eject_queue = 3;
-      wait_until_final_target_reached();
-      // move_settings.end_output = 100;
+      // wait_until_final_target_reached();
       add_target(ball_e, -302.42_deg, ball_field_offset, false);
-      intakes_back.start();
-      wait(630);
+      // intakes_back.start();
+      // wait(630);
       wait_until_final_target_reached();
       intake_queue = 1;
-      wait(700);
-      intakes_back.start();
-      // move_settings.end_output = 20;
+      wait(400);
       add_target(ball_h, -315_deg, ball_field_offset);
+      wait(300);
+      intakes_back.start();
       wait_until_final_target_reached();
       intake_queue = 1;
       wait(700);
-      wait_until_final_target_reached();
+      intakes_back.start();
+
       drive_to_goal(goal_2, -180_deg, 3000);
       intake_queue = 1;
       score_balls(2);
 
+      add_target(goal_2, -135_deg, 25_in, -180_deg);
+      wait(200);
       eject_queue = 1;
-      intakes_back.start();
-      add_target(goal_2, -160_deg, 25_in);
-      wait_until_final_target_reached();
-      add_target(ball_b, -270_deg, ball_field_offset);
       wait(500);
-      intake_queue = 3;
+      add_target(ball_b, -270_deg, ball_field_offset);
+      wait_until_final_target_reached();
+      intake_queue = 1;
+      wait(400);
       add_target(goal_3, -225_deg, 20_in);
+      wait_until_final_target_reached();
+      intake_queue = 2;
       drive_to_goal(goal_3, -225_deg);
       score_balls(1);
 
-      add_target(ball_d, -270_deg, 25_in);
+      add_target(ball_d, -180_deg, 25_in, -270_deg);
+      wait(500);
+      eject_queue = 2;
+      wait_until_final_target_reached();
+      wait(500);
       add_target(ball_d, -270_deg, ball_wall_offset);
       wait(500);
-      intake_queue = 3;
+      intake_queue = 1;
       add_target(ball_i, -270_deg, 30_in);
+      wait_until_final_target_reached();
+      intake_queue = 2;
       drive_to_goal(goal_6, -270_deg);
       score_balls(2);
 
-      intakes_back.start();
+      // intakes_back.start();
       add_target(ball_l, -270_deg, 25_in);
       add_target(ball_l, -270_deg, ball_wall_offset);
       wait_until_final_target_reached();
-      intake_queue = 3;
+      intake_queue = 1;
       
 
 
@@ -1013,7 +1041,7 @@ Macro shawnton_three(
       intake_queue = 1;
 
       WAIT_UNTIL(final_target_reached)
-      add_target(70.3361_in, 131.7450_in, 25_deg, 6_in, 25_deg);
+      add_target(70.3361_in, 130.7450_in, 25_deg, 6_in, 25_deg);
       wait(1000);
       clear_all_targets();
 
