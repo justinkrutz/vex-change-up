@@ -515,7 +515,7 @@ Macro home_row_three(
       drive_to_goal(goal_3, -225_deg); // at goal 3
       score_balls(2); // score
 
-      add_target(goal_3, -225_deg, 35_in); // back away
+      add_target(goal_3, -225_deg, 25_in); // back away
       wait(500);
       eject_queue = 1;
 
@@ -1041,7 +1041,7 @@ Macro shawnton_three(
       intake_queue = 1;
 
       WAIT_UNTIL(final_target_reached)
-      add_target(70.3361_in, 131.7450_in, 25_deg, 6_in, 25_deg);
+      add_target(70.3361_in, 130.7450_in, 25_deg, 6_in, 25_deg);
       wait(1000);
       clear_all_targets();
 
